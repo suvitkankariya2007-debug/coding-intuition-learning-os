@@ -47,38 +47,74 @@ export type Database = {
         }
         Relationships: []
       }
+      coaching_preferences: {
+        Row: {
+          confirmed_at: string | null
+          prefs: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          prefs?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          prefs?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       curriculum_items: {
         Row: {
+          concept_only: boolean
           created_at: string
           difficulty: string | null
           id: string
+          idea: string | null
           import_id: string | null
+          leetcode_id: number | null
           position: number
+          priority_marker: string | null
           raw: Json
+          reference: string | null
           title: string
           topic: string | null
           url: string | null
           user_id: string
         }
         Insert: {
+          concept_only?: boolean
           created_at?: string
           difficulty?: string | null
           id?: string
+          idea?: string | null
           import_id?: string | null
+          leetcode_id?: number | null
           position: number
+          priority_marker?: string | null
           raw?: Json
+          reference?: string | null
           title: string
           topic?: string | null
           url?: string | null
           user_id?: string
         }
         Update: {
+          concept_only?: boolean
           created_at?: string
           difficulty?: string | null
           id?: string
+          idea?: string | null
           import_id?: string | null
+          leetcode_id?: number | null
           position?: number
+          priority_marker?: string | null
           raw?: Json
+          reference?: string | null
           title?: string
           topic?: string | null
           url?: string | null
@@ -102,6 +138,7 @@ export type Database = {
           interval_days: number
           item_id: string
           last_reviewed_at: string | null
+          manual_mark: string | null
           notes: string
           repetitions: number
           status: string
@@ -115,6 +152,7 @@ export type Database = {
           interval_days?: number
           item_id: string
           last_reviewed_at?: string | null
+          manual_mark?: string | null
           notes?: string
           repetitions?: number
           status?: string
@@ -128,6 +166,7 @@ export type Database = {
           interval_days?: number
           item_id?: string
           last_reviewed_at?: string | null
+          manual_mark?: string | null
           notes?: string
           repetitions?: number
           status?: string
@@ -143,6 +182,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      memory_outbox: {
+        Row: {
+          consent: boolean
+          created_at: string
+          id: string
+          status: string
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          consent: boolean
+          created_at?: string
+          id?: string
+          status?: string
+          summary: string
+          user_id?: string
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          id?: string
+          status?: string
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -167,27 +233,48 @@ export type Database = {
       }
       review_log: {
         Row: {
+          confidence: number | null
+          edge_case: string | null
           grade: number
+          hint_stage: string | null
           id: string
+          invariant: string | null
           item_id: string
+          manual_mark: string | null
+          mistake_class: string | null
           next_due: string
           reviewed_at: string
+          transfer_problem: string | null
           user_id: string
         }
         Insert: {
+          confidence?: number | null
+          edge_case?: string | null
           grade: number
+          hint_stage?: string | null
           id?: string
+          invariant?: string | null
           item_id: string
+          manual_mark?: string | null
+          mistake_class?: string | null
           next_due: string
           reviewed_at?: string
+          transfer_problem?: string | null
           user_id?: string
         }
         Update: {
+          confidence?: number | null
+          edge_case?: string | null
           grade?: number
+          hint_stage?: string | null
           id?: string
+          invariant?: string | null
           item_id?: string
+          manual_mark?: string | null
+          mistake_class?: string | null
           next_due?: string
           reviewed_at?: string
+          transfer_problem?: string | null
           user_id?: string
         }
         Relationships: [
@@ -205,7 +292,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      replace_catalog: {
+        Args: { p_confirm: boolean; p_entries: Json; p_source: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
