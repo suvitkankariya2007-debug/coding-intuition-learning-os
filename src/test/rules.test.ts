@@ -30,7 +30,7 @@ describe("planner", () => {
   });
   it("puts overdue reviews on day one", () => {
     const p = buildPlan({ ...base, days: 7, reviews: [{ item_id: "a", title: "A", due_date: "2026-10-01" }] });
-    expect(p[0].reviews).toHaveLength(1);
+    expect(p[0]?.reviews).toHaveLength(1);
   });
 });
 

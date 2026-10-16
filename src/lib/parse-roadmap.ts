@@ -13,7 +13,7 @@ const pick = (headers: string[], keys: string[]) =>
 /** Turn a table (first row = headers) into entries. Never invents rows. */
 export function rowsToEntries(rows: string[][]): ParsedEntry[] {
   if (rows.length < 2) return [];
-  const headers = rows[0].map((h) => h.trim());
+  const headers = (rows[0] ?? []).map((h) => h.trim());
   const ti = pick(headers, ["problem", "title", "question", "name"]);
   const top = pick(headers, ["topic", "pattern", "category", "section"]);
   const di = pick(headers, ["difficulty", "level"]);
@@ -71,8 +71,9 @@ export async function parseDocx(file: File): Promise<string[][]> {
   );
   if (!tables.length) return [];
   // Merge all tables that share the first table's header (multi-page tables).
-  const header = tables[0][0]?.join("|");
-  const merged = [tables[0][0]];
+  const first = tables[0] ?? [];
+  const header = first[0]?.join("|");
+  const merged: string[][] = first[0] ? [first[0]] : [];
   for (const t of tables) {
     const body = t[0]?.join("|") === header ? t.slice(1) : t;
     merged.push(...body);

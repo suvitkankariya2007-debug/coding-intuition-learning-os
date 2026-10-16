@@ -68,7 +68,7 @@ function ImportPage() {
     if (!imp) return;
     const { error } = await supabase.from("catalog_imports")
       .update({ verified: v, verified_at: v ? new Date().toISOString() : null }).eq("id", imp.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["catalog"] });
   }
 

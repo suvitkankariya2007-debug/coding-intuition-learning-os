@@ -15,7 +15,7 @@ function Dashboard() {
   const { data } = useSuspenseQuery(catalogQuery);
   const today = todayISO();
   const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<string, number>;
-  for (const i of data.items) counts[i.progress?.status ?? "not_started"]++;
+  for (const i of data.items) { const k = i.progress?.status ?? "not_started"; counts[k] = (counts[k] ?? 0) + 1; }
   const due = data.items.filter((i) => i.progress?.due_date && i.progress.due_date <= today).length;
   return (
     <div>
@@ -23,7 +23,7 @@ function Dashboard() {
       <h1 className="text-3xl font-bold">Today</h1>
       <div className="mt-6 grid gap-4 md:grid-cols-5">
         <Stat label="Reviews due" value={due} accent />
-        {STATUSES.map((s) => <Stat key={s} label={s.replace("_", " ")} value={counts[s]} />)}
+        {STATUSES.map((s) => <Stat key={s} label={s.replace("_", " ")} value={counts[s] ?? 0} />)}
       </div>
       <div className="mt-8 flex gap-3">
         <Button asChild><Link to="/reviews">Start reviews</Link></Button>

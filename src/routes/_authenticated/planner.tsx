@@ -28,9 +28,9 @@ function Planner() {
       <h1 className="text-3xl font-bold">Planner</h1>
       <div className="mt-6 grid max-w-xl gap-6 md:grid-cols-2">
         <label className="space-y-2 text-sm"><span>Days: <b className="font-mono">{days}</b></span>
-          <Slider min={7} max={30} step={1} value={[days]} onValueChange={(v) => setDays(v[0])} /></label>
+          <Slider min={7} max={30} step={1} value={[days]} onValueChange={(v) => setDays(v[0] ?? 14)} /></label>
         <label className="space-y-2 text-sm"><span>New problems / day: <b className="font-mono">{perDay}</b></span>
-          <Slider min={0} max={6} step={1} value={[perDay]} onValueChange={(v) => setPerDay(v[0])} /></label>
+          <Slider min={0} max={6} step={1} value={[perDay]} onValueChange={(v) => setPerDay(v[0] ?? 2)} /></label>
       </div>
       <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {plan.map((d) => (
