@@ -14,7 +14,192 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      catalog_imports: {
+        Row: {
+          created_at: string
+          expected_count: number
+          id: string
+          imported_count: number
+          source_name: string
+          user_id: string
+          verified: boolean
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expected_count?: number
+          id?: string
+          imported_count?: number
+          source_name: string
+          user_id?: string
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expected_count?: number
+          id?: string
+          imported_count?: number
+          source_name?: string
+          user_id?: string
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      curriculum_items: {
+        Row: {
+          created_at: string
+          difficulty: string | null
+          id: string
+          import_id: string | null
+          position: number
+          raw: Json
+          title: string
+          topic: string | null
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string | null
+          id?: string
+          import_id?: string | null
+          position: number
+          raw?: Json
+          title: string
+          topic?: string | null
+          url?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string | null
+          id?: string
+          import_id?: string | null
+          position?: number
+          raw?: Json
+          title?: string
+          topic?: string | null
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_items_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_progress: {
+        Row: {
+          due_date: string | null
+          ease: number
+          id: string
+          interval_days: number
+          item_id: string
+          last_reviewed_at: string | null
+          notes: string
+          repetitions: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          due_date?: string | null
+          ease?: number
+          id?: string
+          interval_days?: number
+          item_id: string
+          last_reviewed_at?: string | null
+          notes?: string
+          repetitions?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          due_date?: string | null
+          ease?: number
+          id?: string
+          interval_days?: number
+          item_id?: string
+          last_reviewed_at?: string | null
+          notes?: string
+          repetitions?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_progress_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      review_log: {
+        Row: {
+          grade: number
+          id: string
+          item_id: string
+          next_due: string
+          reviewed_at: string
+          user_id: string
+        }
+        Insert: {
+          grade: number
+          id?: string
+          item_id: string
+          next_due: string
+          reviewed_at?: string
+          user_id?: string
+        }
+        Update: {
+          grade?: number
+          id?: string
+          item_id?: string
+          next_due?: string
+          reviewed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_log_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
