@@ -41,7 +41,7 @@ describe("Unified MCP tool contracts",()=>{
  it("lists every unified read tool",async()=>{
    const r=await respondToMcp({jsonrpc:"2.0",id:2,method:"tools/list"},supplied) as {result:{tools:{name:string}[]}};
    expect(r.result.tools.map(t=>t.name)).toEqual([
-     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","get_source_status"
+     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","diagnose_weaknesses","get_source_status"
    ]);
  });
  it("returns canonical roadmap and stable pagination",async()=>{
@@ -53,6 +53,10 @@ describe("Unified MCP tool contracts",()=>{
    expect(await value("get_source_status")).toEqual(expect.arrayContaining([
      expect.objectContaining({source:"github",storedRecords:1,liveConnectivityVerified:false})
    ]));
+ });
+ it("returns diagnostic explanations only for recorded reflections",async()=>{
+   const rows=await value("diagnose_weaknesses");
+   expect(rows).toEqual([]);
  });
  it("isolates problem history to a valid item id",async()=>{
    expect(await value("get_problem_history",{itemId})).toMatchObject({found:true,reviews:[{grade:1}],evidence:[{accepted:false}]});
