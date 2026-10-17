@@ -8,6 +8,7 @@ import { recommendDSA, type LearningItem, type Evidence } from "@/lib/evidence-i
 import { syncPublicPlatforms } from "@/lib/platform-sync";
 import { syncPublicGitHubSolutions } from "@/lib/github-sync";
 import { syncConsentedMemories } from "@/lib/supermemory-sync";
+import { runUnifiedSync } from "@/lib/sync-orchestrator";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogBanner } from "@/components/CatalogBanner";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,21 @@ function Dashboard() {
       else toast.success(`Matched ${result.matched} submission(s) to your roadmap`);
     },
     onError: err => toast.error(err.message),
+  });
+  const unifiedSync = useMutation({
+    mutationFn:()=>runUnifiedSync([
+      {source:"leetcode_codeforces",run:()=>syncPublicPlatforms({data:{leetcode,codeforces}})},
+      {source:"github",run:async()=>{
+        const value=await syncPublicGitHubSolutions({data:{repository:githubRepo}});
+        return {matched:value.matched};
+      }}
+    ]),
+    onSuccess:result=>{
+      void qc.invalidateQueries({queryKey:["catalog"]});
+      if(result.status==="success") toast.success(`All sources checked: ${result.matched} matched record(s)`);
+      else toast.warning(`Sync ${result.status}: ${result.matched} matched. ${result.results.flatMap(x=>x.warnings).join("; ") || "Check source details"}`);
+    },
+    onError:e=>toast.error(e.message),
   });
   const today = todayISO();
   const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<string, number>;
@@ -108,6 +124,7 @@ function Dashboard() {
           <label className="text-xs text-muted-foreground">Codeforces public handle
             <input aria-label="Codeforces handle" className="mt-1 block rounded-md border bg-background px-2 py-2 text-sm text-foreground" value={codeforces} onChange={e=>setCodeforces(e.target.value)} maxLength={40}/>
           </label>
+          <Button disabled={unifiedSync.isPending || !githubRepo} variant="default" onClick={()=>unifiedSync.mutate()}>{unifiedSync.isPending ? "Syncing all..." : "Sync all connected sources"}</Button>
           <Button disabled={sync.isPending} onClick={()=>sync.mutate()}>{sync.isPending ? "Syncing..." : "Sync public submissions"}</Button>
           <span className="text-xs text-muted-foreground">LeetCode recent public accepted only; Codeforces recent 100. Read-only, no platform passwords.</span>
         </div>
