@@ -6,6 +6,8 @@ import { catalogQuery, STATUSES } from "@/lib/data";
 import { todayISO } from "@/lib/srs";
 import { recommendDSA, type LearningItem, type Evidence } from "@/lib/evidence-intelligence";
 import { syncPublicPlatforms } from "@/lib/platform-sync";
+import { syncConsentedMemories } from "@/lib/supermemory-sync";
+import { supabase } from "@/integrations/supabase/client";
 import { CatalogBanner } from "@/components/CatalogBanner";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const { data } = useSuspenseQuery(catalogQuery);
   const qc = useQueryClient();
+  const { user } = Route.useRouteContext();
+  const [memoryConsent,setMemoryConsent] = useState(false);
   const [leetcode, setLeetcode] = useState("suvitk");
   const [codeforces, setCodeforces] = useState("suvitkankariya2007");
   const sync = useMutation({
@@ -43,6 +47,30 @@ function Dashboard() {
     status: (i.progress?.status ?? "not_started") as LearningItem["status"],
     attemptCount: i.progress?.status === "attempted" ? 1 : 0,
   }));
+  const memoryDelivery = useMutation({
+    mutationFn: async () => {
+      if (!memoryConsent) throw new Error("Please confirm memory sharing first");
+      const reviewItems = data.items.filter(i => data.latestReviewByItem.has(i.id)).slice(0,10);
+      if (reviewItems.length === 0) throw new Error("Review a problem first to have an insight to share");
+      const summary = "DSA review reflections (user explicitly opted in): " +
+        reviewItems.map(i => {
+          const grade = data.latestReviewByItem.get(i.id)!.grade;
+          return `${i.title}: recall grade ${grade}/5`;
+        }).join("; ");
+      const {error} = await supabase.from("memory_outbox").insert({
+        user_id:user.id, summary:summary.slice(0,2000),
+        consent:true, status:"queued_not_connected",
+      });
+      if(error) throw error;
+      return syncConsentedMemories();
+    },
+    onSuccess: result => {
+      setMemoryConsent(false);
+      if(result.errors.length) toast.warning(`Sent ${result.sent} insight(s); ${result.errors.join("; ")}`);
+      else toast.success(`Sent ${result.sent} opted-in learning insight(s)`);
+    },
+    onError: err => toast.error(err.message),
+  });
   const evidence: Evidence[] = data.evidence.filter(e => e.item_id && (
     e.source === "leetcode" || e.source === "codeforces" || e.source === "github"
   )).map(e => ({
@@ -85,6 +113,17 @@ function Dashboard() {
           ))}
         </ol>
         {recommendations.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Import a curriculum to start receiving recommendations.</p>}
+      </section>
+      <section className="mt-8 rounded-lg border p-4" aria-label="Supermemory learning context">
+        <h2 className="text-lg font-semibold">Optional cross-session memory</h2>
+        <p className="mt-1 text-sm text-muted-foreground">With consent, send a summary of up to ten recorded review grades to the isolated leetcode_problems namespace. No code, passwords or free-form notes are sent.</p>
+        <label className="mt-3 flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={memoryConsent} onChange={e=>setMemoryConsent(e.target.checked)} />
+          I consent to sharing these review grades with Supermemory
+        </label>
+        <Button className="mt-3" variant="outline" disabled={!memoryConsent || memoryDelivery.isPending} onClick={()=>memoryDelivery.mutate()}>
+          {memoryDelivery.isPending ? "Sending..." : "Send learning insight"}
+        </Button>
       </section>
       <p className="mt-10 text-sm text-muted-foreground">
         Counts reflect only what you record here — nothing is pre-filled or inferred.
