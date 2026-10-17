@@ -1,3 +1,4 @@
+import { diagnoseWeaknesses } from "./learning-diagnosis";
 import type { Recommendation } from "./evidence-intelligence";
 
 type JsonId = string | number | null;
@@ -6,7 +7,7 @@ export type RoadmapProblem = {
   itemId:string; title:string; topic:string; position:number; status:string; dueDate:string|null
 };
 export type ReviewRecord = {
-  itemId:string; grade:number; reviewedAt:string; mistakeClass?:string|null; hintStage?:string|null
+  itemId:string; grade:number; reviewedAt:string; mistakeClass?:string|null; hintStage?:string|null; confidence?:number|null; mistakeClass?:string|null
 };
 export type EvidenceRecord = {
   itemId:string|null; source:string; observedAt:string; accepted:boolean; verdict?:string|null
@@ -26,6 +27,7 @@ const tools:ToolSpec[] = [
   {name:"get_roadmap",description:"List canonical curriculum problems in order, optionally filtered by topic; up to 50 per page.",inputSchema:{type:"object",properties:{offset:{type:"integer",minimum:0,maximum:1000},limit:{type:"integer",minimum:1,maximum:50},topic:{type:"string",maxLength:80}},additionalProperties:false}},
   {name:"get_progress_report",description:"Return aggregate progress, review and verified evidence counts for this learner.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
   {name:"get_problem_history",description:"Retrieve recent review and evidence history for one curriculum item.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
+  {name:"diagnose_weaknesses",description:"Identify recurring learner-reported reasoning difficulties and provide specific corrective exercises.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
   {name:"get_source_status",description:"Count stored evidence per coding source and report the latest observed timestamp; does not claim a live connection.",inputSchema:{type:"object",properties:{},additionalProperties:false}}
 ];
 const success=(id:JsonId,result:unknown)=>({jsonrpc:"2.0" as const,id,result});
@@ -68,6 +70,7 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
    return {found:true,problem,reviews:reviews.filter(x=>x.itemId===itemId).slice(0,25),
      evidence:evidence.filter(x=>x.itemId===itemId).slice(0,50)};
  }
+ if(name==="diagnose_weaknesses")return diagnoseWeaknesses(reviews.map(r=>({itemId:r.itemId,reviewedAt:r.reviewedAt,grade:r.grade,mistakeClass:r.mistakeClass??null,hintStage:r.hintStage??null,confidence:r.confidence??null})));
  if(name==="get_source_status"){
    const sources=["leetcode","codeforces","github"];
    return sources.map(source=>{
