@@ -2,18 +2,23 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 async function fetchCatalog() {
-  const [items, progress, imp] = await Promise.all([
+  const [items, progress, imp, reviews] = await Promise.all([
     supabase.from("curriculum_items").select("*").order("position"),
     supabase.from("item_progress").select("*"),
     supabase.from("catalog_imports").select("*").order("created_at", { ascending: false }).limit(1),
+    supabase.from("review_log").select("item_id,grade,reviewed_at").order("reviewed_at", { ascending: false }).limit(2000),
   ]);
   if (items.error) throw items.error;
   if (progress.error) throw progress.error;
   if (imp.error) throw imp.error;
+  if (reviews.error) throw reviews.error;
+  const latestReviewByItem = new Map<string, { grade: number; reviewed_at: string }>();
+  for (const r of reviews.data) if (!latestReviewByItem.has(r.item_id)) latestReviewByItem.set(r.item_id, r);
   const byItem = new Map(progress.data.map((p) => [p.item_id, p]));
   return {
     items: items.data.map((i) => ({ ...i, progress: byItem.get(i.id) ?? null })),
     latestImport: imp.data[0] ?? null,
+    latestReviewByItem,
   };
 }
 
