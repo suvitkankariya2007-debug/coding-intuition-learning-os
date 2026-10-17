@@ -21,7 +21,7 @@ export const syncPublicGitHubSolutions=createServerFn({method:"POST"})
  })
  .handler(async({data,context})=>{
    const {supabase,userId}=context;
-   const {data:catalog,error}=await supabase.from("curriculum_items").select("id,title").eq("is_active",true);
+   const {data:catalog,error}=await supabase.from("curriculum_items").select("id,title,leetcode_id").eq("is_active",true);
    if(error)throw new Error("Cannot read curriculum");
    const details=await readGitHub(`/repos/${data.repository}`) as RepoResponse;
    if(details.private)throw new Error("Private repository requires separate GitHub authorization");
