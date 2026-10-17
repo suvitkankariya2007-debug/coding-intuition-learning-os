@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { catalogQuery, STATUSES } from "@/lib/data";
 import { todayISO } from "@/lib/srs";
-import { recommendDSA, type LearningItem, type Evidence } from "@/lib/evidence-intelligence";
+import { recommendDSA, LEARNING_MODES, type LearningMode, type LearningItem, type Evidence } from "@/lib/evidence-intelligence";
 import { syncPublicPlatforms } from "@/lib/platform-sync";
 import { syncPublicGitHubSolutions } from "@/lib/github-sync";
 import { syncConsentedMemories } from "@/lib/supermemory-sync";
@@ -24,6 +24,16 @@ function Dashboard() {
   const qc = useQueryClient();
   const { user } = Route.useRouteContext();
   const [memoryConsent,setMemoryConsent] = useState(false);
+  const [mode,setMode] = useState<LearningMode>(data.learningMode);
+  const saveMode = useMutation({
+    mutationFn:async(next:LearningMode)=>{
+      const {error}=await supabase.from("coaching_preferences").upsert({user_id:user.id,prefs:{learning_mode:next}},{onConflict:"user_id"});
+      if(error)throw error;
+      return next;
+    },
+    onSuccess:()=>{void qc.invalidateQueries({queryKey:["catalog"]});toast.success("Learning mode saved");},
+    onError:e=>{setMode(data.learningMode);toast.error(e.message);}
+  });
   const [leetcode, setLeetcode] = useState("suvitk");
   const [codeforces, setCodeforces] = useState("suvitkankariya2007");
   const [githubRepo,setGithubRepo] = useState("suvitkankariya2007-debug/LeetCode-Challenge");
@@ -104,7 +114,7 @@ function Dashboard() {
     observedAt: e.observed_at, provenanceId: e.provenance_id,
     verdict: e.verdict, accepted: e.accepted, codeUrl: e.code_url,
   }));
-  const recommendations = recommendDSA(learningItems, evidence, { now: new Date().toISOString(), limit: 5 });
+  const recommendations = recommendDSA(learningItems, evidence, { now: new Date().toISOString(), limit: 5, mode });
   return (
     <div>
       <CatalogBanner imp={data.latestImport} />
@@ -119,6 +129,11 @@ function Dashboard() {
       </div>
       <section className="mt-10" aria-label="Recommended practice">
         <h2 className="text-xl font-bold">Recommended next problems</h2>
+        <label className="mt-3 block text-sm">Learning mode
+          <select aria-label="Learning mode" className="mt-1 block rounded-md border bg-background p-2" disabled={saveMode.isPending} value={mode} onChange={e=>{const v=e.target.value as LearningMode;if(!LEARNING_MODES.includes(v))return;setMode(v);saveMode.mutate(v)}}>
+            {LEARNING_MODES.map(x=><option key={x} value={x}>{x==="interview"?"Interview DSA":x==="competitive"?"Competitive programming":x==="revision"?"Revision": "Contest practice"}</option>)}
+          </select>
+        </label>
         <p className="mt-1 text-sm text-muted-foreground">Ranked using saved review grades and matched public platform submissions. Unmatched submissions are never counted.</p>
         <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border p-3">
           <label className="text-xs text-muted-foreground">LeetCode public handle
