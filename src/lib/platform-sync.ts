@@ -1,3 +1,4 @@
+import slugAliases from "../../data/leetcode-slug-aliases.json";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { indexTitles, cleanCurriculumTitle, normalizeCodeforces, normalizeLeetCode, type CodeforcesSubmission, type LeetCodeSubmission } from "@/lib/submission-evidence";
@@ -15,7 +16,7 @@ async function jsonWithTimeout(url: string, init: RequestInit = {}): Promise<unk
   if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
   return response.json();
 }
-function slugIndex(rows: { id:string; title:string; url:string|null }[]) {
+function slugIndex(rows: { id:string; title:string; url:string|null; leetcode_id:number|null }[]) {
   const names = new Map<string,string>();
   const conflicted = new Set<string>();
   for (const row of rows) {
@@ -27,8 +28,11 @@ function slugIndex(rows: { id:string; title:string; url:string|null }[]) {
       }
     } catch { /* URL missing: use normalized title below */ }
     const key = slug ?? cleanCurriculumTitle(row.title).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (names.has(key) && names.get(key) !== row.id) conflicted.add(key);
-    else names.set(key,row.id);
+    const aliases = [key, row.leetcode_id ? slugAliases[String(row.leetcode_id) as keyof typeof slugAliases] : undefined].filter((x):x is string=>!!x);
+    for(const alias of aliases) {
+      if(names.has(alias) && names.get(alias) !== row.id) conflicted.add(alias);
+      else names.set(alias,row.id);
+    }
   }
   for (const key of conflicted) names.delete(key);
   return names;
@@ -41,7 +45,7 @@ export const syncPublicPlatforms = createServerFn({method:"POST"})
   })
   .handler(async ({data,context}) => {
     const {supabase,userId} = context;
-    const {data:rows,error:catalogError} = await supabase.from("curriculum_items").select("id,title,url").eq("is_active",true);
+    const {data:rows,error:catalogError} = await supabase.from("curriculum_items").select("id,title,url,leetcode_id").eq("is_active",true);
     if (catalogError) throw new Error("Unable to load your curriculum");
     const titles = indexTitles(rows);
     const slugs = slugIndex(rows);
