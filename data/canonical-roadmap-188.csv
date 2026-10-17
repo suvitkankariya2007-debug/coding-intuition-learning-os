@@ -1,0 +1,189 @@
+index,title,topic,reference,idea,priorityMarker,leetcodeId,conceptOnly,order,source
+0,Two Sum,Arrays and Hashing,LC 1,Hash map lookup,star,1.0,False,1,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+1,Best Time to Buy and Sell Stock,Arrays and Hashing,LC 121,Single-pass min-tracking,star,121.0,False,2,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+2,Maximum Subarray (Kadane's),Arrays and Hashing,LC 53,Kadane's algorithm,star,53.0,False,3,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+3,Sort Colors,Arrays and Hashing,LC 75,Dutch national flag,star,75.0,False,4,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+4,Next Permutation,Arrays and Hashing,LC 31,In-place array manipulation,star,31.0,False,5,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+5,Merge Intervals,Arrays and Hashing,LC 56,Interval sort + merge,star,56.0,False,6,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+6,Set Matrix Zeroes,Arrays and Hashing,LC 73,In-place matrix marking,star,73.0,False,7,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+7,Majority Element,Arrays and Hashing,LC 169,Boyer-Moore voting,star,169.0,False,8,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+8,Majority Element II,Arrays and Hashing,LC 229,Extended Boyer-Moore,none,229.0,False,9,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+9,3Sum,Arrays and Hashing,LC 15,Two-pointer on sorted array,star,15.0,False,10,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+10,Longest Consecutive Sequence,Arrays and Hashing,LC 128,"Hash set, sequence start detection",star,128.0,False,11,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+11,Subarray Sum Equals K,Arrays and Hashing,LC 560,Prefix sum + hashmap,star,560.0,False,12,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+12,Search a 2D Matrix,Arrays and Hashing,LC 74,Binary search on flattened matrix,star,74.0,False,13,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+13,Rotate Image,Arrays and Hashing,LC 48,In-place matrix rotation,none,48.0,False,14,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+14,Find the Duplicate Number,Arrays and Hashing,LC 287,Floyd's cycle detection on array,none,287.0,False,15,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+15,Merge Sorted Array,Arrays and Hashing,LC 88,Two-pointer merge from the back,star,88.0,False,16,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+16,Product of Array Except Self,Arrays and Hashing,LC 238,"Prefix and suffix products, including zero handling",none,238.0,False,17,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+17,Group Anagrams,Arrays and Hashing,LC 49,Canonical hash keys for equivalence classes,none,49.0,False,18,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+18,First Missing Positive,Arrays and Hashing,LC 41,In-place index placement under O(1) extra space,none,41.0,False,19,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+19,Spiral Matrix,Arrays and Hashing,LC 54,Four moving boundaries and corner-case control,none,54.0,False,20,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+20,Sort an Array,Arrays and Hashing,LC 912,Implement merge sort and quicksort; compare stability and worst cases,none,912.0,False,21,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+21,Binary Search,Binary Search,LC 704,Standard binary search,star,704.0,False,22,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+22,Search in Rotated Sorted Array,Binary Search,LC 33,Modified binary search,star,33.0,False,23,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+23,Find Minimum in Rotated Sorted Array,Binary Search,LC 153,Modified binary search,star,153.0,False,24,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+24,Lower Bound / Upper Bound,Binary Search,"concept, LC 35 anchor",Lower bound and upper bound on half-open index ranges,star,35.0,False,25,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+25,Find Single Element in Sorted Array,Binary Search,LC 540,Binary search on parity,star,540.0,False,26,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+26,Koko Eating Bananas,Binary Search,LC 875,Binary search on answer,star,875.0,False,27,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+27,Split Array Largest Sum,Binary Search,LC 410,Binary search on the minimum feasible capacity,yellow,410.0,False,28,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+28,Median of Two Sorted Arrays,Binary Search,LC 4,Binary search on partition,yellow,4.0,False,29,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+29,Find First and Last Position of Element in Sorted Array,Binary Search,LC 34,"Two boundary searches, including an absent target",none,34.0,False,30,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+30,Find Peak Element,Binary Search,LC 162,Binary search on a local slope rather than sorted values,none,162.0,False,31,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+31,Time Based Key-Value Store,Binary Search,LC 981,Rightmost timestamp not exceeding a query,none,981.0,False,32,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+32,Reverse Words in a String,Strings,LC 151,In-place string manipulation,star,151.0,False,33,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+33,Longest Palindromic Substring,Strings,LC 5,Expand around center / DP,star,5.0,False,34,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+34,Roman to Integer,Strings,LC 13,Subtractive scan over Roman symbols,star,13.0,False,35,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+35,Integer to Roman,Strings,LC 12,Greedy descending symbols with subtractive pairs,star,12.0,False,36,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+36,String to Integer atoi,Strings,LC 8,"Sign, whitespace, digits and overflow state",star,8.0,False,37,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+37,Find the Index of the First Occurrence in a String,Strings,LC 28,"Naive matching, then KMP/rolling-hash alternatives",star,28.0,False,38,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+38,Longest Common Prefix,Strings,LC 14,Horizontal/vertical scanning,star,14.0,False,39,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+39,Rabin-Karp,Strings,"concept, LC 28 anchor",Rolling polynomial hash; verify matches on collision,yellow,28.0,False,40,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+40,KMP / LPS,Strings,"concept, LC 28 / LC 214 anchor",Prefix-function fallback after a mismatch,star,28.0,False,41,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+41,Valid Anagram,Strings,LC 242,Frequency counting,star,242.0,False,42,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+42,Minimum Insertions to Make String Palindrome,Strings,LC 1312,LCS-based DP,star,1312.0,False,43,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+43,String Compression,Strings,LC 443,Read and write pointers with multi-digit counts,none,443.0,False,44,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+44,Reverse Linked List,Linked List,LC 206,Iterative pointer reversal,star,206.0,False,45,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+45,Middle of Linked List,Linked List,LC 876,Slow/fast pointer,star,876.0,False,46,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+46,Merge Two Sorted Linked Lists,Linked List,LC 21,Two-pointer merge,star,21.0,False,47,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+47,Remove Nth Node From End,Linked List,LC 19,Two-pointer with gap,star,19.0,False,48,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+48,Delete Node When Only Node Is Given,Linked List,LC 237,Value-copy trick,none,237.0,False,49,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+49,Add Two Numbers,Linked List,LC 2,Digit-by-digitData Structures and Algorithms Specialization simulation,star,2.0,False,50,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+50,Detect Cycle,Linked List,LC 141,Floyd's cycle detection,star,141.0,False,51,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+51,Find Starting Point of Cycle,Linked List,LC 142,"Floyd's cycle detection, phase 2",star,142.0,False,52,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+52,Intersection of Two Linked Lists,Linked List,LC 160,Two-pointer length equalization,star,160.0,False,53,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+53,Palindrome Linked List,Linked List,LC 234,Slow/fast + reversal,star,234.0,False,54,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+54,Reverse Nodes in K-Group,Linked List,LC 25,Iterative group reversal,star,25.0,False,55,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+55,Clone Linked List with Random Pointer,Linked List,LC 138,Hashmap or interleaving,star,138.0,False,56,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+56,Subsets,Recursion and Backtracking,LC 78,"Backtracking, include/exclude",star,78.0,False,57,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+57,Subsets II,Recursion and Backtracking,LC 90,Backtracking with dedup,star,90.0,False,58,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+58,Combination Sum,Recursion and Backtracking,LC 39,"Backtracking, reuse allowed",star,39.0,False,59,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+59,Combination Sum II,Recursion and Backtracking,LC 40,"Backtracking, dedup",star,40.0,False,60,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+60,Permutations,Recursion and Backtracking,LC 46,"Backtracking, swap/visited",star,46.0,False,61,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+61,Palindrome Partitioning,Recursion and Backtracking,LC 131,Backtracking + palindrome check,star,131.0,False,62,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+62,N-Queens,Recursion and Backtracking,LC 51,Constraint backtracking,star,51.0,False,63,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+63,Sudoku Solver,Recursion and Backtracking,LC 37,Constraint backtracking,star,37.0,False,64,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+64,Generate Parentheses,Recursion and Backtracking,LC 22,Prune partial states with an open/close invariant,none,22.0,False,65,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+65,Letter Combinations of a Phone Number,Recursion and Backtracking,LC 17,Cartesian-product branching with variable choices,none,17.0,False,66,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+66,Word Search,Recursion and Backtracking,LC 79,Grid DFS with visited-state restoration,none,79.0,False,67,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+67,Check / Set / Clear / Toggle ith Bit,Bit Manipulation,concept,Bitmasking fundamentals,star,,True,68,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+68,Count Set Bits,Bit Manipulation,LC 191,Bit counting,star,191.0,False,69,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+69,Single Number,Bit Manipulation,LC 136,XOR cancellation,star,136.0,False,70,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+70,Single Number II,Bit Manipulation,LC 137,Bitwise counting mod 3,yellow,137.0,False,71,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+71,Power of Two / Related Bit Tricks,Bit Manipulation,LC 231,Bit trick (n & (n-1)),star,231.0,False,72,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+72,Implement Stack,Stack and Queue,concept,Data structure implementation,star,,True,73,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+73,Implement Queue,Stack and Queue,concept (LC 232 anchor),Data structure implementation,star,232.0,False,74,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+74,Valid Parentheses,Stack and Queue,LC 20,Stack matching,star,20.0,False,75,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+75,Next Greater Element,Stack and Queue,LC 496,Monotonic stack,star,496.0,False,76,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+76,Min Stack,Stack and Queue,LC 155,Auxiliary min-tracking stack,star,155.0,False,77,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+77,Largest Rectangle in Histogram,Stack and Queue,LC 84,Monotonic stack,star,84.0,False,78,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+78,Sliding Window Maximum,Stack and Queue,LC 239,Monotonic deque,star,239.0,False,79,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+79,Stock Span,Stack and Queue,LC 901,Monotonic stack,yellow,901.0,False,80,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+80,Asteroid Collision,Stack and Queue,LC 735,Stack simulation,yellow,735.0,False,81,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+81,LRU Cache,Stack and Queue,LC 146,Hashmap + doubly linked list,star,146.0,False,82,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+82,Daily Temperatures,Stack and Queue,LC 739,Monotonic stack of unresolved indices and distance,none,739.0,False,83,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+83,Evaluate Reverse Polish Notation,Stack and Queue,LC 150,Operand order and expression evaluation with a stack,none,150.0,False,84,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+84,Car Fleet,Stack and Queue,LC 853,Sort by position and merge arrival times,none,853.0,False,85,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+85,Longest Substring Without Repeating Characters,Sliding Window and Two Pointers,LC 3,Variable window,star,3.0,False,86,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+86,Longest Repeating Character Replacement,Sliding Window and Two Pointers,LC 424,Variable window + frequency map,star,424.0,False,87,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+87,Minimum Window Substring,Sliding Window and Two Pointers,LC 76,"Variable window, shrink/expand",star,76.0,False,88,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+88,Max Consecutive Ones III,Sliding Window and Two Pointers,LC 1004,At-most-K window,star,1004.0,False,89,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+89,Binary Subarrays With Sum,Sliding Window and Two Pointers,LC 930,At-most(K) − at-most(K−1),yellow,930.0,False,90,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+90,Subarrays With K Different Integers,Sliding Window and Two Pointers,LC 992,At-most(K) − at-most(K−1),yellow,992.0,False,91,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+91,Container With Most Water,Sliding Window and Two Pointers,LC 11,Opposite-direction two pointer,star,11.0,False,92,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+92,Trapping Rain Water,Sliding Window and Two Pointers,LC 42,Two pointer / prefix max,star,42.0,False,93,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+93,Minimum Size Subarray Sum,Sliding Window and Two Pointers,LC 209,Shortest valid window; relies on positive inputs,none,209.0,False,94,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+94,Permutation in String,Sliding Window and Two Pointers,LC 567,"Fixed-width frequency matching, distinct from variable windows",none,567.0,False,95,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+95,Implement Min Heap / Max Heap,Heaps,concept,Data structure implementation,star,,True,96,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+96,Kth Largest Element,Heaps,LC 215,Heap / quickselect,star,215.0,False,97,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+97,Top K Frequent Elements,Heaps,LC 347,Heap + frequency map,star,347.0,False,98,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+98,Merge K Sorted Lists / Arrays,Heaps,LC 23,Min-heap merge,star,23.0,False,99,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+99,Find Median From Data Stream,Heaps,LC 295,Two-heap design,star,295.0,False,100,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+100,Jump Game I,Greedy and Intervals,LC 55,Greedy reachability,star,55.0,False,101,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+101,Jump Game II,Greedy and Intervals,LC 45,Greedy range extension,star,45.0,False,102,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+102,Insert Interval,Greedy and Intervals,LC 57,Interval merge on insert,star,57.0,False,103,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+103,Non-overlapping Intervals,Greedy and Intervals,LC 435,Greedy by end time,star,435.0,False,104,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+104,Fractional Knapsack,Greedy and Intervals,concept,Greedy ratio sort,star,,True,105,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+105,Job Sequencing,Greedy and Intervals,"concept, no exact LC equivalent",Deadline sorting with profit and slot feasibility,yellow,,True,106,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+106,Gas Station,Greedy and Intervals,LC 134,Global feasibility plus restart proof for a circular tour,none,134.0,False,107,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+107,Partition Labels,Greedy and Intervals,LC 763,Last-occurrence boundary and greedy segment closure,none,763.0,False,108,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+108,Divide Intervals Into Minimum Number of Groups,Greedy and Intervals,LC 2406,Sweep-line overlap count; closed interval endpoints matter,none,2406.0,False,109,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+109,Inorder Traversal,Binary Trees,LC 94,DFS traversal,star,94.0,False,110,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+110,Preorder Traversal,Binary Trees,LC 144,DFS traversal,star,144.0,False,111,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+111,Postorder Traversal,Binary Trees,LC 145,DFS traversal,star,145.0,False,112,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+112,Level Order Traversal,Binary Trees,LC 102,BFS traversal,star,102.0,False,113,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+113,Maximum Depth,Binary Trees,LC 104,DFS recursion,star,104.0,False,114,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+114,Diameter of Binary Tree,Binary Trees,LC 543,DFS with height tracking,star,543.0,False,115,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+115,Balanced Binary Tree,Binary Trees,LC 110,DFS with height tracking,star,110.0,False,116,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+116,Lowest Common Ancestor,Binary Trees,LC 236,DFS recursion,star,236.0,False,117,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+117,Maximum Path Sum,Binary Trees,LC 124,DFS with global max,star,124.0,False,118,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+118,Same Tree,Binary Trees,LC 100,DFS comparison,star,100.0,False,119,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+119,Boundary Traversal,Binary Trees,concept,Combined left/leaf/right traversal,yellow,,True,120,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+120,Top View,Binary Trees,concept,BFS with horizontal distance,star,,True,121,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+121,Vertical Order Traversal,Binary Trees,LC 987,BFS/DFS with coordinates,yellow,987.0,False,122,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+122,Construct Binary Tree from Preorder + Inorder,Binary Trees,LC 105,Recursive array partitioning,star,105.0,False,123,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+123,Binary Tree Right Side View,Binary Trees,LC 199,Level-wise visible node selection,none,199.0,False,124,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+124,Serialize and Deserialize Binary Tree,Binary Trees,LC 297,Reversible traversal with null markers,none,297.0,False,125,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+125,Path Sum III,Binary Trees,LC 437,Tree DFS combined with prefix-sum frequencies,none,437.0,False,126,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+126,Search in BST,Binary Search Trees,LC 700,BST property traversal,star,700.0,False,127,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+127,Insert into a Binary Search Tree,Binary Search Trees,LC 701,Maintain the BST ordering invariant,star,701.0,False,128,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+128,Delete Node in a BST,Binary Search Trees,LC 450,Reconnect successor and child cases,star,450.0,False,129,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+129,Validate BST,Binary Search Trees,LC 98,Range-bound DFS,star,98.0,False,130,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+130,Kth Smallest Element,Binary Search Trees,LC 230,Inorder traversal,star,230.0,False,131,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+131,LCA in BST,Binary Search Trees,LC 235,BST property traversal,star,235.0,False,132,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+132,BST Iterator,Binary Search Trees,LC 173,Controlled inorder traversal,yellow,173.0,False,133,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+133,BFS of Graph,Graphs,concept,BFS traversal,star,,True,134,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+134,DFS of Graph,Graphs,concept,DFS traversal,star,,True,135,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+135,Number of Provinces,Graphs,LC 547,DFS/BFS/DSU on adjacency matrix,star,547.0,False,136,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+136,Flood Fill,Graphs,LC 733,DFS/BFS grid traversal,star,733.0,False,137,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+137,Rotten Oranges,Graphs,LC 994,Multi-source BFS,star,994.0,False,138,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+138,Number of Islands,Graphs,LC 200,DFS/BFS grid traversal,star,200.0,False,139,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+139,Detect Cycle in Undirected Graph - BFS,Graphs,concept (LC 261 premium anchor),BFS with parent tracking; solve with both BFS and DFS,star,261.0,False,140,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+140,Detect Cycle in Directed Graph - DFS,Graphs,concept,DFS with recursion-stack tracking,star,,True,141,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+141,Topological Sort - DFS,Graphs,concept,DFS + stack,star,,True,142,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+142,Topological Sort - BFS (Kahn),Graphs,concept,Kahn's algorithm,star,,True,143,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+143,Course Schedule I,Graphs,LC 207,Cycle detection (topo sort),star,207.0,False,144,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+144,Course Schedule II,Graphs,LC 210,Topological sort output,star,210.0,False,145,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+145,Bipartite Graph - BFS,Graphs,LC 785,"Two-coloring, BFS; solve with both BFS and DFS",star,785.0,False,146,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+146,Network Delay Time,Graphs,LC 743,Dijkstra on non-negative weighted edges; code the heap relaxations,star,743.0,False,147,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+147,Min Cost to Connect All Points (Prim),Graphs,LC 1584,Grow an MST from visited to unvisited vertices,star,1584.0,False,148,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+148,Min Cost to Connect All Points (Kruskal),Graphs,LC 1584,"Sort edges and use DSU to reject cycles; same input, distinct MST algorithm",star,1584.0,False,149,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+149,Disjoint Set Union,Graphs,concept,Union-Find with rank + path compression,star,,True,150,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+150,01 Matrix,Graphs,LC 542,Multi-source BFS seeded from all zeros,none,542.0,False,151,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+151,Word Ladder,Graphs,LC 127,Implicit unweighted graph and shortest transformation BFS,none,127.0,False,152,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+152,Redundant Connection,Graphs,LC 684,DSU cycle detection on streamed edges,none,684.0,False,153,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+153,Cheapest Flights Within K Stops,Graphs,LC 787,Shortest path with an extra edge-count state; avoid plain Dijkstra pruning,none,787.0,False,154,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+154,Critical Connections in a Network,Graphs,LC 1192,Tarjan low-link values for bridges,none,1192.0,False,155,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+155,Climbing Stairs,Dynamic Programming,LC 70,1D DP,star,70.0,False,156,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+156,House Robber,Dynamic Programming,LC 198,1D DP,star,198.0,False,157,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+157,House Robber II,Dynamic Programming,LC 213,"1D DP, circular",star,213.0,False,158,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+158,Unique Paths,Dynamic Programming,LC 62,Grid DP,star,62.0,False,159,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+159,Minimum Path Sum,Dynamic Programming,LC 64,Grid DP,star,64.0,False,160,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+160,Subset Sum,Dynamic Programming,"concept, LC 416 anchor",Boolean subset-sum state; separate from equal-partition wrapper,star,416.0,False,161,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+161,Partition Equal Subset Sum,Dynamic Programming,LC 416,Subset-sum DP,star,416.0,False,162,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+162,0/1 Knapsack,Dynamic Programming,concept,Pick-or-skip capacity DP with one-use items,star,,True,163,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+163,Coin Change,Dynamic Programming,LC 322,Unbounded knapsack (min),star,322.0,False,164,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+164,Coin Change II,Dynamic Programming,LC 518,Unbounded knapsack (count),star,518.0,False,165,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+165,Unbounded Knapsack,Dynamic Programming,"concept, LC 518 anchor",Repeat-item transition; contrast with 0/1 knapsack,yellow,518.0,False,166,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+166,Longest Common Subsequence,Dynamic Programming,LC 1143,2D string DP,star,1143.0,False,167,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+167,Longest Increasing Subsequence,Dynamic Programming,LC 300,1D/patience DP,star,300.0,False,168,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+168,Edit Distance,Dynamic Programming,LC 72,2D string DP,star,72.0,False,169,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+169,Word Break,Dynamic Programming,LC 139,1D DP + dictionary,star,139.0,False,170,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+170,Longest Palindromic Subsequence,Dynamic Programming,LC 516,2D interval DP,yellow,516.0,False,171,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+171,Wildcard Matching,Dynamic Programming,LC 44,2D pattern-matching DP,yellow,44.0,False,172,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+172,Best Time to Buy and Sell Stock II,Dynamic Programming,LC 122,"Greedy/DP, unlimited transactions",star,122.0,False,173,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+173,Best Time to Buy and Sell Stock III,Dynamic Programming,LC 123,"State-machine DP, ≤2 transactions",yellow,123.0,False,174,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+174,Best Time to Buy and Sell Stock IV,Dynamic Programming,LC 188,"State-machine DP, ≤K transactions",yellow,188.0,False,175,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+175,Matrix Chain Multiplication,Dynamic Programming,concept,Interval DP,yellow,,True,176,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+176,Palindrome Partitioning II,Dynamic Programming,LC 132,Interval DP + cut minimization,yellow,132.0,False,177,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+177,Target Sum,Dynamic Programming,LC 494,Subset-sum DP variant,yellow,494.0,False,178,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+178,Decode Ways,Dynamic Programming,LC 91,Prefix DP with zero and two-digit validity,none,91.0,False,179,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+179,Maximum Product Subarray,Dynamic Programming,LC 152,Track both minimum and maximum because signs flip,none,152.0,False,180,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+180,Distinct Subsequences,Dynamic Programming,LC 115,"Counting alignments of two strings, not merely their best length",none,115.0,False,181,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+181,Burst Balloons,Dynamic Programming,LC 312,Interval DP by choosing the last operation,none,312.0,False,182,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+182,Implement Trie,Tries,LC 208,Trie construction,star,208.0,False,183,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+183,Longest String With All Prefixes,Tries,LC 720,Trie + DFS,yellow,720.0,False,184,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+184,Number of Distinct Substrings,Tries,LC 1698 (premium),Trie / suffix structure,yellow,1698.0,False,185,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+185,Maximum XOR of Two Numbers,Tries,LC 421,Bitwise trie,star,421.0,False,186,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+186,Maximum XOR With an Element,Tries,LC 1707,Bitwise trie + offline queries,yellow,1707.0,False,187,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
+187,Word Search II,Tries,LC 212,Trie-guided grid search with shared-prefix pruning,none,212.0,False,188,DSA_Roadmap_Audit(1).docx | Revised core 2026-09-29
