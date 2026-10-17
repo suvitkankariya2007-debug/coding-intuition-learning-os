@@ -6,7 +6,7 @@ async function fetchCatalog() {
     supabase.from("curriculum_items").select("*").eq("is_active", true).order("position"),
     supabase.from("item_progress").select("*"),
     supabase.from("catalog_imports").select("*").order("created_at", { ascending: false }).limit(1),
-    supabase.from("review_log").select("item_id,grade,reviewed_at").order("reviewed_at", { ascending: false }).limit(2000),
+    supabase.from("review_log").select("item_id,grade,reviewed_at,mistake_class,hint_stage,confidence").order("reviewed_at", { ascending: false }).limit(2000),
     supabase.from("platform_evidence").select("item_id,source,provenance_id,observed_at,verdict,accepted,code_url").limit(2000),
   ]);
   if (items.error) throw items.error;
