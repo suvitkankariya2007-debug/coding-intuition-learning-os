@@ -27,6 +27,12 @@ describe("provenance-aware recommendations",()=>{
     expect(x.some(i=>i.itemId==="array")).toBe(false);
     expect(x.some(i=>i.itemId==="bst")).toBe(true);
   });
+  it("ignores unknown evidence sources and bounds malformed recommendation limits",()=>{
+    const fake={itemId:"bst",source:"untrusted",provenanceId:"fake",observedAt:now,accepted:true} as unknown as Evidence;
+    const result=recommendDSA(items,[fake],{now,limit:Number.POSITIVE_INFINITY});
+    expect(result[0].evidence.accepted).toBe(0);
+    expect(result).toHaveLength(items.length);
+  });
   it("never leaks code or arbitrary notes in recommendation result",()=>{
     const x=recommendDSA(items,[],{now});
     expect(JSON.stringify(x)).not.toContain("codeUrl");
