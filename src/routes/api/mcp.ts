@@ -20,7 +20,7 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
   if (error || !auth.user) throw new Error("unauthorized");
   return async()=>{
     const [catalog,progress,reviews,evidence]=await Promise.all([
-      supabase.from("curriculum_items").select("id,title,topic,position").order("position").limit(1000),
+      supabase.from("curriculum_items").select("id,title,topic,position").eq("is_active",true).order("position").limit(1000),
       supabase.from("item_progress").select("item_id,status,due_date").limit(1000),
       supabase.from("review_log").select("item_id,grade,reviewed_at").order("reviewed_at",{ascending:false}).limit(2000),
       supabase.from("platform_evidence").select("item_id,source,observed_at,provenance_id,verdict,accepted").limit(2000)
