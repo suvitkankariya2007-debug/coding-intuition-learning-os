@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 async function fetchCatalog() {
   const [items, progress, imp, reviews, platformEvidence] = await Promise.all([
-    supabase.from("curriculum_items").select("*").order("position"),
+    supabase.from("curriculum_items").select("*").eq("is_active", true).order("position"),
     supabase.from("item_progress").select("*"),
     supabase.from("catalog_imports").select("*").order("created_at", { ascending: false }).limit(1),
     supabase.from("review_log").select("item_id,grade,reviewed_at").order("reviewed_at", { ascending: false }).limit(2000),
