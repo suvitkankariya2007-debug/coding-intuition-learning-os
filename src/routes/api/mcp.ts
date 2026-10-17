@@ -22,7 +22,7 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
     const [catalog,progress,reviews,evidence]=await Promise.all([
       supabase.from("curriculum_items").select("id,title,topic,position").eq("is_active",true).order("position").limit(1000),
       supabase.from("item_progress").select("item_id,status,due_date").limit(1000),
-      supabase.from("review_log").select("item_id,grade,reviewed_at").order("reviewed_at",{ascending:false}).limit(2000),
+      supabase.from("review_log").select("item_id,grade,reviewed_at,mistake_class,hint_stage").order("reviewed_at",{ascending:false}).limit(2000),
       supabase.from("platform_evidence").select("item_id,source,observed_at,provenance_id,verdict,accepted").limit(2000)
     ]);
     if(catalog.error||progress.error||reviews.error||evidence.error) throw new Error("query failure");
@@ -47,7 +47,15 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
       due:catalog.data.flatMap(i=>{
         const dueDate=byProgress.get(i.id)?.due_date;
         return dueDate && dueDate<=day?[{itemId:i.id,title:i.title,dueDate}]:[];
-      }).slice(0,20)
+      }).slice(0,20),
+      roadmap:catalog.data.map(i=>({
+        itemId:i.id,title:i.title,topic:i.topic??"Uncategorized",position:i.position,
+        status:byProgress.get(i.id)?.status??"not_started",dueDate:byProgress.get(i.id)?.due_date??null
+      })),
+      reviews:reviews.data.map(r=>({itemId:r.item_id,grade:r.grade,reviewedAt:r.reviewed_at,
+        mistakeClass:r.mistake_class,hintStage:r.hint_stage})),
+      evidence:evidence.data.map(e=>({itemId:e.item_id,source:e.source,observedAt:e.observed_at,
+        accepted:e.accepted,verdict:e.verdict}))
     };
   };
 }
