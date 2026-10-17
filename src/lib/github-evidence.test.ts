@@ -16,6 +16,11 @@ describe("GitHub code evidence",()=>{
   expect(r).toHaveLength(1);
   expect(r[0]).toMatchObject({itemId:"98",accepted:false});
  });
+ it("matches numbered and marked imported curriculum titles",()=>{
+  const r=indexPublicSolutions("test-user/LeetCode-Challenge","main",[{path:"0098-validate-binary-search-tree/0098-validate-binary-search-tree.cpp",type:"blob"}],[{id:"bst",title:"98. Validate Binary Search Tree  ⭐"}]);
+  expect(r).toHaveLength(1);
+  expect(r[0].itemId).toBe("bst");
+ });
  it("rejects duplicate ambiguous roadmap matches",()=>{
   const r=indexPublicSolutions("test-user/dsa","main",[{path:"two_sum.py",type:"blob"}],
   [{id:"1",title:"Two Sum"},{id:"2",title:"two-sum"}]);
