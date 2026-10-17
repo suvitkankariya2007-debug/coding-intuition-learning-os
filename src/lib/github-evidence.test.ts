@@ -11,6 +11,11 @@ describe("GitHub code evidence",()=>{
   expect(result[0]).toMatchObject({itemId:"1",source:"github",accepted:false});
   expect(result[0].codeUrl).toContain("solutions/two_sum.cpp");
  });
+ it("matches numbered LeetCode-Challenge file paths",()=>{
+  const r=indexPublicSolutions("test-user/LeetCode-Challenge","main",[{path:"0098-validate-binary-search-tree/0098-validate-binary-search-tree.cpp",type:"blob"}],[{id:"98",title:"Validate Binary Search Tree"}]);
+  expect(r).toHaveLength(1);
+  expect(r[0]).toMatchObject({itemId:"98",accepted:false});
+ });
  it("rejects duplicate ambiguous roadmap matches",()=>{
   const r=indexPublicSolutions("test-user/dsa","main",[{path:"two_sum.py",type:"blob"}],
   [{id:"1",title:"Two Sum"},{id:"2",title:"two-sum"}]);
