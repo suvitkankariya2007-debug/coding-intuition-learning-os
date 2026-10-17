@@ -41,7 +41,7 @@ export const syncPublicPlatforms = createServerFn({method:"POST"})
   })
   .handler(async ({data,context}) => {
     const {supabase,userId} = context;
-    const {data:rows,error:catalogError} = await supabase.from("curriculum_items").select("id,title,url");
+    const {data:rows,error:catalogError} = await supabase.from("curriculum_items").select("id,title,url").eq("is_active",true);
     if (catalogError) throw new Error("Unable to load your curriculum");
     const titles = indexTitles(rows);
     const slugs = slugIndex(rows);
