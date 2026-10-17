@@ -22,6 +22,13 @@ describe("provenance-aware recommendations",()=>{
     const e:Evidence={itemId:"bst",source:"codeforces",provenanceId:"123",observedAt:now,verdict:"WRONG_ANSWER"};
     expect(recommendDSA(items,[e,e],{now})[0].evidence.rejected).toBe(1);
   });
+  it("raises priority for an explicitly recorded reasoning weakness",()=>{
+    const baseline:LearningItem[]=[{id:"a",title:"A",topic:"trees",position:1,status:"attempted",recallGrade:1},
+      {id:"b",title:"B",topic:"trees",position:2,status:"attempted",recallGrade:1,mistakeClass:"base-case",hintStage:"deeper",confidence:2}];
+    const result=recommendDSA(baseline,[],{now});
+    expect(result[0].itemId).toBe("b");
+    expect(result[0].reason.join(" ")).toContain("base case");
+  });
   it("keeps contest queue focused on previous work",()=>{
     const x=recommendDSA(items,[],{now,mode:"contest"});
     expect(x.some(i=>i.itemId==="array")).toBe(false);
