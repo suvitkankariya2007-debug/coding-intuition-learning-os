@@ -7,7 +7,7 @@ export type RoadmapProblem = {
   itemId:string; title:string; topic:string; position:number; status:string; dueDate:string|null
 };
 export type ReviewRecord = {
-  itemId:string; grade:number; reviewedAt:string; mistakeClass?:string|null; hintStage?:string|null; confidence?:number|null; mistakeClass?:string|null
+  itemId:string; grade:number; reviewedAt:string; mistakeClass?:string|null; hintStage?:string|null; confidence?:number|null
 };
 export type EvidenceRecord = {
   itemId:string|null; source:string; observedAt:string; accepted:boolean; verdict?:string|null
