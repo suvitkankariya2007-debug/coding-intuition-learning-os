@@ -211,9 +211,9 @@ export type Database = {
         Relationships: []
       }
       platform_evidence: {
-        Row: { id: string; user_id: string; item_id: string | null; source: string; provenance_id: string; verdict: string | null; accepted: boolean; observed_at: string; synced_at: string }
-        Insert: { id?: string; user_id?: string; item_id?: string | null; source: string; provenance_id: string; verdict?: string | null; accepted?: boolean; observed_at: string; synced_at?: string }
-        Update: { id?: string; user_id?: string; item_id?: string | null; source?: string; provenance_id?: string; verdict?: string | null; accepted?: boolean; observed_at?: string; synced_at?: string }
+        Row: { id: string; user_id: string; item_id: string | null; source: string; provenance_id: string; code_url: string | null; verdict: string | null; accepted: boolean; observed_at: string; synced_at: string }
+        Insert: { id?: string; user_id?: string; item_id?: string | null; source: string; provenance_id: string; code_url?: string | null; verdict?: string | null; accepted?: boolean; observed_at: string; synced_at?: string }
+        Update: { id?: string; user_id?: string; item_id?: string | null; source?: string; provenance_id?: string; code_url?: string | null; verdict?: string | null; accepted?: boolean; observed_at?: string; synced_at?: string }
         Relationships: [{ foreignKeyName: "platform_evidence_item_id_fkey"; columns: ["item_id"]; isOneToOne: false; referencedRelation: "curriculum_items"; referencedColumns: ["id"] }]
       }
       profiles: {
