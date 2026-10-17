@@ -6,6 +6,7 @@ import { catalogQuery, STATUSES } from "@/lib/data";
 import { todayISO } from "@/lib/srs";
 import { recommendDSA, type LearningItem, type Evidence } from "@/lib/evidence-intelligence";
 import { syncPublicPlatforms } from "@/lib/platform-sync";
+import { syncPublicGitHubSolutions } from "@/lib/github-sync";
 import { syncConsentedMemories } from "@/lib/supermemory-sync";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogBanner } from "@/components/CatalogBanner";
@@ -24,6 +25,12 @@ function Dashboard() {
   const [memoryConsent,setMemoryConsent] = useState(false);
   const [leetcode, setLeetcode] = useState("suvitk");
   const [codeforces, setCodeforces] = useState("suvitkankariya2007");
+  const [githubRepo,setGithubRepo] = useState("");
+  const githubSync = useMutation({
+    mutationFn:()=>syncPublicGitHubSolutions({data:{repository:githubRepo}}),
+    onSuccess:r=>{ void qc.invalidateQueries({queryKey:["catalog"]}); toast.success(`Indexed ${r.matched} solution file(s) from ${r.scanned} GitHub entries`); },
+    onError:e=>toast.error(e.message),
+  });
   const sync = useMutation({
     mutationFn: () => syncPublicPlatforms({data:{leetcode,codeforces}}),
     onSuccess: result => {
@@ -76,7 +83,7 @@ function Dashboard() {
   )).map(e => ({
     itemId: e.item_id!, source: e.source as Evidence["source"],
     observedAt: e.observed_at, provenanceId: e.provenance_id,
-    verdict: e.verdict, accepted: e.accepted,
+    verdict: e.verdict, accepted: e.accepted, codeUrl: e.code_url,
   }));
   const recommendations = recommendDSA(learningItems, evidence, { now: new Date().toISOString(), limit: 5 });
   return (
@@ -103,6 +110,15 @@ function Dashboard() {
           </label>
           <Button disabled={sync.isPending} onClick={()=>sync.mutate()}>{sync.isPending ? "Syncing..." : "Sync public submissions"}</Button>
           <span className="text-xs text-muted-foreground">LeetCode recent public accepted only; Codeforces recent 100. Read-only, no platform passwords.</span>
+        </div>
+        <div className="mt-3 flex flex-wrap items-end gap-3 rounded-lg border p-3">
+          <label className="text-xs text-muted-foreground">Public GitHub solutions repository (owner/repo)
+            <input aria-label="Public GitHub solutions repository" className="mt-1 block rounded-md border bg-background px-2 py-2 text-sm text-foreground" placeholder="owner/dsa-solutions" value={githubRepo} onChange={e=>setGithubRepo(e.target.value)} maxLength={141}/>
+          </label>
+          <Button variant="outline" disabled={!githubRepo || githubSync.isPending} onClick={()=>githubSync.mutate()}>
+            {githubSync.isPending ? "Indexing..." : "Index public solutions"}
+          </Button>
+          <span className="text-xs text-muted-foreground">Exact filenames only. GitHub files never count as accepted submissions.</span>
         </div>
         <ol className="mt-4 space-y-3">
           {recommendations.map(r => (
