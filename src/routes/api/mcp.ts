@@ -20,7 +20,7 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
   if (error || !auth.user) throw new Error("unauthorized");
   return async()=>{
     const [catalog,progress,reviews,evidence,preferences]=await Promise.all([
-      supabase.from("curriculum_items").select("id,title,topic,position").eq("is_active",true).order("position").limit(1000),
+      supabase.from("curriculum_items").select("id,title,topic,position,idea").eq("is_active",true).order("position").limit(1000),
       supabase.from("item_progress").select("item_id,status,due_date").limit(1000),
       supabase.from("review_log").select("item_id,grade,reviewed_at,mistake_class,hint_stage,confidence").order("reviewed_at",{ascending:false}).limit(2000),
       supabase.from("platform_evidence").select("item_id,source,observed_at,provenance_id,verdict,accepted").limit(2000),
@@ -57,7 +57,7 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
       }).slice(0,20),
       roadmap:catalog.data.map(i=>({
         itemId:i.id,title:i.title,topic:i.topic??"Uncategorized",position:i.position,
-        status:byProgress.get(i.id)?.status??"not_started",dueDate:byProgress.get(i.id)?.due_date??null
+        status:byProgress.get(i.id)?.status??"not_started",dueDate:byProgress.get(i.id)?.due_date??null,idea:i.idea
       })),
       reviews:reviews.data.map(r=>({itemId:r.item_id,grade:r.grade,reviewedAt:r.reviewed_at,
         mistakeClass:r.mistake_class,hintStage:r.hint_stage,confidence:r.confidence})),
