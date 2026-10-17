@@ -1,14 +1,18 @@
-# Welcome to your Lovable project
+# Coding Intuition Learning Os
+
+Build Coding Intuition Learning OS as a real full-stack private DSA study app on Lovable Cloud with authentication and RLS, a durable per-user learning database, dated spaced-repetition reviews, 7-30 day planner, contest warm-up, GitHub public-solution index, safe LeetCode/Codeforces observations, and optional Supermemory integration that never collects credentials in the browser. No fake solved data, no public learner notes. First build working auth and CRUD and a clear modern dark UI. Source curriculum must ultimately be imported from my 188-entry DSA_Roadmap_Audit(1).docx; do not invent entries if not yet available. Include import flow and clearly mark catalog incomplete until verified. Use free-tier features only and do not publish before auth/RLS tests. This is a real engineering MVP, not a UI mockup.
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://coding-intuition-learning-os.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/6e9db500-9028-4140-ba51-1903e21ae09d).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +24,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
