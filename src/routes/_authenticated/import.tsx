@@ -48,14 +48,12 @@ function ImportPage() {
     // Do not permit a browser-side delete/reinsert operation against an existing catalog.
     // Replacement requires an audited, transactional server-side reconciliation that
     // preserves item IDs and dependent progress/review records.
-    if (data.items.length > 0) {
-      toast.error("Safe replacement required: existing catalog and progress have been preserved. Use the audited reconciliation workflow.");
+    if (data.items.length > 0 || imp) {
+      toast.error("Safe reconciliation required: existing catalog/import data and progress have been preserved.");
       return;
     }
     setBusy(true);
     try {
-      const del = await supabase.from("curriculum_items").delete().eq("user_id", user.id);
-      if (del.error) throw del.error;
       const ins = await supabase.from("catalog_imports")
         .insert({ user_id: user.id, source_name: fileName, expected_count: EXPECTED, imported_count: entries.length })
         .select().single();
@@ -124,7 +122,7 @@ function ImportPage() {
                 ))}</tbody>
               </table>
             </div>
-            <Button onClick={commit} disabled={busy || entries?.length !== EXPECTED || data.items.length > 0}>Save {entries.length} entries to my catalog</Button>
+            <Button onClick={commit} disabled={busy || entries?.length !== EXPECTED || data.items.length > 0 || !!imp}>Save {entries.length} entries to my catalog</Button>
           </>
         )}
       </section>
