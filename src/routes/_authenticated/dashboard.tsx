@@ -23,6 +23,8 @@ function Dashboard() {
   const learningItems: LearningItem[] = data.items.map(i => ({
     id: i.id, title: i.title, topic: i.topic ?? "Uncategorized", position: i.position,
     dueDate: i.progress?.due_date ?? null,
+    recallGrade: (() => { const g = data.latestReviewByItem.get(i.id)?.grade; return g == null ? null : (g <= 1 ? 0 : g === 2 ? 1 : g === 3 ? 2 : 3) as 0 | 1 | 2 | 3; })(),
+    lastReviewedAt: data.latestReviewByItem.get(i.id)?.reviewed_at ?? null,
     status: (i.progress?.status ?? "not_started") as LearningItem["status"],
     attemptCount: i.progress?.status === "attempted" ? 1 : 0,
   }));
