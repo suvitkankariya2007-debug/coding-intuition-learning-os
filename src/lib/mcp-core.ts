@@ -1,10 +1,12 @@
+import { progressiveHint } from "./progressive-coaching";
+import { proposeTransferProblem } from "./transfer-intelligence";
 import { diagnoseWeaknesses } from "./learning-diagnosis";
 import type { Recommendation } from "./evidence-intelligence";
 
 type JsonId = string | number | null;
 export type McpRequest = { jsonrpc:"2.0"; id?:JsonId; method:string; params?:unknown };
 export type RoadmapProblem = {
-  itemId:string; title:string; topic:string; position:number; status:string; dueDate:string|null
+  itemId:string; title:string; topic:string; position:number; status:string; dueDate:string|null; idea?:string|null
 };
 export type ReviewRecord = {
   itemId:string; grade:number; reviewedAt:string; mistakeClass?:string|null; hintStage?:string|null; confidence?:number|null
@@ -28,6 +30,8 @@ const tools:ToolSpec[] = [
   {name:"get_progress_report",description:"Return aggregate progress, review and verified evidence counts for this learner.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
   {name:"get_problem_history",description:"Retrieve recent review and evidence history for one curriculum item.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
   {name:"diagnose_weaknesses",description:"Identify recurring learner-reported reasoning difficulties and provide specific corrective exercises.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
+  {name:"get_transfer_problem",description:"Suggest an unfamiliar problem in the same topic, excluding solved problems.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
+  {name:"get_progressive_hint",description:"Return one grounded level of guided reasoning for a curriculum problem, without exposing code.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"},level:{type:"integer",minimum:1,maximum:3}},required:["itemId","level"],additionalProperties:false}},
   {name:"get_source_status",description:"Count stored evidence per coding source and report the latest observed timestamp; does not claim a live connection.",inputSchema:{type:"object",properties:{},additionalProperties:false}}
 ];
 const success=(id:JsonId,result:unknown)=>({jsonrpc:"2.0" as const,id,result});
@@ -37,9 +41,10 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 function validateArgs(name:string,raw:unknown):Record<string,unknown>|null{
  const a=raw===undefined?{}:asObject(raw);
  if(!a)return null;
- const allowed=name==="get_roadmap"?["offset","limit","topic"]:name==="get_problem_history"?["itemId"]:[];
+ const allowed=name==="get_roadmap"?["offset","limit","topic"]:["get_problem_history","get_transfer_problem"].includes(name)?["itemId"]:name==="get_progressive_hint"?["itemId","level"]:[];
  if(Object.keys(a).some(k=>!allowed.includes(k)))return null;
- if(name==="get_problem_history" && (typeof a.itemId!=="string" || !uuid.test(a.itemId)))return null;
+ if(["get_problem_history","get_transfer_problem","get_progressive_hint"].includes(name) && (typeof a.itemId!=="string" || !uuid.test(a.itemId)))return null;
+ if(name==="get_progressive_hint" && (![1,2,3].includes(Number(a.level)) || !Number.isInteger(a.level)))return null;
  if(name==="get_roadmap"){
    if(a.offset!==undefined && (!Number.isInteger(a.offset)||Number(a.offset)<0||Number(a.offset)>1000))return null;
    if(a.limit!==undefined && (!Number.isInteger(a.limit)||Number(a.limit)<1||Number(a.limit)>50))return null;
@@ -71,6 +76,17 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
      evidence:evidence.filter(x=>x.itemId===itemId).slice(0,50)};
  }
  if(name==="diagnose_weaknesses")return diagnoseWeaknesses(reviews.map(r=>({itemId:r.itemId,reviewedAt:r.reviewedAt,grade:r.grade,mistakeClass:r.mistakeClass??null,hintStage:r.hintStage??null,confidence:r.confidence??null})));
+ if(name==="get_transfer_problem"){
+   const source=roadmap.find(x=>x.itemId===a.itemId);
+   if(!source)return {found:false,reason:"Unknown curriculum item"};
+   const next=proposeTransferProblem({id:source.itemId,title:source.title,topic:source.topic,position:source.position,status:source.status},roadmap.map(x=>({id:x.itemId,title:x.title,topic:x.topic,position:x.position,status:x.status})));
+   return next?{found:true,sourceItemId:source.itemId,candidate:{itemId:next.id,title:next.title,topic:next.topic}}:{found:false,reason:"No unattempted transfer candidate in this topic"};
+ }
+ if(name==="get_progressive_hint"){
+   const row=roadmap.find(x=>x.itemId===a.itemId);
+   if(!row)return {found:false,reason:"Unknown curriculum item"};
+   return {found:true,itemId:row.itemId,...progressiveHint({title:row.title,topic:row.topic,idea:row.idea??null,level:a.level as 1|2|3})};
+ }
  if(name==="get_source_status"){
    const sources=["leetcode","codeforces","github"];
    return sources.map(source=>{
