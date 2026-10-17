@@ -21,6 +21,11 @@ describe("GitHub code evidence",()=>{
   expect(r).toHaveLength(1);
   expect(r[0].itemId).toBe("bst");
  });
+ it("matches title aliases through canonical LeetCode ID without inferring acceptance",()=>{
+  const r=indexPublicSolutions("test-user/LeetCode-Challenge","main",[{path:"0098-validate-binary-search-tree/0098-validate-binary-search-tree.cpp",type:"blob"}],[{id:"98",title:"Validate BST",leetcode_id:98}]);
+  expect(r).toHaveLength(1);
+  expect(r[0].accepted).toBe(false);
+ });
  it("rejects duplicate ambiguous roadmap matches",()=>{
   const r=indexPublicSolutions("test-user/dsa","main",[{path:"two_sum.py",type:"blob"}],
   [{id:"1",title:"Two Sum"},{id:"2",title:"two-sum"}]);
