@@ -50,11 +50,12 @@ export function recommendDSA(
   options: { now?: string; limit?: number; focusTopics?: string[]; mode?: "daily" | "contest" } = {},
 ): Recommendation[] {
   const now = validDate(options.now) ?? Date.now();
-  const limit = Math.max(0, Math.min(50, Math.floor(options.limit ?? 10)));
+  const requestedLimit = options.limit ?? 10;
+  const limit = Number.isFinite(requestedLimit) ? Math.max(0, Math.min(50, Math.floor(requestedLimit))) : 10;
   const focus = new Set((options.focusTopics ?? []).map(t => t.toLowerCase()));
   const byId = new Map<string, Evidence[]>();
   for (const e of evidence) {
-    if (!e.itemId || !validDate(e.observedAt) || !e.provenanceId) continue;
+    if (!e.itemId || !validDate(e.observedAt) || !e.provenanceId || !["leetcode", "codeforces", "github", "manual", "supermemory"].includes(e.source)) continue;
     const group = byId.get(e.itemId) ?? [];
     if (!group.some(x => x.source === e.source && x.provenanceId === e.provenanceId)) group.push(e);
     byId.set(e.itemId, group);
