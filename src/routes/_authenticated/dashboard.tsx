@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 import { catalogQuery, STATUSES } from "@/lib/data";
 import { todayISO } from "@/lib/srs";
-import { recommendDSA, type LearningItem } from "@/lib/evidence-intelligence";
+import { recommendDSA, type LearningItem, type Evidence } from "@/lib/evidence-intelligence";
+import { syncPublicPlatforms } from "@/lib/platform-sync";
 import { CatalogBanner } from "@/components/CatalogBanner";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +17,18 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { data } = useSuspenseQuery(catalogQuery);
+  const qc = useQueryClient();
+  const [leetcode, setLeetcode] = useState("suvitk");
+  const [codeforces, setCodeforces] = useState("suvitkankariya2007");
+  const sync = useMutation({
+    mutationFn: () => syncPublicPlatforms({data:{leetcode,codeforces}}),
+    onSuccess: result => {
+      void qc.invalidateQueries({queryKey:["catalog"]});
+      if (result.errors.length) toast.warning(`Matched ${result.matched} submission(s). ${result.errors.join("; ")}`);
+      else toast.success(`Matched ${result.matched} submission(s) to your roadmap`);
+    },
+    onError: err => toast.error(err.message),
+  });
   const today = todayISO();
   const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<string, number>;
   for (const i of data.items) { const k = i.progress?.status ?? "not_started"; counts[k] = (counts[k] ?? 0) + 1; }
@@ -28,7 +43,14 @@ function Dashboard() {
     status: (i.progress?.status ?? "not_started") as LearningItem["status"],
     attemptCount: i.progress?.status === "attempted" ? 1 : 0,
   }));
-  const recommendations = recommendDSA(learningItems, [], { now: new Date().toISOString(), limit: 5 });
+  const evidence: Evidence[] = data.evidence.filter(e => e.item_id && (
+    e.source === "leetcode" || e.source === "codeforces" || e.source === "github"
+  )).map(e => ({
+    itemId: e.item_id!, source: e.source as Evidence["source"],
+    observedAt: e.observed_at, provenanceId: e.provenance_id,
+    verdict: e.verdict, accepted: e.accepted,
+  }));
+  const recommendations = recommendDSA(learningItems, evidence, { now: new Date().toISOString(), limit: 5 });
   return (
     <div>
       <CatalogBanner imp={data.latestImport} />
@@ -43,7 +65,17 @@ function Dashboard() {
       </div>
       <section className="mt-10" aria-label="Recommended practice">
         <h2 className="text-xl font-bold">Recommended next problems</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Based only on your recorded progress and review dates. External submission evidence is not connected yet.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Ranked using saved review grades and matched public platform submissions. Unmatched submissions are never counted.</p>
+        <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border p-3">
+          <label className="text-xs text-muted-foreground">LeetCode public handle
+            <input aria-label="LeetCode username" className="mt-1 block rounded-md border bg-background px-2 py-2 text-sm text-foreground" value={leetcode} onChange={e=>setLeetcode(e.target.value)} maxLength={40}/>
+          </label>
+          <label className="text-xs text-muted-foreground">Codeforces public handle
+            <input aria-label="Codeforces handle" className="mt-1 block rounded-md border bg-background px-2 py-2 text-sm text-foreground" value={codeforces} onChange={e=>setCodeforces(e.target.value)} maxLength={40}/>
+          </label>
+          <Button disabled={sync.isPending} onClick={()=>sync.mutate()}>{sync.isPending ? "Syncing..." : "Sync public submissions"}</Button>
+          <span className="text-xs text-muted-foreground">LeetCode recent public accepted only; Codeforces recent 100. Read-only, no platform passwords.</span>
+        </div>
         <ol className="mt-4 space-y-3">
           {recommendations.map(r => (
             <li key={r.itemId} className="rounded-lg border bg-card p-4">
