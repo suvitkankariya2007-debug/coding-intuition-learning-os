@@ -32,10 +32,14 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
     const items:LearningItem[]=catalog.data.map(i=>{
       const p=byProgress.get(i.id);
       const grade=byGrade.get(i.id);
+      const reflection=reviews.data.find(r=>r.item_id===i.id);
       return {id:i.id,title:i.title,topic:i.topic??"Uncategorized",position:i.position,
         dueDate:p?.due_date??null,
         status:(p?.status??"not_started") as LearningItem["status"],
         recallGrade:grade==null?null:grade<=1?0:grade===2?1:grade===3?2:3,
+        mistakeClass:reflection?.mistake_class??null,
+        hintStage:reflection?.hint_stage as LearningItem["hintStage"] ?? null,
+        confidence:reflection?.confidence??null,
       };
     });
     const records:Evidence[]=evidence.data.filter(e=>e.item_id && ["leetcode","codeforces","github"].includes(e.source))
