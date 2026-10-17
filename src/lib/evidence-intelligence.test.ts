@@ -40,6 +40,19 @@ describe("provenance-aware recommendations",()=>{
     expect(result[0].evidence.accepted).toBe(0);
     expect(result).toHaveLength(items.length);
   });
+  it("keeps revision mode focused on attempted or overdue work",()=>{
+    const result=recommendDSA(items,[],{now,mode:"revision"});
+    expect(result.map(x=>x.itemId)).not.toContain("array");
+    expect(result.map(x=>x.itemId)).toContain("bst");
+  });
+  it("prioritizes retries in competitive mode",()=>{
+    const same=[{id:"a",title:"New",topic:"graphs",position:1,status:"not_started" as const},
+      {id:"b",title:"Retry",topic:"graphs",position:2,status:"attempted" as const}];
+    const submissions:Evidence[]=[{itemId:"b",source:"codeforces",provenanceId:"cf-1",verdict:"WRONG_ANSWER",observedAt:now}];
+    const result=recommendDSA(same,submissions,{now,mode:"competitive"});
+    expect(result[0].itemId).toBe("b");
+    expect(result[0].reason.join(" ")).toContain("Competitive practice");
+  });
   it("never leaks code or arbitrary notes in recommendation result",()=>{
     const x=recommendDSA(items,[],{now});
     expect(JSON.stringify(x)).not.toContain("codeUrl");
