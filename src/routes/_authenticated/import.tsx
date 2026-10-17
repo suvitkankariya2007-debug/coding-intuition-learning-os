@@ -8,6 +8,7 @@ import { parseCsv, parseDocx, rowsToEntries, type ParsedEntry } from "@/lib/pars
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import canonicalRoadmap from "../../../data/canonical-roadmap-188.json";
 
 const EXPECTED = 188;
 
@@ -73,6 +74,21 @@ function ImportPage() {
     }
   }
 
+  async function reconcileCanonical() {
+    if (busy) return;
+    const confirmed = window.confirm("Activate the 188-problem canonical roadmap? Extra imported rows will become inactive, not deleted. All existing progress and reviews will be preserved.");
+    if (!confirmed) return;
+    setBusy(true);
+    try {
+      const {error} = await supabase.rpc("reconcile_canonical_188", {p_entries:canonicalRoadmap});
+      if (error) throw error;
+      toast.success("Canonical 188 roadmap activated without deleting historical entries.");
+      await qc.invalidateQueries({queryKey:["catalog"]});
+    } catch(e) {
+      toast.error(e instanceof Error ? e.message : "Canonical reconciliation failed safely");
+    } finally { setBusy(false); }
+  }
+
   async function setVerified(v: boolean) {
     if (!imp) return;
     const { error } = await supabase.from("catalog_imports")
@@ -105,6 +121,14 @@ function ImportPage() {
             </label>
           </div>
         ) : <p className="mt-2 text-sm text-muted-foreground">Nothing imported yet.</p>}
+        {data.items.length > EXPECTED && (
+          <div className="mt-4 rounded-md border p-3 text-sm">
+            <p>The validated 188-entry canonical roadmap is ready. Surplus entries will be archived without deleting any rows or learning progress.</p>
+            <Button className="mt-3" variant="outline" disabled={busy} onClick={reconcileCanonical}>
+              {busy ? "Checking..." : "Safely activate canonical 188 roadmap"}
+            </Button>
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">
