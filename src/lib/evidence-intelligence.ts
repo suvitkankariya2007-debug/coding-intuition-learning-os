@@ -3,6 +3,8 @@
  * Pure and deterministic: no unverified submission is silently marked solved.
  * Designed to run over authenticated, RLS-scoped database records.
  */
+export type LearningMode = "interview" | "competitive" | "revision" | "contest";
+export const LEARNING_MODES:LearningMode[] = ["interview","competitive","revision","contest"];
 export type EvidenceSource = "leetcode" | "codeforces" | "github" | "manual" | "supermemory";
 export type Evidence = {
   itemId: string;
@@ -50,7 +52,7 @@ function verdictAccepted(e: Evidence) {
 export function recommendDSA(
   items: LearningItem[],
   evidence: Evidence[],
-  options: { now?: string; limit?: number; focusTopics?: string[]; mode?: "daily" | "contest" } = {},
+  options: { now?: string; limit?: number; focusTopics?: string[]; mode?: LearningMode | "daily" } = {},
 ): Recommendation[] {
   const now = validDate(options.now) ?? Date.now();
   const requestedLimit = options.limit ?? 10;
@@ -84,8 +86,9 @@ export function recommendDSA(
     if(item.hintStage && item.hintStage !== "none" && !solved) { score += 8; reason.push("Needed hints in the previous review"); }
     if(item.confidence != null && item.confidence <= 2 && !solved) { score += 8; reason.push("Low confidence in independent reasoning"); }
     if (rejected) { score += Math.min(rejected, 5) * 6; reason.push(`${rejected} observed non-accepted submission(s)`); }
+    if(options.mode==="competitive" && rejected) { score+=10; reason.push("Competitive practice: revisit unsuccessful attempts"); }
     if (attempted && !solved) { score += 18; reason.push("Attempted but no verified acceptance recorded"); }
-    if (!attempted && !solved) { score += options.mode === "contest" ? 0 : 10; reason.push("New curriculum problem"); }
+    if (!attempted && !solved) { score += options.mode === "contest" || options.mode === "revision" ? 0 : 10; reason.push("New curriculum problem"); }
     if (solved && !isDue && !weakRecall) score -= 25;
     if (codeFiles) reason.push(`${codeFiles} GitHub solution file(s) available for revision; not acceptance proof`);
     if (accepted) reason.push(`${accepted} accepted submission(s) observed`);
@@ -96,7 +99,7 @@ export function recommendDSA(
       reason, evidence: { accepted, rejected, codeFiles,
         latestAt: latest.length ? new Date(Math.max(...latest)).toISOString() : null },
       position: item.position, isNew: !attempted && !solved, due: isDue };
-  }).filter(r => options.mode !== "contest" || !r.isNew || r.due)
+  }).filter(r => !["contest","revision"].includes(options.mode ?? "interview") || !r.isNew || r.due)
     .sort((a,b) => b.score - a.score || a.position - b.position || a.itemId.localeCompare(b.itemId))
     .slice(0,limit)
     .map(({position: _position,isNew: _isNew,due: _due,...rest}) => rest);
