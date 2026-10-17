@@ -56,7 +56,7 @@ describe("Unified MCP tool contracts",()=>{
  });
  it("returns diagnostic explanations only for recorded reflections",async()=>{
    const rows=await value("diagnose_weaknesses");
-   expect(rows).toEqual([]);
+   expect(rows).toMatchObject([{pattern:"base-case",lowRecall:1,affectedProblems:1}]);
  });
  it("isolates problem history to a valid item id",async()=>{
    expect(await value("get_problem_history",{itemId})).toMatchObject({found:true,reviews:[{grade:1}],evidence:[{accepted:false}]});
