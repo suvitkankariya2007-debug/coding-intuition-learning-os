@@ -305,6 +305,10 @@ export type Database = {
         Args: { p_confirm: boolean; p_entries: Json; p_source: string }
         Returns: string
       }
+      record_learning_review: {
+        Args: { p_item_id: string; p_grade: number; p_mistake_class?: string | null; p_hint_stage?: string; p_confidence?: number }
+        Returns: string
+      }
       reconcile_canonical_188: {
         Args: { p_entries: Json }
         Returns: Json
