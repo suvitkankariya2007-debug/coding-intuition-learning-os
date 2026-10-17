@@ -20,5 +20,7 @@ jobs:
         run: bun install --no-save
       - name: Test recommendation and roadmap logic
         run: bunx vitest run src/lib/evidence-intelligence.test.ts src/lib/submission-evidence.test.ts src/test/rules.test.ts
+      - name: Verify real public platform API contracts
+        run: bun scripts/smoke-public-platforms.mjs
       - name: Build app
         run: bun run build
