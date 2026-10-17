@@ -70,6 +70,7 @@ export type Database = {
       }
       curriculum_items: {
         Row: {
+          is_active: boolean
           concept_only: boolean
           created_at: string
           difficulty: string | null
@@ -87,6 +88,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          is_active?: boolean
           concept_only?: boolean
           created_at?: string
           difficulty?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          is_active?: boolean
           concept_only?: boolean
           created_at?: string
           difficulty?: string | null
@@ -301,6 +304,10 @@ export type Database = {
       replace_catalog: {
         Args: { p_confirm: boolean; p_entries: Json; p_source: string }
         Returns: string
+      }
+      reconcile_canonical_188: {
+        Args: { p_entries: Json }
+        Returns: Json
       }
     }
     Enums: {
