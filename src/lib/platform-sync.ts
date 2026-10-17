@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { indexTitles, normalizeCodeforces, normalizeLeetCode, type CodeforcesSubmission, type LeetCodeSubmission } from "@/lib/submission-evidence";
+import { indexTitles, cleanCurriculumTitle, normalizeCodeforces, normalizeLeetCode, type CodeforcesSubmission, type LeetCodeSubmission } from "@/lib/submission-evidence";
 import type { Evidence } from "@/lib/evidence-intelligence";
 
 const userNamePattern = /^[a-zA-Z0-9_.-]{1,40}$/;
@@ -26,7 +26,7 @@ function slugIndex(rows: { id:string; title:string; url:string|null }[]) {
         slug = u.pathname.match(/^\/problems\/([a-z0-9-]+)/)?.[1];
       }
     } catch { /* URL missing: use normalized title below */ }
-    const key = slug ?? row.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const key = slug ?? cleanCurriculumTitle(row.title).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     if (names.has(key) && names.get(key) !== row.id) conflicted.add(key);
     else names.set(key,row.id);
   }
