@@ -41,7 +41,7 @@ describe("Unified MCP tool contracts",()=>{
  it("lists every unified read tool",async()=>{
    const r=await respondToMcp({jsonrpc:"2.0",id:2,method:"tools/list"},supplied) as {result:{tools:{name:string}[]}};
    expect(r.result.tools.map(t=>t.name)).toEqual([
-     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","diagnose_weaknesses","get_source_status"
+     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","diagnose_weaknesses","get_transfer_problem","get_progressive_hint","get_source_status"
    ]);
  });
  it("returns canonical roadmap and stable pagination",async()=>{
@@ -57,6 +57,14 @@ describe("Unified MCP tool contracts",()=>{
  it("returns diagnostic explanations only for recorded reflections",async()=>{
    const rows=await value("diagnose_weaknesses");
    expect(rows).toMatchObject([{pattern:"base-case",lowRecall:1,affectedProblems:1}]);
+ });
+ it("provides grounded hints and does not invent unrelated transfer candidates",async()=>{
+   const hint=await value("get_progressive_hint",{itemId,level:1});
+   expect(hint).toMatchObject({found:true,revealsConcept:false});
+   const transfer=await value("get_transfer_problem",{itemId});
+   expect(transfer).toMatchObject({found:false});
+   const invalid=await call("get_progressive_hint",{itemId,level:4});
+   expect(invalid).toHaveProperty("error.code",-32602);
  });
  it("isolates problem history to a valid item id",async()=>{
    expect(await value("get_problem_history",{itemId})).toMatchObject({found:true,reviews:[{grade:1}],evidence:[{accepted:false}]});
