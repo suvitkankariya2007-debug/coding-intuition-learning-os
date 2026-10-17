@@ -24,5 +24,7 @@ jobs:
         run: bun scripts/smoke-public-platforms.mjs
       - name: Verify database migration registry
         run: node scripts/check-migration-journal.mjs
+      - name: Verify migration reconciliation runner syntax
+        run: node --check scripts/reconcile-applied-migrations.mjs
       - name: Build app
         run: bun run build
