@@ -25,7 +25,7 @@ function Dashboard() {
   const [memoryConsent,setMemoryConsent] = useState(false);
   const [leetcode, setLeetcode] = useState("suvitk");
   const [codeforces, setCodeforces] = useState("suvitkankariya2007");
-  const [githubRepo,setGithubRepo] = useState("");
+  const [githubRepo,setGithubRepo] = useState("suvitkankariya2007-debug/LeetCode-Challenge");
   const githubSync = useMutation({
     mutationFn:()=>syncPublicGitHubSolutions({data:{repository:githubRepo}}),
     onSuccess:r=>{ void qc.invalidateQueries({queryKey:["catalog"]}); toast.success(`Indexed ${r.matched} solution file(s) from ${r.scanned} GitHub entries`); },
