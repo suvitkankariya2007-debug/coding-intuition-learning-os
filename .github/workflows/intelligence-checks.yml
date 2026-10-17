@@ -22,5 +22,7 @@ jobs:
         run: bunx vitest run src/lib/evidence-intelligence.test.ts src/lib/submission-evidence.test.ts src/lib/mcp-core.test.ts src/lib/github-evidence.test.ts src/test/rules.test.ts
       - name: Verify real public platform API contracts
         run: bun scripts/smoke-public-platforms.mjs
+      - name: Verify database migration registry
+        run: node scripts/check-migration-journal.mjs
       - name: Build app
         run: bun run build
