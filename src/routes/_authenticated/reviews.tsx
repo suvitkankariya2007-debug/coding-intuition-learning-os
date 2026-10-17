@@ -5,7 +5,7 @@ import { useState } from "react";
 import { MISTAKE_CLASSES, HINT_STAGES } from "@/lib/learning-diagnosis";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogQuery, type CatalogRow } from "@/lib/data";
-import { review, todayISO } from "@/lib/srs";
+import { todayISO } from "@/lib/srs";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/reviews")({
@@ -47,21 +47,14 @@ function ReviewCard({ row }: { row: CatalogRow }) {
   const [mistakeClass,setMistakeClass] = useState("");
   const [hintStage,setHintStage] = useState("none");
   const [confidence,setConfidence] = useState(3);
-  const { user } = Route.useRouteContext();
   const m = useMutation({
     mutationFn: async (grade: number) => {
-      const p = row.progress;
-      const today = todayISO();
-      const next = review({ ease: Number(p?.ease ?? 2.5), interval_days: p?.interval_days ?? 0, repetitions: p?.repetitions ?? 0 }, grade, today);
-      const { error } = await supabase.from("item_progress").upsert(
-        { user_id: user.id, item_id: row.id, ...next, last_reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-          status: p?.status && p.status !== "not_started" ? p.status : "attempted" },
-        { onConflict: "user_id,item_id" },
-      );
-      if (error) throw error;
-      const log = await supabase.from("review_log").insert({ user_id: user.id, item_id: row.id, grade, next_due: next.due_date, mistake_class:mistakeClass || null, hint_stage:hintStage, confidence });
-      if (log.error) throw log.error;
-      return next.due_date;
+      const {data:nextDue,error} = await supabase.rpc("record_learning_review",{
+        p_item_id:row.id,p_grade:grade,p_mistake_class:mistakeClass||null,
+        p_hint_stage:hintStage,p_confidence:confidence
+      });
+      if(error)throw error;
+      return nextDue;
     },
     onSuccess: (d) => { toast.success(`Next review ${d}`); qc.invalidateQueries({ queryKey: ["catalog"] }); },
     onError: (e) => toast.error(e.message),
