@@ -10,6 +10,7 @@ import { syncPublicGitHubSolutions } from "@/lib/github-sync";
 import { syncConsentedMemories } from "@/lib/supermemory-sync";
 import { runUnifiedSync } from "@/lib/sync-orchestrator";
 import { createLearningArchive, saveLearningArchive } from "@/lib/learning-export";
+import { makeRestorePlan } from "@/lib/learning-restore";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogBanner } from "@/components/CatalogBanner";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,15 @@ function Dashboard() {
     },
     onError: err => toast.error(err.message),
   });
+  async function inspectArchive(file:File) {
+    if(file.size>20*1024*1024){toast.error("Archive exceeds the 20 MB review limit");return;}
+    try{
+      const parsed:unknown=JSON.parse(await file.text());
+      const result=makeRestorePlan(parsed);
+      if(!result.ok){toast.error(result.errors.slice(0,3).join("; "));return;}
+      toast.success(`Archive valid: ${result.counts.curriculum_items} curriculum rows, ${result.counts.review_log} reviews. No data changed.`);
+    }catch(e){toast.error(e instanceof Error?e.message:"Could not inspect the archive");}
+  }
   const exportData=useMutation({
     mutationFn:createLearningArchive,
     onSuccess:data=>{saveLearningArchive(data);toast.success("Your complete learning archive is ready");},
@@ -175,6 +185,9 @@ function Dashboard() {
         <h2 className="text-lg font-semibold">Own your learning data</h2>
         <p className="mt-1 text-sm text-muted-foreground">Export the full roadmap, archived entries, progress, reflections, evidence, preferences and memory history as versioned JSON. No changes are made to the database.</p>
         <Button className="mt-3" variant="outline" disabled={exportData.isPending} onClick={()=>exportData.mutate()}>{exportData.isPending?"Preparing archive...":"Export all learning data"}</Button>
+        <label className="mt-4 block text-sm">Verify an existing backup (dry run only)
+          <input className="mt-2 block text-sm" type="file" accept=".json,application/json" onChange={e=>{const file=e.target.files?.[0];if(file)void inspectArchive(file);e.target.value="";}}/>
+        </label>
       </section>
       <section className="mt-8 rounded-lg border p-4" aria-label="Supermemory learning context">
         <h2 className="text-lg font-semibold">Optional cross-session memory</h2>
