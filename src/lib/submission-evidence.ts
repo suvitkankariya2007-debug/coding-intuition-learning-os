@@ -11,7 +11,7 @@ export type LeetCodeSubmission = {
 };
 export type ProblemIndex = ReadonlyMap<string, string>;
 const iso = (value: number) => Number.isFinite(value) && value > 0 ? new Date(value).toISOString() : null;
-export const cleanCurriculumTitle = (s: string) => s.replace(/^\\s*\\d{1,4}\\.\\s+/, "").replace(/\\s+(?:⭐|NEW|\\(unmarked\\))\\s*$/i, "").trim();
+export const cleanCurriculumTitle = (s: string) => s.replace(/^[0-9]{1,4}[.] +/, "").replace(/ +(?:⭐|NEW|[(]unmarked[)]) *$/i, "").trim();
 export const normalizedTitle = (s: string) => cleanCurriculumTitle(s).toLowerCase().normalize("NFKC").replace(/[^a-z0-9]+/g, "");
 export function indexTitles(items: { id: string; title: string }[]): Map<string, string> {
   const seen = new Map<string, string>();
