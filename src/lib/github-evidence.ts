@@ -16,7 +16,7 @@ export function indexPublicSolutions(
  for(const f of entries.slice(0,4000)){
    if(f.type!=="blob" || !f.path || !extension.test(f.path)) continue;
    const base=f.path.split("/").pop()!.replace(extension,"");
-   const itemId=names.get(normalizedTitle(base.replace(/^\\d{1,6}[-_ ]+/, "")));
+   const itemId=names.get(normalizedTitle(base.replace(/^[0-9]{1,6}[-_ ]+/, "")));
    if(!itemId || visited.has(`${itemId}:${f.path}`)) continue;
    visited.add(`${itemId}:${f.path}`);
    const path=f.path.split("/").map(encodeURIComponent).join("/");
