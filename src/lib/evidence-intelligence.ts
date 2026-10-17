@@ -25,6 +25,9 @@ export type LearningItem = {
   attemptCount?: number;
   status?: "not_started" | "attempted" | "solved" | "mastered";
   priority?: number;
+  mistakeClass?: string | null;
+  hintStage?: "none" | "gentle" | "deeper" | "solution" | null;
+  confidence?: number | null;
 };
 export type Recommendation = {
   itemId: string;
@@ -77,6 +80,9 @@ export function recommendDSA(
     let score = 0;
     if (isDue) { score += 55 + Math.min(daysOverdue, 20); reason.push(daysOverdue ? `Review overdue by ${daysOverdue} day(s)` : "Review due now"); }
     if (weakRecall) { score += 30; reason.push("Previous recall was difficult"); }
+    if(item.mistakeClass && weakRecall) { score += 14; reason.push(`Revisit reasoning error: ${item.mistakeClass.replaceAll("-", " ")}`); }
+    if(item.hintStage && item.hintStage !== "none" && !solved) { score += 8; reason.push("Needed hints in the previous review"); }
+    if(item.confidence != null && item.confidence <= 2 && !solved) { score += 8; reason.push("Low confidence in independent reasoning"); }
     if (rejected) { score += Math.min(rejected, 5) * 6; reason.push(`${rejected} observed non-accepted submission(s)`); }
     if (attempted && !solved) { score += 18; reason.push("Attempted but no verified acceptance recorded"); }
     if (!attempted && !solved) { score += options.mode === "contest" ? 0 : 10; reason.push("New curriculum problem"); }
