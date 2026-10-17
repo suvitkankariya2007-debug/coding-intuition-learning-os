@@ -40,7 +40,18 @@ function ImportPage() {
 
   async function commit() {
     if (!entries?.length) return;
-    if (data.items.some((i) => i.progress) && !confirm("Replacing the catalog deletes your existing progress and notes. Continue?")) return;
+    if (entries.length !== EXPECTED) {
+      toast.error("Import blocked: the canonical roadmap must contain exactly 188 entries.");
+      return;
+    }
+    // IMPORTANT: curriculum_items deletion cascades to item_progress and review_log.
+    // Do not permit a browser-side delete/reinsert operation against an existing catalog.
+    // Replacement requires an audited, transactional server-side reconciliation that
+    // preserves item IDs and dependent progress/review records.
+    if (data.items.length > 0) {
+      toast.error("Safe replacement required: existing catalog and progress have been preserved. Use the audited reconciliation workflow.");
+      return;
+    }
     setBusy(true);
     try {
       const del = await supabase.from("curriculum_items").delete().eq("user_id", user.id);
@@ -113,7 +124,7 @@ function ImportPage() {
                 ))}</tbody>
               </table>
             </div>
-            <Button onClick={commit} disabled={busy || !entries.length}>Save {entries.length} entries to my catalog</Button>
+            <Button onClick={commit} disabled={busy || entries?.length !== EXPECTED || data.items.length > 0}>Save {entries.length} entries to my catalog</Button>
           </>
         )}
       </section>
