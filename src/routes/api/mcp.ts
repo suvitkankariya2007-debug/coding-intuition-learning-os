@@ -3,9 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { recommendDSA, LEARNING_MODES, type LearningMode, type Evidence, type LearningItem } from "@/lib/evidence-intelligence";
 import { respondToMcp, type ToolData } from "@/lib/mcp-core";
 import { findLearningMemories } from "@/lib/supermemory-search";
+import {rankWithReasoning} from "@/lib/reasoning-ranking";
+import {type LearningEventInput,type LearningEventRecord,type LearningEventKind} from "@/lib/learning-events";
+import type {ConceptKey,ConceptProblem} from "@/lib/concept-graph";
 import type { Database } from "@/integrations/supabase/types";
 
-async function authorizedData(request:Request):Promise<(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>> {
+type AuthHandlers={loadData:(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>;recordEvent:(event:LearningEventInput)=>Promise<unknown>};
+async function authorizedData(request:Request):Promise<AuthHandlers> {
   const tokenHeader=request.headers.get("Authorization") ?? "";
   if (!tokenHeader.startsWith("Bearer ")) throw new Error("unauthorized");
   const token=tokenHeader.slice(7);
@@ -19,15 +23,32 @@ async function authorizedData(request:Request):Promise<(toolName?:string,args?:R
   });
   const {data:auth,error}=await supabase.auth.getUser(token);
   if (error || !auth.user) throw new Error("unauthorized");
-  return async(toolName,args)=>{
-    const [catalog,progress,reviews,evidence,preferences]=await Promise.all([
+  const recordEvent=async (event:LearningEventInput)=>{
+    if(event.itemId){
+      const {data:item,error}=await supabase.from("curriculum_items").select("id").eq("id",event.itemId).eq("user_id",auth.user.id).eq("is_active",true).maybeSingle();
+      if(error||!item)throw Error("Roadmap item unavailable");
+    }
+    // Ignore repeat event IDs: a timeout/retry must not double-count a reasoning session.
+    // PostgreSQL RLS also enforces ownership and append-only updates.
+    const {data:inserted,error}=await supabase.from("learning_events").upsert({
+      user_id:auth.user.id,client_event_id:event.clientEventId,item_id:event.itemId,
+      problem_ref:event.problemRef,kind:event.kind,summary:event.summary,concept_keys:event.conceptKeys,
+      mistake_class:event.mistakeClass,hint_stage:event.hintStage,confidence:event.confidence,
+      independently_explained:event.independentlyExplained,origin:event.origin
+    },{onConflict:"user_id,client_event_id",ignoreDuplicates:true}).select("id").maybeSingle();
+    if(error)throw Error("Unable to store learning observation");
+    return {stored:true,duplicate:!inserted,clientEventId:event.clientEventId,provenance:"self_report_not_accepted_submission"};
+  };
+  const loadData=async(toolName?:string,args?:Record<string,unknown>):Promise<ToolData>=>{
+    const [catalog,progress,reviews,evidence,preferences,events]=await Promise.all([
       supabase.from("curriculum_items").select("id,title,topic,position,idea").eq("is_active",true).order("position").limit(1000),
       supabase.from("item_progress").select("item_id,status,due_date").limit(1000),
       supabase.from("review_log").select("item_id,grade,reviewed_at,mistake_class,hint_stage,confidence").order("reviewed_at",{ascending:false}).limit(2000),
       supabase.from("platform_evidence").select("item_id,source,observed_at,provenance_id,verdict,accepted").limit(2000),
-      supabase.from("coaching_preferences").select("prefs").maybeSingle()
+      supabase.from("coaching_preferences").select("prefs").maybeSingle(),
+      supabase.from("learning_events").select("client_event_id,item_id,problem_ref,kind,summary,concept_keys,mistake_class,hint_stage,confidence,independently_explained,origin,recorded_at").order("recorded_at",{ascending:false}).limit(2000)
     ]);
-    if(catalog.error||progress.error||reviews.error||evidence.error||preferences.error) throw new Error("query failure");
+    if(catalog.error||progress.error||reviews.error||evidence.error||preferences.error||events.error) throw new Error("query failure");
     const byProgress=new Map(progress.data.map(p=>[p.item_id,p]));
     const byGrade=new Map<string,number>();
     for (const r of reviews.data) if(!byGrade.has(r.item_id)) byGrade.set(r.item_id,r.grade);
@@ -51,10 +72,22 @@ async function authorizedData(request:Request):Promise<(toolName?:string,args?:R
     const mode:LearningMode=LEARNING_MODES.includes(saved as LearningMode) ? saved as LearningMode : "interview";
     const memorySearch=toolName==="get_memory_patterns" && typeof args?.query==="string"
       ? await findLearningMemories(auth.user.id,args.query) : undefined;
+    const learningEvents:LearningEventRecord[]=events.data.map(e=>({
+      clientEventId:e.client_event_id,itemId:e.item_id,problemRef:e.problem_ref,
+      kind:e.kind as LearningEventKind,summary:e.summary,conceptKeys:e.concept_keys as ConceptKey[],
+      mistakeClass:e.mistake_class,hintStage:e.hint_stage,confidence:e.confidence,
+      independentlyExplained:e.independently_explained,origin:e.origin as "chatgpt"|"app",
+      recordedAt:e.recorded_at
+    }));
+    const conceptsRoadmap:ConceptProblem[]=catalog.data.map(i=>({
+      itemId:i.id,title:i.title,topic:i.topic??"Uncategorized",idea:i.idea,position:i.position,
+      status:byProgress.get(i.id)?.status??"not_started"
+    }));
     const day=new Date().toISOString().slice(0,10);
     return {
-      recommendations:recommendDSA(items,records,{now:new Date().toISOString(),limit:5,mode}),
+      recommendations:rankWithReasoning(recommendDSA(items,records,{now:new Date().toISOString(),limit:50,mode}),conceptsRoadmap,learningEvents).slice(0,5),
       memorySearch,
+      learningEvents,
       due:catalog.data.flatMap(i=>{
         const dueDate=byProgress.get(i.id)?.due_date;
         return dueDate && dueDate<=day?[{itemId:i.id,title:i.title,dueDate}]:[];
@@ -69,6 +102,7 @@ async function authorizedData(request:Request):Promise<(toolName?:string,args?:R
         accepted:e.accepted,verdict:e.verdict}))
     };
   };
+  return {loadData,recordEvent};
 }
 export const Route=createFileRoute("/api/mcp")({
   server:{handlers:{
@@ -83,9 +117,9 @@ export const Route=createFileRoute("/api/mcp")({
       if(raw.length>32768) return new Response("Request too large",{status:413});
       let payload:unknown;
       try{payload=JSON.parse(raw);}catch{return Response.json({jsonrpc:"2.0",id:null,error:{code:-32700,message:"Parse error"}},{status:400});}
-      let loadData:(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>;
-      try{loadData=await authorizedData(request);}catch{return Response.json({error:"Unauthorized"},{status:401,headers:{"WWW-Authenticate":'Bearer realm="coding-intuition"'}});}
-      const result=await respondToMcp(payload,loadData);
+      let handlers:AuthHandlers;
+      try{handlers=await authorizedData(request);}catch{return Response.json({error:"Unauthorized"},{status:401,headers:{"WWW-Authenticate":'Bearer realm="coding-intuition"'}});}
+      const result=await respondToMcp(payload,handlers.loadData,handlers.recordEvent);
       if(result===null)return new Response(null,{status:202});
       return Response.json(result,{headers:{"Cache-Control":"no-store","MCP-Protocol-Version":"2025-06-18"}});
     },
