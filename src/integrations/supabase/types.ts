@@ -186,6 +186,12 @@ export type Database = {
           },
         ]
       }
+      learning_events: {
+        Row: { id:string; user_id:string; client_event_id:string; item_id:string|null; problem_ref:string|null; kind:string; summary:string; concept_keys:string[]; mistake_class:string|null; hint_stage:string|null; confidence:number|null; independently_explained:boolean|null; origin:string; recorded_at:string }
+        Insert: { id?:string; user_id?:string; client_event_id:string; item_id?:string|null; problem_ref?:string|null; kind:string; summary:string; concept_keys?:string[]; mistake_class?:string|null; hint_stage?:string|null; confidence?:number|null; independently_explained?:boolean|null; origin:string; recorded_at?:string }
+        Update: { id?:string; user_id?:string; client_event_id?:string; item_id?:string|null; problem_ref?:string|null; kind?:string; summary?:string; concept_keys?:string[]; mistake_class?:string|null; hint_stage?:string|null; confidence?:number|null; independently_explained?:boolean|null; origin?:string; recorded_at?:string }
+        Relationships: [{foreignKeyName:"learning_events_item_id_fkey";columns:["item_id"];isOneToOne:false;referencedRelation:"curriculum_items";referencedColumns:["id"]}]
+      }
       memory_outbox: {
         Row: {
           consent: boolean
