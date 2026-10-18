@@ -108,7 +108,7 @@ export class LearnerStore extends DurableObject<Env> {
               const r=parsed.record;assertItem(r.itemId);
               if(!Number.isInteger(r.grade)||r.grade<0||r.grade>5||!Number.isFinite(Date.parse(r.reviewedAt)))throw Error('Invalid review document');
               const key='review:'+await sha256(parsed.clientEventId);
-              const previous=await this.ctx.storage.get<any>(key);
+              const previous=staged[key] as any ?? await this.ctx.storage.get<any>(key);
               if(previous?.status!=='stored') {
                 state.reviews.push({itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt});
                 const history=state.reviews.filter(x=>x.itemId===r.itemId).sort((a,b)=>a.reviewedAt.localeCompare(b.reviewedAt));

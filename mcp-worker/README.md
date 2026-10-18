@@ -31,10 +31,10 @@ From this directory:
 
 ```sh
 npm ci --no-audit --no-fund
-npm run check
-npm run build
-npm test
+npm run verify:local
 ```
+
+This command checks TypeScript, creates a dry-run bundle, then runs the local runtime tests. It does not deploy, create hosting resources, register an OAuth client, or use live Supermemory credits. Dependency installation needs registry access; verification uses installed dependencies and a simulated upstream. Run this command after source edits so integration tests use a fresh bundle.
 
 The integration suite runs the actual Worker bundle in workerd/Miniflare with a simulated upstream Supermemory. It tests consent cookies, wrong accounts, PKCE, code replay, scope enforcement, refresh, namespace isolation, bounded requests, query caching, concurrent retries, recommendations, review schedules and reconciliation. It does **not** establish a live user authorization or a successful ChatGPT Go call.
 
@@ -70,5 +70,7 @@ The preparation script registers a public PKCE client with Supermemory and reuse
 Keep Supermemory OAuth. Public LeetCode/Codeforces/GitHub reads need no additional account login. GitHub write access is needed only during code maintenance. Lovable, Vercel, Supabase, Railway, Google Drive, Notion, Gmail, LinkedIn and a paid model API are not runtime dependencies of this MCP. This is a dependency review, not permission to uninstall or delete those apps or their data.
 
 ## Release status
+
+Deployment is paused at the user's request. Finish local implementation and verification without continuing hosting sign-in, creating KV resources, running the deployment preparation script, or publishing the Worker. A real endpoint and live account verification require a later deployment decision.
 
 Implementation and local protocol verification are separate from deployment. Hosting authentication, live Supermemory OAuth, and the final ChatGPT Go tool call remain release gates until observed. No public MCP URL is claimed ready by this source alone.

@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 const base='https://learning.example',redirect='https://chatgpt.com/connector_platform_oauth_redirect';
 const verifier='v'.repeat(64),challenge=createHash('sha256').update(verifier).digest('base64url');
 let mf:Miniflare,clientId:string,token:string,refreshToken:string;
-let owner='owner-fixture',writes=0,searches=0,refreshes=0;
+let owner='owner-fixture',writes=0,searches=0,refreshes=0,failNextWrite=false;
 const documents:any[]=[];
 const cookies=(r:Response)=>r.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');
 async function req(path:string,init:RequestInit={}){return mf.dispatchFetch(base+path,{...init,redirect:'manual'} as any);}
@@ -51,7 +51,7 @@ beforeAll(async()=>{
     else {
       if(args.namespace!=='leetcode_problems')throw Error('Cross-space request');
       if(name==='search_memory'){searches++;data={namespace:'leetcode_problems',results:[{id:'memory-1',text:'Start with gentle hints.',similarity:0.9}]};}
-      else if(name==='add_memory'){writes++;const id='doc-'+writes;documents.push({id,content:args.content,updatedAt:new Date().toISOString()});data={success:true,namespace:'leetcode_problems',id};}
+      else if(name==='add_memory'){writes++;const id='doc-'+writes;documents.push({id,content:args.content,updatedAt:new Date().toISOString()});if(failNextWrite){failNextWrite=false;return new Response('Response lost after storage',{status:503});}data={success:true,namespace:'leetcode_problems',id};}
       else if(name==='list_documents')data={documents:documents.slice((args.page-1)*3,args.page*3),pagination:{totalPages:Math.ceil(documents.length/3)}};
       else if(name==='get_document')data={namespace:'leetcode_problems',document:{...documents.find(x=>x.id===args.documentId),contentTruncated:false}};
       else throw Error('Unexpected upstream tool '+name);
@@ -80,6 +80,30 @@ describe('OAuth and authenticated MCP in the Workers runtime',()=>{
  it('uses the recorded weakness and memory context in recommendations',async()=>{const r=await rpc('get_recommendations');const data=JSON.parse(r.body.result.content[0].text);expect(data.memoryContext.items[0].content).toContain('gentle');expect(data.recommendations.some((x:any)=>x.reason.some((s:string)=>s.includes('weak technique')))).toBe(true);});
  it('saves a recall grade without marking the problem accepted',async()=>{const r=await rpc('record_review',{itemId:'18800000-0000-5000-8000-000000000001',grade:2,clientEventId:'review-0001'});expect(r.body.result.isError).toBe(false);expect(JSON.parse(r.body.result.content[0].text).nextDue).toMatch(/^\d{4}-\d{2}-\d{2}$/);const report=await rpc('get_progress_report');expect(JSON.parse(report.body.result.content[0].text).byStatus.solved).toBe(0);});
  it('reconciles memory without duplicating events or grades',async()=>{const r=await rpc('refresh_learning_memory',{});expect(r.body.result.isError).toBe(false);const signals=await rpc('get_learning_signals');expect(JSON.parse(signals.body.result.content[0].text).eventCount).toBe(1);});
+ it('reconciles an ambiguous write before retrying without creating another memory',async()=>{
+   const args={clientEventId:'ambiguous-0001',problemRef:'lc:98',kind:'mistake',summary:'I forgot to carry ancestor bounds when validating this subtree.',conceptKeys:['dfs'],origin:'chatgpt'};
+   failNextWrite=true;const before=writes;
+   expect((await rpc('record_reasoning_event',args)).body.result.isError).toBe(true);
+   const pending=await rpc('record_reasoning_event',args);
+   expect(JSON.parse(pending.body.result.content[0].text).status).toBe('pending');
+   expect(writes-before).toBe(1);
+   expect((await rpc('refresh_learning_memory',{page:1})).body.result.isError).toBe(false);
+   const recovered=await rpc('record_reasoning_event',args);
+   expect(JSON.parse(recovered.body.result.content[0].text).status).toBe('stored');
+   expect(writes-before).toBe(1);
+   expect((await rpc('record_reasoning_event',{...args,summary:'A different observation with the same event identifier.'})).body.result.isError).toBe(true);
+ });
+ it('restores a duplicated review only once within the same memory page',async()=>{
+   while(documents.length%3)documents.push({id:'padding-'+documents.length,content:'Unstructured context',updatedAt:new Date().toISOString()});
+   const page=documents.length/3+1;
+   const content=JSON.stringify({format:'coding-intuition-review-v1',clientEventId:'restored-review-0001',record:{itemId:'18800000-0000-5000-8000-000000000001',grade:4,reviewedAt:'2026-10-18T12:00:00Z'}});
+   for(let i=0;i<2;i++)documents.push({id:'duplicated-review-'+i,content,updatedAt:new Date().toISOString()});
+   const restored=await rpc('refresh_learning_memory',{page});
+   expect(restored.body.result.isError).toBe(false);
+   expect(JSON.parse(restored.body.result.content[0].text).restored).toBe(1);
+   const repeated=await rpc('refresh_learning_memory',{page});
+   expect(JSON.parse(repeated.body.result.content[0].text).restored).toBe(0);
+ });
  it('refreshes upstream tokens and rotates downstream refresh tokens',async()=>{const before=refreshes;const r=await req('/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',client_id:clientId,refresh_token:refreshToken,resource:base+'/mcp'}).toString()});expect(r.status).toBe(200);const next=await r.json() as any;expect(next.refresh_token).not.toBe(refreshToken);expect(refreshes).toBeGreaterThan(before);token=next.access_token;});
  it('enforces read-only scope on writes',async()=>{const a=await authorize('learning:read');const u=new URL(a.done.headers.get('Location')!);const r=await exchange(u.searchParams.get('code')!);const read=(await r.json() as any).access_token;const call=await rpc('record_review',{itemId:'18800000-0000-5000-8000-000000000001',grade:5,clientEventId:'review-0002'},read);expect(call.body.result.isError).toBe(true);expect(call.body.result._meta['mcp/www_authenticate'][0]).toContain('insufficient_scope');});
  it('rejects authorization-code replay and revokes the compromised grant',async()=>{const a=await authorize();const code=new URL(a.done.headers.get('Location')!).searchParams.get('code')!;const first=await exchange(code);expect(first.status).toBe(200);const compromised=(await first.json() as any).access_token;expect((await exchange(code)).status).toBe(400);expect((await rpc('get_roadmap',{},compromised)).response.status).toBe(401);});
