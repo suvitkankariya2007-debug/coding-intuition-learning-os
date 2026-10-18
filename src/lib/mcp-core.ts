@@ -2,6 +2,8 @@ import { progressiveHint } from "./progressive-coaching";
 import { proposeTransferProblem } from "./transfer-intelligence";
 import { diagnoseWeaknesses } from "./learning-diagnosis";
 import type { Recommendation } from "./evidence-intelligence";
+import {connectUnfamiliarProblems,type ConceptProblem} from "./concept-graph";
+import {parseLearningEvent,deriveLearningSignals,type LearningEventInput,type LearningEventRecord} from "./learning-events";
 
 type JsonId = string | number | null;
 export type McpRequest = { jsonrpc:"2.0"; id?:JsonId; method:string; params?:unknown };
@@ -21,6 +23,7 @@ export type ToolData = {
   reviews?:ReviewRecord[];
   evidence?:EvidenceRecord[];
   memorySearch?: { namespace:string; query:string; items:{id:string;content:string;score:number}[];cache:"hit"|"miss";interpretation:"context_only_not_mastery" };
+  learningEvents?:LearningEventRecord[];
 };
 
 type ToolSpec={name:string;description:string;inputSchema:{type:"object";properties:Record<string,unknown>;additionalProperties:false;required?:string[]}};
@@ -34,6 +37,9 @@ const tools:ToolSpec[] = [
   {name:"get_transfer_problem",description:"Suggest an unfamiliar problem in the same topic, excluding solved problems.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
   {name:"get_progressive_hint",description:"Return one grounded level of guided reasoning for a curriculum problem, without exposing code.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"},level:{type:"integer",minimum:1,maximum:3}},required:["itemId","level"],additionalProperties:false}},
   {name:"get_memory_patterns",description:"Search recorded Supermemory learning hints in the approved leetcode_problems namespace; returned memories are context, never proof of mastery.",inputSchema:{type:"object",properties:{query:{type:"string",minLength:3,maxLength:250}},required:["query"],additionalProperties:false}},
+  {name:"get_concept_connections",description:"Recommend unfamiliar linked curriculum problems with a contrast question; metadata is heuristic, not proof of mastery.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
+  {name:"get_learning_signals",description:"Show the authenticated user's explicit recorded reasoning weaknesses, hint usage and self-reported insights.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
+  {name:"record_reasoning_event",description:"Save a brief user-approved structured reasoning observation during tutoring. Do not record full chat transcripts, raw copyrighted problems, code, passwords or secrets. Never claims acceptance or mastery.",inputSchema:{type:"object",properties:{clientEventId:{type:"string",minLength:8,maxLength:100},itemId:{type:"string",format:"uuid"},problemRef:{type:"string"},kind:{type:"string",enum:["problem_attempt","reasoning_insight","mistake","approach_comparison","transfer_attempt","recall_check"]},summary:{type:"string",minLength:10,maxLength:700},conceptKeys:{type:"array",items:{type:"string"},maxItems:6},mistakeClass:{type:"string"},hintStage:{type:"string"},confidence:{type:"integer",minimum:1,maximum:5},independentlyExplained:{type:"boolean"},origin:{type:"string",enum:["chatgpt","app"]}},required:["clientEventId","kind","summary","origin"],additionalProperties:false}},
   {name:"get_source_status",description:"Count stored evidence per coding source and report the latest observed timestamp; does not claim a live connection.",inputSchema:{type:"object",properties:{},additionalProperties:false}}
 ];
 const success=(id:JsonId,result:unknown)=>({jsonrpc:"2.0" as const,id,result});
@@ -43,9 +49,10 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 function validateArgs(name:string,raw:unknown):Record<string,unknown>|null{
  const a=raw===undefined?{}:asObject(raw);
  if(!a)return null;
- const allowed=name==="get_roadmap"?["offset","limit","topic"]:["get_problem_history","get_transfer_problem"].includes(name)?["itemId"]:name==="get_progressive_hint"?["itemId","level"]:name==="get_memory_patterns"?["query"]:[];
+ if(name==="record_reasoning_event"){try{return parseLearningEvent(a) as unknown as Record<string,unknown>;}catch{return null;}}
+ const allowed=name==="get_roadmap"?["offset","limit","topic"]:["get_problem_history","get_transfer_problem","get_concept_connections"].includes(name)?["itemId"]:name==="get_progressive_hint"?["itemId","level"]:name==="get_memory_patterns"?["query"]:[];
  if(Object.keys(a).some(k=>!allowed.includes(k)))return null;
- if(["get_problem_history","get_transfer_problem","get_progressive_hint"].includes(name) && (typeof a.itemId!=="string" || !uuid.test(a.itemId)))return null;
+ if(["get_problem_history","get_transfer_problem","get_concept_connections","get_progressive_hint"].includes(name) && (typeof a.itemId!=="string" || !uuid.test(a.itemId)))return null;
  if(name==="get_progressive_hint" && (![1,2,3].includes(Number(a.level)) || !Number.isInteger(a.level)))return null;
  if(name==="get_memory_patterns" && (typeof a.query!=="string" || a.query.trim().length<3 || a.query.length>250))return null;
  if(name==="get_roadmap"){
@@ -94,6 +101,13 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
    if(!data.memorySearch||data.memorySearch.query!==String(a.query).trim())throw Error("Memory search unavailable");
    return data.memorySearch;
  }
+ if(name==="get_learning_signals")return deriveLearningSignals(data.learningEvents??[]);
+ if(name==="get_concept_connections"){
+  const source=roadmap.find(x=>x.itemId===a.itemId);
+  if(!source)return {found:false,reason:"Unknown curriculum problem"};
+  const converted:ConceptProblem[]=roadmap.map(p=>({itemId:p.itemId,title:p.title,topic:p.topic,position:p.position,status:p.status,idea:p.idea}));
+  return {found:true,itemId:source.itemId,connections:connectUnfamiliarProblems(converted.find(x=>x.itemId===source.itemId)!,converted,5)};
+ }
  if(name==="get_source_status"){
    const sources=["leetcode","codeforces","github"];
    return sources.map(source=>{
@@ -104,7 +118,7 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
  }
  throw new Error("Unsupported tool");
 }
-export async function respondToMcp(input:unknown,loadData:(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>){
+export async function respondToMcp(input:unknown,loadData:(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>,recordEvent?:(event:LearningEventInput)=>Promise<unknown>){
  const m=asObject(input);
  if(!m)return failure(null,-32600,"Invalid Request");
  const id:JsonId=(typeof m.id==="string"||typeof m.id==="number"||m.id===null)?m.id as JsonId:null;
@@ -120,6 +134,11 @@ export async function respondToMcp(input:unknown,loadData:(toolName?:string,args
  const args=validateArgs(p.name,p.arguments);
  if(!args)return failure(id,-32602,"Invalid tool arguments");
  try{
+   if(p.name==="record_reasoning_event"){
+    if(!recordEvent)throw Error("Learning event storage unavailable");
+    const receipt=await recordEvent(parseLearningEvent(args));
+    return success(id,{content:[{type:"text",text:JSON.stringify(receipt)}],isError:false});
+   }
    const data=await loadData(p.name,args);
    return success(id,{content:[{type:"text",text:JSON.stringify(invoke(p.name,args,data))}],isError:false});
  }catch{
