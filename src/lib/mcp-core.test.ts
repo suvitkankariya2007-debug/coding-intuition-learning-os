@@ -41,7 +41,7 @@ describe("Unified MCP tool contracts",()=>{
  it("lists every unified read tool",async()=>{
    const r=await respondToMcp({jsonrpc:"2.0",id:2,method:"tools/list"},supplied) as {result:{tools:{name:string}[]}};
    expect(r.result.tools.map(t=>t.name)).toEqual([
-     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","diagnose_weaknesses","get_transfer_problem","get_progressive_hint","get_source_status"
+     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","diagnose_weaknesses","get_transfer_problem","get_progressive_hint","get_memory_patterns","get_source_status"
    ]);
  });
  it("returns canonical roadmap and stable pagination",async()=>{
@@ -66,6 +66,21 @@ describe("Unified MCP tool contracts",()=>{
    const invalid=await call("get_progressive_hint",{itemId,level:4});
    expect(invalid).toHaveProperty("error.code",-32602);
  });
+ it("queries Supermemory lazily and labels returned hints as non-mastery evidence",async()=>{
+    const loader=vi.fn(async (toolName?:string,args?:Record<string,unknown>)=>({
+      ...(await supplied()),
+      memorySearch:toolName==="get_memory_patterns"?{
+        namespace:"leetcode_problems",query:String(args?.query),
+        items:[{id:"m1",content:"Use backward traversal for in-place merge",score:0.81}],
+        cache:"miss" as const,interpretation:"context_only_not_mastery" as const
+      }:undefined
+    }));
+    const reply=await respondToMcp({jsonrpc:"2.0",id:5,method:"tools/call",params:{name:"get_memory_patterns",arguments:{query:"merge arrays"}}},loader) as {result:{content:{text:string}[]}};
+    expect(JSON.parse(reply.result.content[0].text)).toMatchObject({namespace:"leetcode_problems",interpretation:"context_only_not_mastery",items:[{id:"m1",score:0.81}]});
+    expect(loader).toHaveBeenCalledWith("get_memory_patterns",{query:"merge arrays"});
+    const invalid=await respondToMcp({jsonrpc:"2.0",id:6,method:"tools/call",params:{name:"get_memory_patterns",arguments:{query:"a"}}},loader);
+    expect(invalid).toHaveProperty("error.code",-32602);
+  });
  it("isolates problem history to a valid item id",async()=>{
    expect(await value("get_problem_history",{itemId})).toMatchObject({found:true,reviews:[{grade:1}],evidence:[{accepted:false}]});
    expect(await value("get_problem_history",{itemId:"22222222-2222-4222-8222-222222222222"})).toMatchObject({found:false});
