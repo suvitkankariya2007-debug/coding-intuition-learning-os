@@ -1,5 +1,12 @@
 import {memoryCache,validateMemorySearchResponse,type MemoryMatch} from "./memory-cache";
 const EXACT_NAMESPACE="leetcode_problems";
+const SEARCH_LIMIT=5;
+/** Targeted retrieval only. Full-space scans are never triggered by recommendation requests. */
+export function normalizeLearningQuery(raw:string):string{
+ const query=raw.trim().replace(/\s+/g," ");
+ if(query.length<3||query.length>250)throw Error("Invalid memory search query");
+ return query;
+}
 export type MemoryPatternResult={
  namespace:typeof EXACT_NAMESPACE;
  query:string; items:MemoryMatch[];cache:"hit"|"miss";
@@ -10,13 +17,12 @@ export async function findLearningMemories(userId:string,query:string):Promise<M
  const key=process.env.SUPERMEMORY_API_KEY;
  if(!key)throw Error("Supermemory search unavailable: missing API key");
  if(process.env.SUPERMEMORY_NAMESPACE!==EXACT_NAMESPACE)throw Error("Supermemory namespace mismatch");
- const trimmed=query.trim();
- if(trimmed.length<3||trimmed.length>250)throw Error("Invalid memory search query");
+ const trimmed=normalizeLearningQuery(query);
  const value=await memoryCache.get(userId,trimmed,async()=>{
    const response=await fetch("https://api.supermemory.ai/ns/leetcode_problems/search",{
      method:"POST",
      headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},
-     body:JSON.stringify({query:trimmed,searchMode:"memories",limit:5,threshold:0.3,
+     body:JSON.stringify({query:trimmed,searchMode:"memories",limit:SEARCH_LIMIT,threshold:0.3,
        filter:{field:"userId",operator:"eq",value:userId}}),
      signal:AbortSignal.timeout(12000)
    });
