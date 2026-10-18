@@ -1,0 +1,18 @@
+import {inferCurriculumConcepts,type ConceptProblem} from "./concept-graph";
+import {deriveLearningSignals,type LearningEventRecord} from "./learning-events";
+import type {Recommendation} from "./evidence-intelligence";
+/** Ranks SRS work using learner-reported weak techniques, never fabricated accepted verdicts. */
+export function rankWithReasoning(base:Recommendation[],roadmap:ConceptProblem[],events:LearningEventRecord[]):Recommendation[]{
+ const weaknesses=new Map(deriveLearningSignals(events).weakConcepts.map(x=>[x.concept,x.count]));
+ if(!weaknesses.size)return base;
+ const items=new Map(roadmap.map(p=>[p.itemId,p]));
+ return base.map(rec=>{
+  const p=items.get(rec.itemId);
+  if(!p)return rec;
+  const relevant=inferCurriculumConcepts(p).filter(k=>weaknesses.has(k));
+  if(!relevant.length)return rec;
+  const weight=Math.min(35,relevant.reduce((sum,k)=>sum+Math.min(12,(weaknesses.get(k)??0)*6),0));
+  return {...rec,score:rec.score+weight,reason:[...rec.reason,
+   "Practice transfer of learner-reported weak technique(s): "+relevant.join(", ")+" (self-report, not verified mastery)"]};
+ }).sort((a,b)=>b.score-a.score||a.itemId.localeCompare(b.itemId));
+}
