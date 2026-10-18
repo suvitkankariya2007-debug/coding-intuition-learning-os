@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { memoryCache } from "@/lib/memory-cache";
 
 /** User-triggered delivery only. Never read or send memories outside leetcode_problems. */
 export const syncConsentedMemories = createServerFn({method:"POST"})
@@ -44,5 +45,6 @@ export const syncConsentedMemories = createServerFn({method:"POST"})
           .eq("id",row.id).eq("user_id",userId);
       }
     }
+    if(sent>0)memoryCache.invalidate(userId);
     return {sent, pending:data.length - sent, errors};
   });
