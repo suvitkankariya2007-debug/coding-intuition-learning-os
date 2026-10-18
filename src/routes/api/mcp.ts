@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { recommendDSA, LEARNING_MODES, type LearningMode, type Evidence, type LearningItem } from "@/lib/evidence-intelligence";
 import { respondToMcp, type ToolData } from "@/lib/mcp-core";
+import { findLearningMemories } from "@/lib/supermemory-search";
 import type { Database } from "@/integrations/supabase/types";
 
-async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
+async function authorizedData(request:Request):Promise<(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>> {
   const tokenHeader=request.headers.get("Authorization") ?? "";
   if (!tokenHeader.startsWith("Bearer ")) throw new Error("unauthorized");
   const token=tokenHeader.slice(7);
@@ -18,7 +19,7 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
   });
   const {data:auth,error}=await supabase.auth.getUser(token);
   if (error || !auth.user) throw new Error("unauthorized");
-  return async()=>{
+  return async(toolName,args)=>{
     const [catalog,progress,reviews,evidence,preferences]=await Promise.all([
       supabase.from("curriculum_items").select("id,title,topic,position,idea").eq("is_active",true).order("position").limit(1000),
       supabase.from("item_progress").select("item_id,status,due_date").limit(1000),
@@ -48,9 +49,12 @@ async function authorizedData(request:Request):Promise<()=>Promise<ToolData>> {
         provenanceId:e.provenance_id,accepted:e.accepted,verdict:e.verdict}));
     const saved=preferences.data?.prefs && typeof preferences.data.prefs==="object" && !Array.isArray(preferences.data.prefs) ? preferences.data.prefs.learning_mode : null;
     const mode:LearningMode=LEARNING_MODES.includes(saved as LearningMode) ? saved as LearningMode : "interview";
+    const memorySearch=toolName==="get_memory_patterns" && typeof args?.query==="string"
+      ? await findLearningMemories(auth.user.id,args.query) : undefined;
     const day=new Date().toISOString().slice(0,10);
     return {
       recommendations:recommendDSA(items,records,{now:new Date().toISOString(),limit:5,mode}),
+      memorySearch,
       due:catalog.data.flatMap(i=>{
         const dueDate=byProgress.get(i.id)?.due_date;
         return dueDate && dueDate<=day?[{itemId:i.id,title:i.title,dueDate}]:[];
@@ -79,7 +83,7 @@ export const Route=createFileRoute("/api/mcp")({
       if(raw.length>32768) return new Response("Request too large",{status:413});
       let payload:unknown;
       try{payload=JSON.parse(raw);}catch{return Response.json({jsonrpc:"2.0",id:null,error:{code:-32700,message:"Parse error"}},{status:400});}
-      let loadData:()=>Promise<ToolData>;
+      let loadData:(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>;
       try{loadData=await authorizedData(request);}catch{return Response.json({error:"Unauthorized"},{status:401,headers:{"WWW-Authenticate":'Bearer realm="coding-intuition"'}});}
       const result=await respondToMcp(payload,loadData);
       if(result===null)return new Response(null,{status:202});
