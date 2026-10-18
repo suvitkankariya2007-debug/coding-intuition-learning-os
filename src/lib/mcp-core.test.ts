@@ -2,11 +2,13 @@ import {describe,expect,it,vi} from "vitest";
 import {respondToMcp} from "./mcp-core";
 const data=()=>Promise.resolve({recommendations:[{itemId:"a",title:"BST",score:30,reason:["Review due now"],evidence:{accepted:0,rejected:0,codeFiles:0,latestAt:null}}],due:[{itemId:"a",title:"BST",dueDate:"2026-10-17"}]});
 describe("MCP protocol security contract",()=>{
- it("negotiates and exposes only read-only tools",async()=>{
+ it("negotiates and exposes one bounded reasoning event writer",async()=>{
   const init=await respondToMcp({jsonrpc:"2.0",id:1,method:"initialize"},data);
   expect(init).toHaveProperty("result.protocolVersion","2025-06-18");
   const result=await respondToMcp({jsonrpc:"2.0",id:2,method:"tools/list"},data);
-  expect(JSON.stringify(result)).not.toMatch(/write|delete|execute_sql|sync_/);
+  const names=(result as {result:{tools:{name:string}[]}}).result.tools.map(t=>t.name);
+  expect(names.filter(n=>n.startsWith("record_"))).toEqual(["record_reasoning_event"]);
+  expect(names).not.toContain("delete_account");
  });
  it("never loads data for unknown tool names",async()=>{
   const loader=vi.fn(data);
@@ -41,7 +43,7 @@ describe("Unified MCP tool contracts",()=>{
  it("lists every unified read tool",async()=>{
    const r=await respondToMcp({jsonrpc:"2.0",id:2,method:"tools/list"},supplied) as {result:{tools:{name:string}[]}};
    expect(r.result.tools.map(t=>t.name)).toEqual([
-     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","diagnose_weaknesses","get_transfer_problem","get_progressive_hint","get_memory_patterns","get_source_status"
+     "get_recommendations","get_due_reviews","get_roadmap","get_progress_report","get_problem_history","diagnose_weaknesses","get_transfer_problem","get_progressive_hint","get_memory_patterns","get_concept_connections","get_learning_signals","record_reasoning_event","get_source_status"
    ]);
  });
  it("returns canonical roadmap and stable pagination",async()=>{
@@ -90,5 +92,26 @@ describe("Unified MCP tool contracts",()=>{
    const r=await respondToMcp({jsonrpc:"2.0",id:8,method:"tools/call",params:{name:"get_roadmap",arguments:{limit:10000,sql:"DROP TABLE"}}},loader);
    expect(r).toHaveProperty("error.code",-32602);
    expect(loader).not.toHaveBeenCalled();
+ });
+});
+
+describe("bounded MCP learning event writes",()=>{
+ const event={clientEventId:"chatgpt:20261018:bst-1",problemRef:"lc:98",kind:"mistake",summary:"I forgot ancestor bounds and compared only immediate BST children.",conceptKeys:["dfs"],mistakeClass:"invariant",hintStage:"deeper",confidence:2,independentlyExplained:false,origin:"chatgpt"};
+ it("only calls the authenticated event hook with normalized reasoning",async()=>{
+  const save=vi.fn(async(_x:unknown)=>({stored:true,duplicate:false}));
+  const load=vi.fn(data);
+  const response=await respondToMcp({jsonrpc:"2.0",id:19,method:"tools/call",params:{name:"record_reasoning_event",arguments:event}},load,save);
+  expect(response).toHaveProperty("result.isError",false);
+  expect(save).toHaveBeenCalledOnce();
+  expect(save.mock.calls[0][0]).toMatchObject({problemRef:"lc:98",kind:"mistake",origin:"chatgpt"});
+  expect(load).not.toHaveBeenCalled();
+ });
+ it("refuses secrets, malformed events and missing persistence",async()=>{
+  const save=vi.fn(async(_x:unknown)=>({stored:true})),load=vi.fn(data);
+  const invalid=await respondToMcp({jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"record_reasoning_event",arguments:{...event,password:"secret"}}},load,save);
+  expect(invalid).toHaveProperty("error.code",-32602);
+  expect(save).not.toHaveBeenCalled();
+  const unsupported=await respondToMcp({jsonrpc:"2.0",id:2,method:"tools/call",params:{name:"record_reasoning_event",arguments:event}},load);
+  expect(unsupported).toHaveProperty("error.code",-32603);
  });
 });
