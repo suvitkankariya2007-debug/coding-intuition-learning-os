@@ -20,6 +20,7 @@ export type ToolData = {
   roadmap?:RoadmapProblem[];
   reviews?:ReviewRecord[];
   evidence?:EvidenceRecord[];
+  memorySearch?: { namespace:string; query:string; items:{id:string;content:string;score:number}[];cache:"hit"|"miss";interpretation:"context_only_not_mastery" };
 };
 
 type ToolSpec={name:string;description:string;inputSchema:{type:"object";properties:Record<string,unknown>;additionalProperties:false;required?:string[]}};
@@ -32,6 +33,7 @@ const tools:ToolSpec[] = [
   {name:"diagnose_weaknesses",description:"Identify recurring learner-reported reasoning difficulties and provide specific corrective exercises.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
   {name:"get_transfer_problem",description:"Suggest an unfamiliar problem in the same topic, excluding solved problems.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
   {name:"get_progressive_hint",description:"Return one grounded level of guided reasoning for a curriculum problem, without exposing code.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"},level:{type:"integer",minimum:1,maximum:3}},required:["itemId","level"],additionalProperties:false}},
+  {name:"get_memory_patterns",description:"Search recorded Supermemory learning hints in the approved leetcode_problems namespace; returned memories are context, never proof of mastery.",inputSchema:{type:"object",properties:{query:{type:"string",minLength:3,maxLength:250}},required:["query"],additionalProperties:false}},
   {name:"get_source_status",description:"Count stored evidence per coding source and report the latest observed timestamp; does not claim a live connection.",inputSchema:{type:"object",properties:{},additionalProperties:false}}
 ];
 const success=(id:JsonId,result:unknown)=>({jsonrpc:"2.0" as const,id,result});
@@ -41,10 +43,11 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 function validateArgs(name:string,raw:unknown):Record<string,unknown>|null{
  const a=raw===undefined?{}:asObject(raw);
  if(!a)return null;
- const allowed=name==="get_roadmap"?["offset","limit","topic"]:["get_problem_history","get_transfer_problem"].includes(name)?["itemId"]:name==="get_progressive_hint"?["itemId","level"]:[];
+ const allowed=name==="get_roadmap"?["offset","limit","topic"]:["get_problem_history","get_transfer_problem"].includes(name)?["itemId"]:name==="get_progressive_hint"?["itemId","level"]:name==="get_memory_patterns"?["query"]:[];
  if(Object.keys(a).some(k=>!allowed.includes(k)))return null;
  if(["get_problem_history","get_transfer_problem","get_progressive_hint"].includes(name) && (typeof a.itemId!=="string" || !uuid.test(a.itemId)))return null;
  if(name==="get_progressive_hint" && (![1,2,3].includes(Number(a.level)) || !Number.isInteger(a.level)))return null;
+ if(name==="get_memory_patterns" && (typeof a.query!=="string" || a.query.trim().length<3 || a.query.length>250))return null;
  if(name==="get_roadmap"){
    if(a.offset!==undefined && (!Number.isInteger(a.offset)||Number(a.offset)<0||Number(a.offset)>1000))return null;
    if(a.limit!==undefined && (!Number.isInteger(a.limit)||Number(a.limit)<1||Number(a.limit)>50))return null;
@@ -87,6 +90,10 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
    if(!row)return {found:false,reason:"Unknown curriculum item"};
    return {found:true,itemId:row.itemId,...progressiveHint({title:row.title,topic:row.topic,idea:row.idea??null,level:a.level as 1|2|3})};
  }
+ if(name==="get_memory_patterns"){
+   if(!data.memorySearch||data.memorySearch.query!==String(a.query).trim())throw Error("Memory search unavailable");
+   return data.memorySearch;
+ }
  if(name==="get_source_status"){
    const sources=["leetcode","codeforces","github"];
    return sources.map(source=>{
@@ -97,7 +104,7 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
  }
  throw new Error("Unsupported tool");
 }
-export async function respondToMcp(input:unknown,loadData:()=>Promise<ToolData>){
+export async function respondToMcp(input:unknown,loadData:(toolName?:string,args?:Record<string,unknown>)=>Promise<ToolData>){
  const m=asObject(input);
  if(!m)return failure(null,-32600,"Invalid Request");
  const id:JsonId=(typeof m.id==="string"||typeof m.id==="number"||m.id===null)?m.id as JsonId:null;
@@ -113,7 +120,7 @@ export async function respondToMcp(input:unknown,loadData:()=>Promise<ToolData>)
  const args=validateArgs(p.name,p.arguments);
  if(!args)return failure(id,-32602,"Invalid tool arguments");
  try{
-   const data=await loadData();
+   const data=await loadData(p.name,args);
    return success(id,{content:[{type:"text",text:JSON.stringify(invoke(p.name,args,data))}],isError:false});
  }catch{
    return failure(id,-32603,"Learning data temporarily unavailable");
