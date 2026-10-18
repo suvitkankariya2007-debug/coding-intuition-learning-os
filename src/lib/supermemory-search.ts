@@ -16,7 +16,7 @@ export async function findLearningMemories(userId:string,query:string):Promise<M
    const response=await fetch("https://api.supermemory.ai/ns/leetcode_problems/search",{
      method:"POST",
      headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},
-     body:JSON.stringify({query:trimmed,searchMode:"memories",limit:5,threshold:0.3}),
+     body:JSON.stringify({query:trimmed,searchMode:"memories",limit:5,threshold:0.3,\n       filter:{field:"userId",operator:"eq",value:userId}}),
      signal:AbortSignal.timeout(12000)
    });
    if(!response.ok)throw Error(`Supermemory search returned HTTP ${response.status}`);
