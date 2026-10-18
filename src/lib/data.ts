@@ -31,7 +31,7 @@ async function fetchCatalog() {
   };
 }
 
-export const catalogQuery = queryOptions({ queryKey: ["catalog"], queryFn: fetchCatalog });
+export const catalogQuery = queryOptions({ queryKey: ["catalog"], queryFn: fetchCatalog, staleTime: 15_000, gcTime: 120_000, refetchOnWindowFocus: true });
 export type CatalogData = Awaited<ReturnType<typeof fetchCatalog>>;
 export type CatalogRow = CatalogData["items"][number];
 
