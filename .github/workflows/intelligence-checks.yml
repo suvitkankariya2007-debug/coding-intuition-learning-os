@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: bun install --no-save
       - name: Test recommendation and roadmap logic
-        run: bunx vitest run src/lib/evidence-intelligence.test.ts src/lib/submission-evidence.test.ts src/lib/mcp-core.test.ts src/lib/github-evidence.test.ts src/lib/sync-orchestrator.test.ts src/lib/canonical-roadmap.test.ts src/lib/learning-diagnosis.test.ts src/lib/connector-registry.test.ts src/lib/transfer-intelligence.test.ts src/lib/learning-restore.test.ts src/lib/progressive-coaching.test.ts src/lib/memory-cache.test.ts src/lib/concept-graph.test.ts src/lib/learning-events.test.ts src/test/rules.test.ts
+        run: bunx vitest run src/lib/evidence-intelligence.test.ts src/lib/submission-evidence.test.ts src/lib/mcp-core.test.ts src/lib/github-evidence.test.ts src/lib/sync-orchestrator.test.ts src/lib/canonical-roadmap.test.ts src/lib/learning-diagnosis.test.ts src/lib/connector-registry.test.ts src/lib/transfer-intelligence.test.ts src/lib/learning-restore.test.ts src/lib/progressive-coaching.test.ts src/lib/memory-cache.test.ts src/lib/concept-graph.test.ts src/lib/learning-events.test.ts src/lib/reasoning-ranking.test.ts src/test/rules.test.ts
       - name: Verify real public platform API contracts
         run: bun scripts/smoke-public-platforms.mjs
       - name: Verify database migration registry
