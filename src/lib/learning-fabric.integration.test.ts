@@ -46,7 +46,7 @@ describe("end-to-end learning fabric contract (mocked external systems)",()=>{
   const save=vi.fn(async()=>({stored:true,provenance:"self_report_not_accepted_submission"}));
   const loader=vi.fn(async()=>({recommendations:[],due:[]}));
   const result=await respondToMcp({jsonrpc:"2.0",id:3,method:"tools/call",params:{name:"record_reasoning_event",
-   arguments:{clientEventId:"chatgpt:bst:002",kind:"reasoning_insight",summary:"Ancestor bounds matter more than immediate child comparisons.",origin:"chatgpt"}}},loader,save);
+   arguments:{clientEventId:"chatgpt:bst:002",problemRef:"lc:98",kind:"reasoning_insight",summary:"Ancestor bounds matter more than immediate child comparisons.",origin:"chatgpt"}}},loader,save);
   expect(result).toHaveProperty("result.isError",false);
   expect(save).toHaveBeenCalledOnce();
   expect(loader).not.toHaveBeenCalled();
