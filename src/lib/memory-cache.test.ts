@@ -10,6 +10,13 @@ describe("Supermemory caching and response fidelity",()=>{
   expect((await cache.get("u2","merge",fetcher,500)).cache).toBe("miss");
   expect(fetcher).toHaveBeenCalledTimes(2);
  });
+ it("coalesces concurrent identical lookups into one upstream call",async()=>{
+  const cache=new MemoryCache(1000);
+  const fetcher=vi.fn(async()=>sample);
+  const [a,b]=await Promise.all([cache.get("u1","merge",fetcher,100),cache.get("u1","merge",fetcher,100)]);
+  expect(a.items).toEqual(b.items);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+ });
  it("expires and never gives stale evidence on upstream failure",async()=>{
   const cache=new MemoryCache(200);
   await cache.get("u1","merge",async()=>sample,100);
