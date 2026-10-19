@@ -2,6 +2,7 @@ import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 export interface Env {
   PUBLIC_ORIGIN: string;
   MEMORY_NAMESPACE: string;
+  MEMORY_READ_NAMESPACES?: string;
   OWNER_SUPERMEMORY_ID: string;
   SUPERMEMORY_CLIENT_ID: string;
   OAUTH_KV: KVNamespace;
@@ -21,10 +22,15 @@ export const UPSTREAM = {
   mcp: 'https://mcp.supermemory.ai/mcp',
 } as const;
 export const SCOPES = ['learning:read', 'learning:write', 'offline_access'];
+export function readNamespaces(env:Env) {
+  const requested=(env.MEMORY_READ_NAMESPACES??env.MEMORY_NAMESPACE).split(',').map(s=>s.trim());
+  if(requested.some(s=>!['leetcode_problems','leetcode'].includes(s)))throw Error('Unapproved memory read space');
+  return [...new Set([env.MEMORY_NAMESPACE,...requested])];
+}
 export function origin(env: Env) {
   const u = new URL(env.PUBLIC_ORIGIN);
   if (u.origin !== env.PUBLIC_ORIGIN || u.username || u.password ||
-    (u.protocol !== 'https:' && !['localhost','127.0.0.1'].includes(u.hostname))) throw Error('Invalid public origin');
+    (u.protocol !== 'https:' && !(u.protocol==='http:' && ['localhost','127.0.0.1'].includes(u.hostname)))) throw Error('Invalid public origin');
   return u.origin;
 }
 export function assertOwner(env: Env, props: AuthProps) {

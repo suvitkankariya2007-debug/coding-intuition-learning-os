@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "coding-intuition-local-only",
+  "main": "src/tunnel.ts",
+  "compatibility_date": "2026-07-30",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": false,
+  "durable_objects": { "bindings": [{ "name": "LEARNERS", "class_name": "LearnerStore" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LearnerStore"] }]
+}

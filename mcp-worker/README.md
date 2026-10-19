@@ -2,6 +2,8 @@
 
 Standalone runtime for the existing 188-problem learning system. It reuses the repository's pure recommendation, concept-graph, progressive-hint and SRS modules. The web app and existing curriculum/progress tables are untouched.
 
+The current work targets **ChatGPT web through the existing private Secure MCP Tunnel**, following the user's successful mock-server test report. See [local setup and learning workflow](LOCAL_TUNNEL.md). No cloud deployment is required for that route. The hosted OAuth route below remains available separately; Go eligibility is not inferred from general plan documentation or guaranteed for other accounts.
+
 ## Architecture
 
 ChatGPT Go → OAuth-protected MCP → Supermemory OAuth → `leetcode_problems` → bounded semantic retrieval + incremental document reconciliation → concept/weakness ranking → practice and reviews.
@@ -18,12 +20,14 @@ Read-only permission is `learning:read`; recording needs `learning:write`. Each 
 
 ## Cost controls
 
-- No OpenAI API key, LLM API calls, embeddings service, PostgreSQL service, Lovable agent call or Vercel deployment.
+- No LLM API calls, embeddings service, PostgreSQL service, Lovable agent call or Vercel deployment.
 - Supermemory uses its normal MCP OAuth connection. Its existing account's limits still apply.
 - Targeted memory search caches at most 50 queries for five minutes. Source sync caches for ten minutes.
 - Sync reads one page of three documents; unchanged document versions do not download again. Follow `nextPage` until null. Source and memory completeness are reported explicitly.
 - No scheduled polling, cron, automatic bulk indexing, or paid deployment step. CI checks only code/build/tests.
 - The hosting account must be on its intended free plan; do not enable a paid plan or upgrade to satisfy deployment.
+
+These hosting statements describe the hosted Worker. The private tunnel route requires the existing tunnel-client's restricted OpenAI runtime key for tunnel access, not model inference. It does not require Cloudflare. Tunnel traffic, Supermemory and Go remain subject to their own limits and billing; no unlimited-use claim is made.
 
 ## Verify locally
 
@@ -34,7 +38,7 @@ npm ci --no-audit --no-fund
 npm run verify:local
 ```
 
-This command checks TypeScript, creates a dry-run bundle, then runs the local runtime tests. It does not deploy, create hosting resources, register an OAuth client, or use live Supermemory credits. Dependency installation needs registry access; verification uses installed dependencies and a simulated upstream. Run this command after source edits so integration tests use a fresh bundle.
+This command checks TypeScript and native local-script syntax, creates dry-run bundles for both entrypoints, then runs the local runtime tests. It does not deploy, create hosting resources, register an OAuth client, or use live Supermemory credits. Dependency installation needs registry access; verification uses installed dependencies and a simulated upstream. Run this command after source edits so integration tests use fresh bundles.
 
 The integration suite runs the actual Worker bundle in workerd/Miniflare with a simulated upstream Supermemory. It tests consent cookies, wrong accounts, PKCE, code replay, scope enforcement, refresh, namespace isolation, bounded requests, query caching, concurrent retries, recommendations, review schedules and reconciliation. It does **not** establish a live user authorization or a successful ChatGPT Go call.
 
@@ -71,6 +75,8 @@ Keep Supermemory OAuth. Public LeetCode/Codeforces/GitHub reads need no addition
 
 ## Release status
 
-Deployment is paused at the user's request. Finish local implementation and verification without continuing hosting sign-in, creating KV resources, running the deployment preparation script, or publishing the Worker. A real endpoint and live account verification require a later deployment decision.
+Deployment is paused at the user's request. Finish local implementation and verification without continuing hosting sign-in, creating KV resources, running the deployment preparation script, or publishing the Worker. Public endpoint publishing requires a later deployment decision; the private tunnel route does not require deployment.
+
+The private tunnel implementation can be verified on the user's laptop without cloud deployment. Its remaining live gates are Supermemory OAuth on that laptop and actual learning-tool calls through the existing tunnel. The mock-server report is account-specific evidence of tunnel read/write support; it does not establish these real-service gates.
 
 Implementation and local protocol verification are separate from deployment. Hosting authentication, live Supermemory OAuth, and the final ChatGPT Go tool call remain release gates until observed. No public MCP URL is claimed ready by this source alone.
