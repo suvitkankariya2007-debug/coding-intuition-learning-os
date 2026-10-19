@@ -2,13 +2,13 @@
 
 Standalone runtime for the existing 188-problem learning system. It reuses the repository's pure recommendation, concept-graph, progressive-hint and SRS modules. The web app and existing curriculum/progress tables are untouched.
 
-The current work targets **ChatGPT web through the existing private Secure MCP Tunnel**, following the user's successful mock-server test report. See [local setup and learning workflow](LOCAL_TUNNEL.md). No cloud deployment is required for that route. The hosted OAuth route below remains available separately; Go eligibility is not inferred from general plan documentation or guaranteed for other accounts.
+The intended finished setup is a **hosted OAuth-protected MCP Worker** with persistent per-learner storage. After it is deployed and connected, your laptop does not need to stay on. The private Secure MCP Tunnel is an optional local test path only; see [local tunnel test instructions](LOCAL_TUNNEL.md). Nothing is deployed yet. The supplied Go-account mock-server report supports testing through that account, but does not prove the live Supermemory authorization or the final learning flow.
 
 ## Architecture
 
-ChatGPT Go → OAuth-protected MCP → Supermemory OAuth → `leetcode_problems` → bounded semantic retrieval + incremental document reconciliation → concept/weakness ranking → practice and reviews.
+ChatGPT Go → hosted OAuth-protected MCP → Supermemory OAuth → `leetcode_problems` → bounded semantic retrieval + incremental document reconciliation → concept/weakness ranking → practice and reviews.
 
-Cloudflare Workers hosts the endpoint. Cloudflare's maintained OAuth provider handles PKCE, browser-bound consent, token audience, refresh, revocation, DCR and CIMD. Upstream Supermemory tokens are encrypted inside OAuth grant properties; the downstream ChatGPT token is never forwarded upstream. Only the configured Supermemory owner and `leetcode_problems` are allowed.
+Cloudflare Workers hosts the endpoint. Cloudflare's maintained OAuth provider handles PKCE, browser-bound consent, token audience, refresh, revocation, DCR and CIMD. Upstream Supermemory tokens are encrypted inside OAuth grant properties; the downstream ChatGPT token is never forwarded upstream. Only the configured Supermemory owner and `leetcode_problems` are allowed. A per-owner SQLite Durable Object keeps the durable learning ledger and bounded five-minute semantic-search cache; writes invalidate cached memory results so later retrieval sees new learning promptly.
 
 Workers KV stores authentication records. One SQLite-backed Durable Object per owner stores short-lived query caches, provider version markers, structured observation/review receipts and a minimal learning ledger. Raw chats, screenshots, source code and the full Supermemory corpus are not copied into a second database. Credentials are not stored in that ledger. Snapshot chunks and write receipts commit atomically.
 

@@ -8,6 +8,9 @@ import { fetchSource } from './platforms';
 /** Per-owner durable cache and small structured ledger; raw memory remains in Supermemory. */
 export class LearnerStore extends DurableObject<Env> {
   private tail:Promise<unknown>=Promise.resolve();
+  private async invalidateMemorySearchCache(){
+    await this.ctx.storage.delete([...((await this.ctx.storage.list({prefix:'search:'})).keys())]);
+  }
   async fetch(request: Request):Promise<Response> {
     const input=await request.json() as {action:string;props:AuthProps;args:Record<string,any>};
     try {assertOwner(this.env,input.props);}catch{return new Response('Forbidden',{status:403});}
@@ -76,7 +79,7 @@ export class LearnerStore extends DurableObject<Env> {
       if(receipt.success!==true||receipt.namespace!==props.namespace)throw Error('Memory write was not confirmed');
       const saved={status:'stored',clientEventId:e.payload.event.clientEventId,fingerprint:e.fingerprint,documentId:receipt.id??null,provenance:'learner_self_report_not_acceptance'};
       state.events.push(e.payload.event);await this.save(state,{[key]:saved});
-      await this.ctx.storage.delete([...((await this.ctx.storage.list({prefix:'search:'})).keys())]);
+      await this.invalidateMemorySearchCache();
       return saved;
     }
     if(action==='review') {
@@ -90,7 +93,7 @@ export class LearnerStore extends DurableObject<Env> {
       const memory=await withMemory(props.accessToken,call=>call('add_memory',{namespace:props.namespace,content:JSON.stringify({format:'coding-intuition-review-v1',clientEventId:args.clientEventId,record,schedule:next,provenance:'learner_recall_grade_not_acceptance'})}));
       if(memory.success!==true||memory.namespace!==props.namespace)throw Error('Memory write unconfirmed');
       state.progress[args.itemId]={...next,grade:args.grade};state.reviews.push(record);
-      const saved={status:'stored',fingerprint,nextDue:next.due_date,documentId:memory.id??null};await this.save(state,{[key]:saved});return saved;
+      const saved={status:'stored',fingerprint,nextDue:next.due_date,documentId:memory.id??null};await this.save(state,{[key]:saved});await this.invalidateMemorySearchCache();return saved;
     }
     if(action==='sync_memory') {
       const page=Number(args.page??1);if(!Number.isSafeInteger(page)||page<1||page>10000)throw Error('Invalid page');
@@ -135,6 +138,7 @@ export class LearnerStore extends DurableObject<Env> {
         return {changed,restored,page,totalPages:listed.pagination?.totalPages??null,nextPage:page<(listed.pagination?.totalPages??page)?page+1:null};
       });
       await this.save(state,staged);
+      await this.invalidateMemorySearchCache();
       return {...result,coverage:'one_document_page',historyComplete:result.page===1&&result.nextPage===null};
     }
     if(action==='sync_source') {

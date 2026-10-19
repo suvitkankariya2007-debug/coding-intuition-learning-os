@@ -1,6 +1,6 @@
-# ChatGPT web learning through a private tunnel
+# Optional local test path: ChatGPT web through a private tunnel
 
-The intended daily interface is ChatGPT web. A local background process runs the learning tools, and your existing Secure MCP Tunnel forwards tool calls to it. No Cloudflare, Vercel, Railway or public endpoint is required for this mode. The existing hosted OAuth implementation remains a separate option.
+This is an optional pre-deployment test path, not the intended always-on setup. A local background process runs the learning tools, and your existing Secure MCP Tunnel forwards tool calls to it. Your laptop must stay on only while testing this route. The intended finished setup is the hosted OAuth-protected Worker described in [README](README.md); after that is deployed, the laptop and tunnel client are not needed for normal use. Deployment remains paused until the hosted flow, objective checks and release gates pass.
 
 ## What the supplied report establishes
 
@@ -71,9 +71,9 @@ Use the binary's real path if it is not on PATH. Reuse the local environment var
 
 In ChatGPT web, select the existing tunnel, choose no OAuth for this local MCP connection, and refresh or recreate the plugin so it discovers the real learning tools. Review the tool list before use. The local server, tunnel client, internet connection and awake laptop must remain available during tool calls.
 
-## Daily learning flow
+## Learning-flow smoke test
 
-1. Start a ChatGPT web conversation and select the learning plugin. Ask for today's recommendations and due reviews. The tutor retrieves relevant memory before coaching and starts with gentle hints.
+1. Start a ChatGPT web conversation and select the learning plugin. Ask for recommendations and due reviews. The tutor retrieves relevant memory before coaching and starts with gentle hints.
 2. Solve and explain in ChatGPT. Public accepted submissions, GitHub code and self-reported understanding remain distinct evidence.
 3. After a meaningful attempt, the tutor offers a brief reasoning observation. Once approved, it calls record_reasoning_event. A learner-confirmed recall grade uses record_review.
 4. Reuse clientEventId for retries. If a write reports pending, reconcile documents with refresh_learning_memory before retrying; never generate a new ID to force a second write.

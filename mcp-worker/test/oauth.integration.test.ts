@@ -37,7 +37,9 @@ beforeAll(async()=>{
    const url=new URL(request.url);
    if(url.pathname==='/api/auth/oauth2/token'){
     const p=new URLSearchParams(await request.text());if(p.get('grant_type')==='refresh_token')refreshes++;
-    return Response.json({access_token:'upstream-access',token_type:'Bearer',expires_in:90,refresh_token:'upstream-refresh'});
+    // Keep enough lifetime after the provider callback's safety buffer to satisfy
+    // the OAuth provider's 60-second minimum token TTL under test-runner jitter.
+    return Response.json({access_token:'upstream-access',token_type:'Bearer',expires_in:120,refresh_token:'upstream-refresh'});
    }
    if(url.href==='https://mcp.supermemory.ai/mcp'){
     if(request.headers.get('Authorization')!=='Bearer upstream-access')return new Response('Wrong upstream token',{status:401});
@@ -78,7 +80,20 @@ describe('OAuth and authenticated MCP in the Workers runtime',()=>{
  it('returns the real canonical roadmap and targeted cached memory',async()=>{const roadmap=await rpc('get_roadmap',{limit:5});expect(JSON.parse(roadmap.body.result.content[0].text).total).toBe(188);const n=searches;await rpc('get_memory_patterns',{query:'hint preference'});const second=await rpc('get_memory_patterns',{query:'hint preference'});expect(JSON.parse(second.body.result.content[0].text).cache).toBe('hit');expect(searches-n).toBe(1);});
  it('records one observation across concurrent retries',async()=>{const args={clientEventId:'observed-0001',problemRef:'lc:98',kind:'mistake',summary:'I compared immediate children instead of carrying inherited bounds.',conceptKeys:['dfs'],origin:'chatgpt'};const before=writes;const [a,b]=await Promise.all([rpc('record_reasoning_event',args),rpc('record_reasoning_event',args)]);expect(a.body.result.isError).toBe(false);expect(b.body.result.isError).toBe(false);expect(writes-before).toBe(1);const signal=await rpc('get_learning_signals');expect(JSON.parse(signal.body.result.content[0].text).eventCount).toBe(1);});
  it('uses the recorded weakness and memory context in recommendations',async()=>{const r=await rpc('get_recommendations');const data=JSON.parse(r.body.result.content[0].text);expect(data.memoryContext.items[0].content).toContain('gentle');expect(data.recommendations.some((x:any)=>x.reason.some((s:string)=>s.includes('weak technique')))).toBe(true);});
- it('saves a recall grade without marking the problem accepted',async()=>{const r=await rpc('record_review',{itemId:'18800000-0000-5000-8000-000000000001',grade:2,clientEventId:'review-0001'});expect(r.body.result.isError).toBe(false);expect(JSON.parse(r.body.result.content[0].text).nextDue).toMatch(/^\d{4}-\d{2}-\d{2}$/);const report=await rpc('get_progress_report');expect(JSON.parse(report.body.result.content[0].text).byStatus.solved).toBe(0);});
+ it('saves a recall grade and refreshes memory cache without marking the problem accepted',async()=>{
+   const query='review cache freshness';
+   await rpc('get_memory_patterns',{query});
+   await rpc('get_memory_patterns',{query});
+   const searchesBeforeReview=searches;
+   const r=await rpc('record_review',{itemId:'18800000-0000-5000-8000-000000000001',grade:2,clientEventId:'review-0001'});
+   expect(r.body.result.isError).toBe(false);
+   expect(JSON.parse(r.body.result.content[0].text).nextDue).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+   const refreshed=await rpc('get_memory_patterns',{query});
+   expect(JSON.parse(refreshed.body.result.content[0].text).cache).toBe('miss');
+   expect(searches).toBe(searchesBeforeReview+1);
+   const report=await rpc('get_progress_report');
+   expect(JSON.parse(report.body.result.content[0].text).byStatus.solved).toBe(0);
+ });
  it('reconciles memory without duplicating events or grades',async()=>{const r=await rpc('refresh_learning_memory',{});expect(r.body.result.isError).toBe(false);const signals=await rpc('get_learning_signals');expect(JSON.parse(signals.body.result.content[0].text).eventCount).toBe(1);});
  it('reconciles an ambiguous write before retrying without creating another memory',async()=>{
    const args={clientEventId:'ambiguous-0001',problemRef:'lc:98',kind:'mistake',summary:'I forgot to carry ancestor bounds when validating this subtree.',conceptKeys:['dfs'],origin:'chatgpt'};
