@@ -1,6 +1,10 @@
 import {beforeAll,afterAll,describe,it,expect} from 'vitest';
 import {Miniflare} from 'miniflare';
 import {createHash} from 'node:crypto';
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';
+import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+// @ts-ignore Shared read-contract diagnostic for local and hosted entrypoints.
+import {inspectLearningClient} from '../local/doctor.mjs';
 
 const base='https://learning.example',redirect='https://chatgpt.com/connector_platform_oauth_redirect';
 const verifier='v'.repeat(64),challenge=createHash('sha256').update(verifier).digest('base64url');
@@ -78,6 +82,14 @@ describe('OAuth and authenticated MCP in the Workers runtime',()=>{
  it('rejects cross-origin requests and oversized bodies',async()=>{expect((await req('/mcp',{method:'POST',headers:{Origin:'https://evil.example',Authorization:`Bearer ${token}`}})).status).toBe(403);expect((await req('/mcp',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:'x'.repeat(33000)})).status).toBe(413);});
  it('lists tools with explicit write annotations',async()=>{const r=await req('/mcp',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})});expect(r.status).toBe(200);const body=await r.json() as any;expect(body.result.tools).toHaveLength(16);expect(body.result.tools.find((x:any)=>x.name==='record_review').annotations.readOnlyHint).toBe(false);});
  it('returns the real canonical roadmap and targeted cached memory',async()=>{const roadmap=await rpc('get_roadmap',{limit:5});expect(JSON.parse(roadmap.body.result.content[0].text).total).toBe(188);const n=searches;await rpc('get_memory_patterns',{query:'hint preference'});const second=await rpc('get_memory_patterns',{query:'hint preference'});expect(JSON.parse(second.body.result.content[0].text).cache).toBe('hit');expect(searches-n).toBe(1);});
+ it('passes the same initialized SDK read contract through hosted OAuth as the local tunnel',async()=>{
+   const client=new Client({name:'hosted-contract-test',version:'1'});
+   try{
+     await client.connect(new StreamableHTTPClientTransport(new URL(base+'/mcp'),{requestInit:{headers:{Authorization:`Bearer ${token}`}},fetch:((url:any,init:any)=>mf.dispatchFetch(String(url),init)) as any}));
+     const before=writes,report=await inspectLearningClient(client);
+     expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(16);expect(writes).toBe(before);
+   }finally{await client.close();}
+ });
  it('records one observation across concurrent retries',async()=>{const args={clientEventId:'observed-0001',problemRef:'lc:98',kind:'mistake',summary:'I compared immediate children instead of carrying inherited bounds.',conceptKeys:['dfs'],origin:'chatgpt'};const before=writes;const [a,b]=await Promise.all([rpc('record_reasoning_event',args),rpc('record_reasoning_event',args)]);expect(a.body.result.isError).toBe(false);expect(b.body.result.isError).toBe(false);expect(writes-before).toBe(1);const signal=await rpc('get_learning_signals');expect(JSON.parse(signal.body.result.content[0].text).eventCount).toBe(1);});
  it('uses the recorded weakness and memory context in recommendations',async()=>{const r=await rpc('get_recommendations');const data=JSON.parse(r.body.result.content[0].text);expect(data.memoryContext.items[0].content).toContain('gentle');expect(data.recommendations.some((x:any)=>x.reason.some((s:string)=>s.includes('weak technique')))).toBe(true);});
  it('saves a recall grade and refreshes memory cache without marking the problem accepted',async()=>{

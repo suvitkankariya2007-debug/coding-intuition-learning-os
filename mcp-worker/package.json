@@ -12,7 +12,8 @@
     "deploy": "wrangler deploy",
     "build:tunnel": "wrangler deploy --dry-run --config wrangler.tunnel.jsonc --outdir dist-tunnel",
     "memory:login": "node local/login.mjs",
-    "tunnel:serve": "node local/server.mjs"
+    "tunnel:serve": "node local/server.mjs",
+    "tunnel:doctor": "node local/doctor.mjs"
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "1.2.3",

@@ -54,7 +54,14 @@ The process refuses to start without verified, usable credentials. Once connecte
 npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID --allow-writes
 ```
 
-Stop the earlier process before restarting. Opt-in enables only brief learning observations and recall reviews; the tutor must still obtain agreement before each save. There is no delete tool or automatic bulk ingestion.
+Stop the earlier process before restarting. Opt-in enables only brief learning observations and recall reviews; the tutor must still obtain agreement before each save. There is no delete tool or automatic bulk ingestion. Learning improvements are new observations in the history, not overwrites of earlier attempts. Do not save synthetic test performance in the real learning ledger.
+
+Before testing through ChatGPT, run `npm run tunnel:doctor` in a second terminal.
+It initializes an actual SDK client, checks the real learning-tool inventory and
+calls the read tools, including bounded Supermemory retrieval, without saving
+learning observations. A local PASS does not prove the tunnel or Go connection.
+See [the complete local validation sequence](LOCAL_VALIDATION.md) for diagnosis,
+the corrected Go prompt, and the later hosted migration gates.
 
 ## Reuse the existing tunnel
 

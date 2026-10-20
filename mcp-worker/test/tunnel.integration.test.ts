@@ -3,6 +3,8 @@ import {Miniflare} from 'miniflare';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+// @ts-ignore Native local diagnostic, also exercised against the hosted runtime.
+import {diagnoseLocal,inspectLearningClient} from '../local/doctor.mjs';
 
 const base='http://127.0.0.1:8787',owner='owner-fixture';
 let mf:Miniflare,directory:string,writesEnabled=false,loggedIn=true,searches=0,memoryDown=false;
@@ -45,6 +47,31 @@ describe('private local tunnel learning runtime',()=>{
     await rpc('get_memory_patterns',{query:'previous hint preferences'});expect(searches).toBe(2);expect(touched).not.toContain('sm_project_default');
   });
   it('keeps local recommendations available during a memory outage',async()=>{memoryDown=true;const r=await rpc('get_recommendations');expect(r.body.result.isError).toBe(false);const data=JSON.parse(r.body.result.content[0].text);expect(data.memoryContext.status).toBe('unavailable');expect(data.recommendations.length).toBeGreaterThan(0);memoryDown=false;});
+  it('reports an upstream outage separately from a working local MCP connection',async()=>{
+    memoryDown=true;
+    try{
+      const report=await diagnoseLocal({fetcher:(url:any,init:any)=>mf.dispatchFetch(String(url),init)});
+      expect(report.status).toBe('PARTIAL');
+      expect(report.checks.find((c:any)=>c.check==='learning_server_identity').status).toBe('PASS');
+      expect(report.checks.find((c:any)=>c.check==='get_memory_patterns').status).toBe('FAIL');
+      expect(report.checks.find((c:any)=>c.check==='get_recommendations').status).toBe('FAIL');
+    }finally{memoryDown=false;}
+  });
+  it('initializes a real SDK client and validates all read tools without writing learning records',async()=>{
+    const report=await diagnoseLocal({fetcher:(url:any,init:any)=>mf.dispatchFetch(String(url),init)});
+    expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(16);
+    expect(report.checks.filter((c:any)=>c.status==='PASS')).toHaveLength(13);
+    expect(report.learningWritesPerformed).toBe(false);expect(documents).toHaveLength(0);
+    expect(JSON.stringify(report)).not.toContain('upstream-fixture');
+    expect(JSON.stringify(report)).not.toContain('Recent reasoning context.');
+  });
+  it('does not mistake a mock tool inventory or a dead listener for a working learning MCP',async()=>{
+    let called=false;
+    const report=await inspectLearningClient({getServerVersion:()=>({name:'Mock_MCP_E2E'}),listTools:async()=>({tools:[{name:'get_status'}]}),callTool:async()=>{called=true;}});
+    expect(report.status).toBe('FAIL');expect(called).toBe(false);
+    const offline=await diagnoseLocal({fetcher:async()=>{throw Error('fixture unavailable');}});
+    expect(offline.status).toBe('FAIL');expect(offline.stage).toBe('local_listener');
+  });
   it('requires local write opt-in, then persists one event across process restart',async()=>{
     const event={clientEventId:'tunnel-event-0001',problemRef:'lc:98',kind:'mistake',summary:'I checked immediate children instead of inherited ancestor bounds.',conceptKeys:['dfs'],origin:'chatgpt'};
     expect((await rpc('record_reasoning_event',event)).body.result.isError).toBe(true);expect(documents).toHaveLength(0);

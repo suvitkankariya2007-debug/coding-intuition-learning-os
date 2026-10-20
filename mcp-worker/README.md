@@ -31,6 +31,11 @@ These hosting statements describe the hosted Worker. The private tunnel route re
 
 ## Verify locally
 
+For the live laptop setup, `npm run tunnel:doctor` verifies the actual learning
+server identity and all 12 read tools without recording learning events. See
+[local validation](LOCAL_VALIDATION.md). An old `Mock_MCP_E2E` tool inventory in
+ChatGPT indicates the wrong or stale connection, not the learning tool contract.
+
 From this directory:
 
 ```sh
