@@ -38,3 +38,15 @@ describe('actual loopback startup',()=>{
     }finally{await mf?.dispose();await rm(directory,{recursive:true,force:true});}
   });
 });
+
+describe('login failure reporting',()=>{
+  it('reports a safe callback reason without echoing secrets or callback parameters',async()=>{
+    const secret='fixture-provider-secret';
+    const server=await startLogin('owner-fixture',{login:{begin:async()=>'',finish:async()=>{throw Error(secret);}}});
+    try{
+      const response=await fetch('http://127.0.0.1:8788/callback?code='+secret);
+      const text=await response.text();expect(response.status).toBe(400);
+      expect(text).toContain('LOCAL_STARTUP_UNKNOWN');expect(text).not.toContain(secret);
+    }finally{await new Promise<void>((resolve,reject)=>server.close((err:any)=>err?reject(err):resolve()));}
+  });
+});

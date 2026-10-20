@@ -1,3 +1,4 @@
+import { safeDiagnostic } from './diagnostics.mjs';
 import { createServer } from 'node:http';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { MemoryLogin, redirectUri } from './memory-auth.mjs';
@@ -26,7 +27,7 @@ export async function startLogin(owner,{port=8788,login=new MemoryLogin(owner)}=
         server.close();return;
       }
       send(response,404,'Not found');
-    }catch{send(response,400,'Sign-in could not complete. Check the intended account and retry from the local start page. No tokens are displayed.');}
+    }catch(error){const diagnostic=safeDiagnostic(error);console.error('Local Supermemory sign-in: '+diagnostic);send(response,400,'Sign-in could not complete. '+diagnostic+' No tokens are displayed. Retry from the local start page.');}
   });
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
   const timeout=setTimeout(()=>server.close(),15*60000);timeout.unref();server.on('close',()=>clearTimeout(timeout));
@@ -34,5 +35,5 @@ export async function startLogin(owner,{port=8788,login=new MemoryLogin(owner)}=
 }
 if(import.meta.url===new URL(process.argv[1],'file:').href){
   try{await startLogin(process.argv[2]);console.log('Open http://127.0.0.1:8788 on this laptop to sign in to Supermemory. No deployment was made.');}
-  catch{console.error('Local sign-in could not start. Supply the intended Supermemory owner ID and ensure port 8788 is free.');process.exitCode=1;}
+  catch(error){console.error('Local sign-in could not start. '+safeDiagnostic(error));process.exitCode=1;}
 }

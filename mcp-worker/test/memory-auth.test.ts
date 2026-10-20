@@ -55,3 +55,14 @@ describe('local Supermemory authorization and credential lifecycle',()=>{
     }finally{await rm(directory,{recursive:true,force:true});}
   });
 });
+
+// @ts-ignore Native JavaScript safe local diagnostics.
+import {safeDiagnostic} from '../local/diagnostics.mjs';
+describe('safe actionable startup diagnostics',()=>{
+  it('never prints provider bodies, callback URLs or arbitrary exception text',()=>{
+    const secret='fixture-secret-not-for-display';
+    for(const error of [Error(secret),Object.assign(Error(secret),{diagnosticCode:secret}),Object.assign(Error(secret),{code:'EADDRINUSE'})])expect(safeDiagnostic(error)).not.toContain(secret);
+    expect(safeDiagnostic(Error('Supermemory callback issuer is missing or unexpected.'))).toContain('LOGIN_ISSUER');
+    expect(safeDiagnostic(Object.assign(Error(secret),{diagnosticCode:'SUPERMEMORY_TOKEN_HTTP_400'}))).toContain('SUPERMEMORY_TOKEN_HTTP_400');
+  });
+});

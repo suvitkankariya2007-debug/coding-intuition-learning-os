@@ -1,3 +1,4 @@
+import { safeDiagnostic } from './diagnostics.mjs';
 import { Miniflare } from 'miniflare';
 import { join } from 'node:path';
 import { CredentialFile, MemoryCredentials } from './memory-auth.mjs';
@@ -21,5 +22,5 @@ if(import.meta.url===new URL(process.argv[1],'file:').href){
     const mf=await startLocal({owner,allowWrites:args.includes('--allow-writes')});
     console.log('Private MCP ready at http://127.0.0.1:8787/mcp. Run the existing tunnel-client separately. Writes '+(args.includes('--allow-writes')?'enabled':'disabled')+'. No deployment was made.');
     for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>mf.dispose().then(()=>process.exit(0)));
-  }catch{console.error('Local MCP could not start. Verify dependencies, run memory:login with the intended owner, and ensure port 8787 is free.');process.exitCode=1;}
+  }catch(error){console.error('Local MCP could not start. '+safeDiagnostic(error));process.exitCode=1;}
 }

@@ -122,3 +122,29 @@ OAuth, refresh the existing ChatGPT connection to the hosted HTTPS endpoint,
 repeat the same tool tests, reconcile learning state, and finally stop the local
 processes and verify a fresh-chat read. Do not reuse no-auth local settings for
 the public server. No laptop-off or deployment-readiness claim is made now.
+
+
+## Startup troubleshooting after an update
+
+Stop the old MCP and local login processes with Ctrl+C. In the existing checkout,
+fetch and switch to feature/evidence-intelligence-layer, then pull with --ff-only.
+Run npm run verify:local from mcp-worker once; this includes both dry-run builds
+and creates dist-tunnel/tunnel.js. It does not deploy. No dependency reinstall is
+needed when package-lock.json is unchanged and node_modules is already installed.
+
+Run npm run memory:login -- YOUR_SUPERMEMORY_USER_ID. Open the fresh start page
+http://127.0.0.1:8788, not an old /callback address. On failure the updated local
+page and terminal show an allowlisted diagnostic code. Share that code only;
+never share the callback URL, credential file, or provider response body. A
+LOGIN_ISSUER failure needs provider compatibility investigation; retrying with
+another account or removing issuer checks is not a fix. LOGIN_ACCOUNT means
+that the browser signed in to a different account; LOGIN_SPACE means the account
+does not expose the required space. OAuth HTTP codes identify registration vs
+token exchange failures without exposing their contents.
+
+After the success page, start npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID
+--allow-writes. In a separate terminal run npm run tunnel:doctor. Only after PASS,
+restart the installed tunnel-client with the existing coding-intuition-local
+profile and existing tunnel ID. Run its doctor before run. Refresh the existing
+ChatGPT connection and open a fresh Go chat; expect 18 learning tools. Keep the
+MCP server and tunnel client running. Do not save synthetic reasoning or reviews.

@@ -32,8 +32,10 @@ export class CredentialFile {
   }
 }
 export async function requestJson(url,init={},fetcher=fetch){
-  const response=await fetcher(url,{...init,redirect:'manual',signal:AbortSignal.timeout(15000)});
-  if(!response.ok)throw Error('Supermemory request failed; check account login and provider availability.');
+  let response;
+  try{response=await fetcher(url,{...init,redirect:'manual',signal:AbortSignal.timeout(15000)});}
+  catch{throw Object.assign(Error('Supermemory OAuth network request failed.'),{diagnosticCode:'SUPERMEMORY_NETWORK'});}
+  if(!response.ok){const stage=url===endpoints.register?'REGISTER':'TOKEN';throw Object.assign(Error('Supermemory OAuth request rejected.'),{diagnosticCode:`SUPERMEMORY_${stage}_HTTP_${response.status}`});}
   return response.json();
 }
 export async function memoryIdentity(accessToken){
@@ -50,7 +52,8 @@ export async function memoryIdentity(accessToken){
       return result.structuredContent??fallback;
     };
     return {who:await call('who_am_i'),spaces:await call('list_spaces')};
-  }finally{await client.close().catch(()=>{});}
+  }catch{throw Error('Supermemory identity check failed.');}
+  finally{await client.close().catch(()=>{});}
 }
 export function tokenProps(data,previous={}){
   if(typeof data.access_token!=='string'||data.access_token.length<1||String(data.token_type).toLowerCase()!=='bearer'||!Number.isFinite(data.expires_in)||data.expires_in<60)throw Error('Invalid Supermemory token response.');
@@ -78,10 +81,12 @@ export class MemoryLogin {
     const pending=this.pending,received=url.searchParams.get('state')??'';
     if(!pending||pending.expires<this.now()||received.length!==pending.state.length||!timingSafeEqual(Buffer.from(received),Buffer.from(pending.state)))throw Error('Invalid or expired login state. Start again.');
     this.pending=null;
-    if(url.searchParams.has('error')||url.searchParams.get('iss')!==endpoints.issuer||!url.searchParams.get('code'))throw Error('Supermemory authorization was cancelled or invalid.');
+    if(url.searchParams.has('error')||!url.searchParams.get('code'))throw Error('Supermemory authorization was cancelled or invalid.');
+    if(url.searchParams.get('iss')!==endpoints.issuer)throw Error('Supermemory callback issuer is missing or unexpected.');
     const data=await requestJson(endpoints.token,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',client_id:pending.clientId,code:url.searchParams.get('code'),redirect_uri:redirectUri,code_verifier:pending.verifier,resource:endpoints.mcp})},this.fetcher);
     const tokens=tokenProps(data),identity=await this.identity(tokens.accessToken);
-    if(identity.who?.userId!==this.owner||!identity.spaces?.spaces?.some(s=>s.namespace==='leetcode_problems'))throw Error('Wrong account or missing leetcode_problems space. No tokens saved.');
+    if(identity.who?.userId!==this.owner)throw Error('Wrong Supermemory account. No tokens saved.');
+    if(!identity.spaces?.spaces?.some(s=>s.namespace==='leetcode_problems'))throw Error('Missing leetcode_problems space. No tokens saved.');
     await this.file.save({owner:this.owner,clientId:pending.clientId,props:{...tokens,userId:this.owner,namespace:'leetcode_problems'}});
     return {ownerVerified:true,primarySpaceVerified:true};
   }
