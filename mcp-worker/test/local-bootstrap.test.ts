@@ -16,6 +16,7 @@ describe('actual loopback startup',()=>{
     try{
       expect(server.address().address).toBe('127.0.0.1');
       const response=await fetch('http://127.0.0.1:8788');expect(response.status).toBe(200);
+      expect(response.headers.get('Referrer-Policy')).toBe('same-origin');
       const page=await response.text();expect(page).toContain('Continue to Supermemory');
       const csrf=page.match(/name="csrf" value="([^"]+)"/)![1];
       const bad=await fetch('http://127.0.0.1:8788/start',{method:'POST',headers:{Origin:'https://attacker.example'},body:new URLSearchParams({csrf})});expect(bad.status).toBe(403);expect(started).toBe(0);

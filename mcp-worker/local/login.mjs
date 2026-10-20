@@ -5,7 +5,9 @@ import { MemoryLogin, redirectUri } from './memory-auth.mjs';
 export async function startLogin(owner,{port=8788,login=new MemoryLogin(owner)}={}){
   if(port!==8788)throw Error('The registered local callback uses port 8788.');
   const csrf=randomBytes(32).toString('hex'),base=new URL(redirectUri).origin;
-  const send=(response,status,body,headers={})=>{response.writeHead(status,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",...headers});response.end(body);};
+  // no-referrer makes browser form POSTs send Origin: null, failing our strict check.
+  // same-origin preserves local form origins without leaking referrers to Supermemory.
+  const send=(response,status,body,headers={})=>{response.writeHead(status,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",...headers});response.end(body);};
   const server=createServer(async(request,response)=>{
     if(request.headers.host!=='127.0.0.1:8788'){send(response,403,'Unexpected host');return;}
     const url=new URL(request.url,base);
