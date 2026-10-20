@@ -8,7 +8,7 @@ import {parseLearningEvent,deriveLearningSignals,type LearningEventInput,type Le
 type JsonId = string | number | null;
 export type McpRequest = { jsonrpc:"2.0"; id?:JsonId; method:string; params?:unknown };
 export type RoadmapProblem = {
-  itemId:string; title:string; topic:string; position:number; status:string; dueDate:string|null; idea?:string|null
+  itemId:string; title:string; topic:string; position:number; status:string; dueDate:string|null; idea?:string|null;problemRef?:string;origin?:string
 };
 export type ReviewRecord = {
   itemId:string; grade:number; reviewedAt:string; mistakeClass?:string|null; hintStage?:string|null; confidence?:number|null
@@ -36,7 +36,7 @@ const tools:ToolSpec[] = [
   {name:"diagnose_weaknesses",description:"Identify recurring learner-reported reasoning difficulties and provide specific corrective exercises.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
   {name:"get_transfer_problem",description:"Suggest an unfamiliar problem in the same topic, excluding solved problems.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
   {name:"get_progressive_hint",description:"Return one grounded level of guided reasoning for a curriculum problem, without exposing code.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"},level:{type:"integer",minimum:1,maximum:3}},required:["itemId","level"],additionalProperties:false}},
-  {name:"get_memory_patterns",description:"Search recorded Supermemory learning hints in the approved leetcode_problems namespace; returned memories are context, never proof of mastery.",inputSchema:{type:"object",properties:{query:{type:"string",minLength:3,maxLength:250}},required:["query"],additionalProperties:false}},
+  {name:"get_memory_patterns",description:"Search fresh learning preferences and notes in explicitly configured DSA Supermemory spaces. Use refresh after externally added notes; memories are context, never proof of mastery.",inputSchema:{type:"object",properties:{query:{type:"string",minLength:3,maxLength:250},refresh:{type:"boolean",description:"Bypass the five-minute cache to retrieve newly added memory now."}},required:["query"],additionalProperties:false}},
   {name:"get_concept_connections",description:"Recommend unfamiliar linked curriculum problems with a contrast question; metadata is heuristic, not proof of mastery.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
   {name:"get_learning_signals",description:"Show the authenticated user's explicit recorded reasoning weaknesses, hint usage and self-reported insights.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
   {name:"record_reasoning_event",description:"Save a brief user-approved structured reasoning observation during tutoring. Do not record full chat transcripts, raw copyrighted problems, code, passwords or secrets. Never claims acceptance or mastery.",inputSchema:{type:"object",properties:{clientEventId:{type:"string",minLength:8,maxLength:100},itemId:{type:"string",format:"uuid"},problemRef:{type:"string"},kind:{type:"string",enum:["problem_attempt","reasoning_insight","mistake","approach_comparison","transfer_attempt","recall_check"]},summary:{type:"string",minLength:10,maxLength:700},conceptKeys:{type:"array",items:{type:"string"},maxItems:6},mistakeClass:{type:"string"},hintStage:{type:"string"},confidence:{type:"integer",minimum:1,maximum:5},independentlyExplained:{type:"boolean"},origin:{type:"string",enum:["chatgpt","app"]}},required:["clientEventId","kind","summary","origin"],additionalProperties:false}},
@@ -50,11 +50,12 @@ function validateArgs(name:string,raw:unknown):Record<string,unknown>|null{
  const a=raw===undefined?{}:asObject(raw);
  if(!a)return null;
  if(name==="record_reasoning_event"){try{return parseLearningEvent(a) as unknown as Record<string,unknown>;}catch{return null;}}
- const allowed=name==="get_roadmap"?["offset","limit","topic"]:["get_problem_history","get_transfer_problem","get_concept_connections"].includes(name)?["itemId"]:name==="get_progressive_hint"?["itemId","level"]:name==="get_memory_patterns"?["query"]:[];
+ const allowed=name==="get_roadmap"?["offset","limit","topic"]:["get_problem_history","get_transfer_problem","get_concept_connections"].includes(name)?["itemId"]:name==="get_progressive_hint"?["itemId","level"]:name==="get_memory_patterns"?["query","refresh"]:[];
  if(Object.keys(a).some(k=>!allowed.includes(k)))return null;
  if(["get_problem_history","get_transfer_problem","get_concept_connections","get_progressive_hint"].includes(name) && (typeof a.itemId!=="string" || !uuid.test(a.itemId)))return null;
  if(name==="get_progressive_hint" && (![1,2,3].includes(Number(a.level)) || !Number.isInteger(a.level)))return null;
  if(name==="get_memory_patterns" && (typeof a.query!=="string" || a.query.trim().length<3 || a.query.length>250))return null;
+ if(name==="get_memory_patterns" && a.refresh!==undefined && typeof a.refresh!=="boolean")return null;
  if(name==="get_roadmap"){
    if(a.offset!==undefined && (!Number.isInteger(a.offset)||Number(a.offset)<0||Number(a.offset)>1000))return null;
    if(a.limit!==undefined && (!Number.isInteger(a.limit)||Number(a.limit)<1||Number(a.limit)>50))return null;
@@ -69,21 +70,22 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
  if(name==="get_recommendations")return data.recommendations.slice(0,5);
  if(name==="get_due_reviews")return data.due.slice(0,20);
  if(name==="get_roadmap"){
-   const subset=(typeof a.topic==="string"&&a.topic.trim()?roadmap.filter(x=>x.topic.toLowerCase()===String(a.topic).trim().toLowerCase()):roadmap);
+   const canonical=roadmap.filter(x=>!x.origin||x.origin==='curriculum');
+   const subset=(typeof a.topic==="string"&&a.topic.trim()?canonical.filter(x=>x.topic.toLowerCase()===String(a.topic).trim().toLowerCase()):canonical);
    const offset=Number(a.offset??0),limit=Number(a.limit??25);
    return {total:subset.length,offset,limit,items:subset.slice(offset,offset+limit)};
  }
  if(name==="get_progress_report"){
    const byStatus:Record<string,number>={not_started:0,attempted:0,solved:0,mastered:0};
    for(const row of roadmap)byStatus[row.status]=(byStatus[row.status]??0)+1;
-   return {curriculumCount:roadmap.length,byStatus,reviewCount:reviews.length, evidenceCount:evidence.length,dueCount:data.due.length};
+   return {curriculumCount:roadmap.filter(x=>!x.origin||x.origin==='curriculum').length,trackedProblemCount:roadmap.length,byStatus,reviewCount:reviews.length, evidenceCount:evidence.length,dueCount:data.due.length};
  }
  if(name==="get_problem_history"){
    const itemId=String(a.itemId);
    const problem=roadmap.find(x=>x.itemId===itemId);
    if(!problem)return {found:false,itemId};
    return {found:true,problem,reviews:reviews.filter(x=>x.itemId===itemId).slice(0,25),
-     evidence:evidence.filter(x=>x.itemId===itemId).slice(0,50)};
+     evidence:evidence.filter(x=>x.itemId===itemId).slice(0,50),learningEvents:(data.learningEvents??[]).filter(e=>e.itemId===itemId||problem.problemRef&&e.problemRef===problem.problemRef).slice(-25)};
  }
  if(name==="diagnose_weaknesses")return diagnoseWeaknesses(reviews.map(r=>({itemId:r.itemId,reviewedAt:r.reviewedAt,grade:r.grade,mistakeClass:r.mistakeClass??null,hintStage:r.hintStage??null,confidence:r.confidence??null})));
  if(name==="get_transfer_problem"){
@@ -95,7 +97,7 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
  if(name==="get_progressive_hint"){
    const row=roadmap.find(x=>x.itemId===a.itemId);
    if(!row)return {found:false,reason:"Unknown curriculum item"};
-   return {found:true,itemId:row.itemId,...progressiveHint({title:row.title,topic:row.topic,idea:row.idea??null,level:a.level as 1|2|3})};
+   return {found:true,itemId:row.itemId,grounding:row.origin&&row.origin!=='curriculum'?'external_metadata_only_verify_against_problem_and_code':'curriculum_metadata',...progressiveHint({title:row.title,topic:row.topic,idea:row.idea??null,level:a.level as 1|2|3})};
  }
  if(name==="get_memory_patterns"){
    if(!data.memorySearch||data.memorySearch.query!==String(a.query).trim())throw Error("Memory search unavailable");
@@ -145,3 +147,4 @@ export async function respondToMcp(input:unknown,loadData:(toolName?:string,args
    return failure(id,-32603,"Learning data temporarily unavailable");
  }
 }
+

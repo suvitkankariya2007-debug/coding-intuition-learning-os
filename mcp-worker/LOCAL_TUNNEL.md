@@ -20,7 +20,7 @@ OAuth discovery returning 404 was consistent with that mock server; it was not a
 | Local persistent ledger | Structured events, revision schedules, source evidence and idempotency receipts |
 | LeetCode Codeforces GitHub | On-demand public evidence; partial coverage is reported |
 
-Unrelated spaces are excluded. The server never copies every chat or treats free-form memory as verified acceptance or mastery. The ledger is necessary for exact schedules and duplicate prevention; Supermemory provides semantic context and stored recovery envelopes.
+Unrelated spaces are excluded by default; additional DSA read spaces require an explicit configured allowlist. The server never copies every chat or treats free-form memory as verified acceptance or mastery. The ledger is necessary for exact schedules and duplicate prevention; Supermemory provides semantic context and stored recovery envelopes.
 
 ## Authentication boundaries
 
@@ -77,6 +77,8 @@ tunnel-client run --profile coding-intuition-local
 Use the binary's real path if it is not on PATH. Reuse the local environment variable references for tunnel ID and runtime key; never paste actual keys into chat or command arguments. Only run the intended profile for a tunnel while testing; stop the mock client first so it cannot receive learning requests.
 
 In ChatGPT web, select the existing tunnel, choose no OAuth for this local MCP connection, and refresh or recreate the plugin so it discovers the real learning tools. Review the tool list before use. The local server, tunnel client, internet connection and awake laptop must remain available during tool calls.
+
+See [the expanding adaptive workflow](ADAPTIVE_WORKFLOW.md) for new GitHub/profile problems and questions outside the 188-problem seed.
 
 ## Learning-flow smoke test
 

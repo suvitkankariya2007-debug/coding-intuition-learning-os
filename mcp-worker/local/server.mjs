@@ -9,7 +9,7 @@ export async function startLocal({owner,allowWrites=false,file=new CredentialFil
   await credentials.getProps();
   const mf=new Miniflare({host:'127.0.0.1',port,modules:true,scriptPath:new URL('../dist-tunnel/tunnel.js',import.meta.url).pathname,compatibilityDate:'2026-07-30',compatibilityFlags:['nodejs_compat','global_fetch_strictly_public'],
     durableObjects:{LEARNERS:{className:'LearnerStore',useSQLite:true}},durableObjectsPersist:join(file.directory,'ledger'),
-    bindings:{PUBLIC_ORIGIN:'http://127.0.0.1:8787',OWNER_SUPERMEMORY_ID:owner,MEMORY_NAMESPACE:'leetcode_problems',MEMORY_READ_NAMESPACES:'leetcode_problems,leetcode',LOCAL_WRITE_ENABLED:String(allowWrites),LEETCODE_USERNAME:'suvitk',CODEFORCES_HANDLE:'suvitkankariya2007',GITHUB_SOLUTIONS_REPO:'suvitkankariya2007-debug/LeetCode-Challenge'},
+    bindings:{PUBLIC_ORIGIN:'http://127.0.0.1:8787',OWNER_SUPERMEMORY_ID:owner,MEMORY_NAMESPACE:'leetcode_problems',MEMORY_READ_NAMESPACES:process.env.CODING_INTUITION_MEMORY_READ_NAMESPACES||'leetcode_problems,leetcode',LOCAL_WRITE_ENABLED:String(allowWrites),LEETCODE_USERNAME:'suvitk',CODEFORCES_HANDLE:'suvitkankariya2007',GITHUB_SOLUTIONS_REPO:'suvitkankariya2007-debug/LeetCode-Challenge'},
     serviceBindings:{LOCAL_CREDENTIALS:async()=>{try{return Response.json(await credentials.getProps());}catch{return new Response('Supermemory sign-in required',{status:503});}}},
   });
   await mf.ready;return mf;

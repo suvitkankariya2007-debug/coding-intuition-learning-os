@@ -8,6 +8,7 @@ export const learningTools = [
   'get_progressive_hint', 'get_memory_patterns', 'get_concept_connections',
   'get_learning_signals', 'record_reasoning_event', 'get_source_status',
   'sync_learning_source', 'refresh_learning_memory', 'record_review',
+  'get_learning_catalog', 'get_problem_code',
 ];
 
 // Shared by local and authenticated hosted-runtime tests. No learning writes,
@@ -37,6 +38,7 @@ export async function inspectLearningClient(client) {
       return null;
     }
   }
+  await call('get_learning_catalog', { limit: 1 }, d => d?.canonicalCount === 188 && d.total >= 188);
   const roadmap = await call('get_roadmap', { limit: 1 }, d => d?.total === 188 && d.items?.length === 1);
   await call('get_progress_report', {}, d => d?.curriculumCount === 188);
   await call('get_due_reviews', {}, Array.isArray);
@@ -45,6 +47,7 @@ export async function inspectLearningClient(client) {
   await call('diagnose_weaknesses');
   if (roadmap) {
     const itemId = roadmap.items[0].itemId;
+    await call('get_problem_code', { itemId }, d => typeof d?.found === 'boolean');
     await call('get_problem_history', { itemId }, d => d?.found === true);
     await call('get_progressive_hint', { itemId, level: 1 }, d => d?.found === true);
     await call('get_concept_connections', { itemId }, d => d?.found === true);

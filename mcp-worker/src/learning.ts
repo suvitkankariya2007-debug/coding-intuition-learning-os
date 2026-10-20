@@ -1,27 +1,35 @@
-import canonical from '../../data/canonical-roadmap-188.json';
+import {curriculum,allProblems,type TrackedProblem} from './catalog';
+export {curriculum} from './catalog';
 import { recommendDSA, type Evidence, type LearningItem } from '../../src/lib/evidence-intelligence';
 import { rankWithReasoning } from '../../src/lib/reasoning-ranking';
 import { parseLearningEvent, type LearningEventRecord } from '../../src/lib/learning-events';
 import type { ToolData, ReviewRecord } from '../../src/lib/mcp-core';
 import { sha256 } from './config';
 
-export type Snapshot = { events: LearningEventRecord[]; reviews: ReviewRecord[]; evidence: Evidence[]; progress: Record<string,{due_date:string;ease:number;interval_days:number;repetitions:number;grade:number}>; sourceStatus: Record<string,unknown> };
+export type Snapshot = { events: LearningEventRecord[]; reviews: ReviewRecord[]; evidence: Evidence[]; progress: Record<string,{due_date:string;ease:number;interval_days:number;repetitions:number;grade:number}>; sourceStatus: Record<string,unknown>; problems?:TrackedProblem[] };
 export const emptySnapshot = ():Snapshot => ({events:[],reviews:[],evidence:[],progress:{},sourceStatus:{}});
 /** Stable IDs belong to this canonical MCP view, not the old per-user SQL row IDs. */
-export const curriculum = canonical.map(row=>({...row,id:`18800000-0000-5000-8000-${String(row.position).padStart(12,'0')}`}));
-export function assertItem(id: string) {if(!curriculum.some(p=>p.id===id))throw Error('Unknown canonical roadmap item');}
+export function assertItem(id: string,extra:TrackedProblem[]=[]) {if(!allProblems(extra).some(p=>p.id===id))throw Error('Unknown learning item');}
 export function learningDay(now = Date.now()) {return new Date(now+19800000).toISOString().slice(0,10);}
 export function buildData(s:Snapshot):ToolData {
-  const items:LearningItem[]=curriculum.map(p=>{
+  const catalog=allProblems(s.problems);
+  const items:LearningItem[]=catalog.map((p,index)=>{
     const review=s.progress[p.id];
-    const accepted=s.evidence.some(e=>e.itemId===p.id && e.source==='leetcode' && e.accepted===true);
-    const attempted=s.events.some(e=>e.itemId===p.id || e.problemRef===`lc:${p.leetcode_id}`);
-    return {id:p.id,title:p.title,topic:p.topic,position:p.position,status:accepted?'solved':attempted||review?'attempted':'not_started',dueDate:review?.due_date??null,recallGrade:review?review.grade<=1?0:review.grade===2?1:review.grade===3?2:3:null};
+    const accepted=s.evidence.some(e=>e.itemId===p.id && ['leetcode','codeforces'].includes(e.source) && e.accepted===true);
+    const observations=s.events.filter(e=>e.itemId===p.id || e.problemRef===p.problemRef);
+    const attempted=observations.length>0||s.evidence.some(e=>e.itemId===p.id&&['github','leetcode','codeforces'].includes(e.source));
+    return {id:p.id,title:p.title,topic:p.topic,position:index+1,status:accepted?'solved':attempted||review?'attempted':'not_started',dueDate:review?.due_date??null,recallGrade:review?review.grade<=1?0:review.grade===2?1:review.grade===3?2:3:null};
   });
-  const roadmap=items.map((p,i)=>({itemId:p.id,title:p.title,topic:p.topic,position:p.position,status:p.status!,dueDate:p.dueDate??null,idea:curriculum[i].idea}));
+  const roadmap=items.map((p,i)=>({itemId:p.id,title:p.title,topic:p.topic,position:p.position,status:p.status!,dueDate:p.dueDate??null,idea:[catalog[i].idea,...s.events.filter(e=>e.itemId===p.id||e.problemRef===catalog[i].problemRef).flatMap(e=>e.conceptKeys)].filter(Boolean).join(' '),problemRef:catalog[i].problemRef,origin:catalog[i].origin}));
   // Rank the entire roadmap by weakness before choosing five, avoiding the old top-50 cutoff.
   const base=items.flatMap(item=>recommendDSA([item],s.evidence,{limit:1,now:learningDay()+'T00:00:00Z'}));
-  const ranked=rankWithReasoning(base,roadmap,s.events);
+  const ranked=rankWithReasoning(base,roadmap,s.events).map(rec=>{
+    const p=catalog.find(p=>p.id===rec.itemId)!;
+    const history=s.events.filter(e=>e.itemId===p.id||e.problemRef===p.problemRef).sort((a,b)=>a.recordedAt.localeCompare(b.recordedAt));
+    let lastMistake=-1;history.forEach((e,i)=>{if(e.kind==='mistake'||e.kind==='recall_check'&&e.confidence!==null&&e.confidence<=2)lastMistake=i;});
+    const improvement=lastMistake<0?0:history.slice(lastMistake+1).filter(e=>e.independentlyExplained===true&&['reasoning_insight','recall_check','transfer_attempt'].includes(e.kind)).length;
+    return improvement?{...rec,score:rec.score-Math.min(18,improvement*6),reason:[...rec.reason,'Later independently explained reasoning reduced practice priority; self-report does not establish mastery.']}:rec;
+  });
   const position=new Map(items.map(p=>[p.id,p.position]));
   ranked.sort((a,b)=>b.score-a.score||position.get(a.itemId)!-position.get(b.itemId)!);
   return {roadmap,recommendations:ranked.slice(0,5),learningEvents:s.events,reviews:s.reviews.slice().reverse(),evidence:s.evidence.map(e=>({...e,accepted:e.accepted===true})),

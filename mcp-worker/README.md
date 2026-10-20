@@ -1,6 +1,6 @@
 # Coding Intuition MCP
 
-Standalone runtime for the existing 188-problem learning system. It reuses the repository's pure recommendation, concept-graph, progressive-hint and SRS modules. The web app and existing curriculum/progress tables are untouched.
+Adaptive runtime with the 188-problem curriculum as a seed plus newer GitHub, LeetCode, Codeforces and conversation problems. It reuses the repository's pure recommendation, concept-graph, progressive-hint and SRS modules. The web app and existing curriculum/progress tables are untouched.
 
 The intended finished setup is a **hosted OAuth-protected MCP Worker** with persistent per-learner storage. After it is deployed and connected, your laptop does not need to stay on. The private Secure MCP Tunnel is an optional local test path only; see [local tunnel test instructions](LOCAL_TUNNEL.md). Nothing is deployed yet. The supplied Go-account mock-server report supports testing through that account, but does not prove the live Supermemory authorization or the final learning flow.
 
@@ -8,13 +8,15 @@ The intended finished setup is a **hosted OAuth-protected MCP Worker** with pers
 
 ChatGPT Go → hosted OAuth-protected MCP → Supermemory OAuth → `leetcode_problems` → bounded semantic retrieval + incremental document reconciliation → concept/weakness ranking → practice and reviews.
 
-Cloudflare Workers hosts the endpoint. Cloudflare's maintained OAuth provider handles PKCE, browser-bound consent, token audience, refresh, revocation, DCR and CIMD. Upstream Supermemory tokens are encrypted inside OAuth grant properties; the downstream ChatGPT token is never forwarded upstream. Only the configured Supermemory owner and `leetcode_problems` are allowed. A per-owner SQLite Durable Object keeps the durable learning ledger and bounded five-minute semantic-search cache; writes invalidate cached memory results so later retrieval sees new learning promptly.
+Cloudflare Workers hosts the endpoint. Cloudflare's maintained OAuth provider handles PKCE, browser-bound consent, token audience, refresh, revocation, DCR and CIMD. Upstream Supermemory tokens are encrypted inside OAuth grant properties; the downstream ChatGPT token is never forwarded upstream. Only the configured Supermemory owner is allowed. Writes remain in `leetcode_problems`; reads use the explicit DSA-space allowlist. A per-owner SQLite Durable Object keeps the durable learning ledger and bounded five-minute semantic-search cache; writes invalidate cached memory results so later retrieval sees new learning promptly.
 
 Workers KV stores authentication records. One SQLite-backed Durable Object per owner stores short-lived query caches, provider version markers, structured observation/review receipts and a minimal learning ledger. Raw chats, screenshots, source code and the full Supermemory corpus are not copied into a second database. Credentials are not stored in that ledger. Snapshot chunks and write receipts commit atomically.
 
 ## Tools
 
-The 13 existing learning tools cover the roadmap, recommendations, due reviews, progress, problem history, weaknesses, transfer, progressive hints, memory patterns, concept connections, learning signals, reasoning observations and source status. Three additions provide `record_review`, `refresh_learning_memory`, and `sync_learning_source`.
+See [the expanding adaptive workflow](ADAPTIVE_WORKFLOW.md). `get_learning_catalog` includes newer problems outside the canonical seed; `get_problem_code` fetches bounded pinned GitHub code for discussion. Profile sync now contributes external LC/CF problems and previously unmatched GitHub files to recommendations. Approved question observations and external recall reviews persist across recovery. `refresh: true` bypasses memory caches, and source sync accepts `force: true` after new activity. Additional memory read spaces require explicit configuration.
+
+There are 18 tools. The 13 original learning tools cover the roadmap, recommendations, due reviews, progress, problem history, weaknesses, transfer, progressive hints, memory patterns, concept connections, learning signals, reasoning observations and source status. Three more provide `record_review`, `refresh_learning_memory`, and `sync_learning_source`.
 
 Read-only permission is `learning:read`; recording needs `learning:write`. Each memory write needs an approved short structured observation, uses a stable idempotency key, and is explicitly distinguished from verified acceptance. A failed/ambiguous upstream write remains pending; do not resubmit under a new ID. Reconcile the memory documents first.
 
@@ -32,7 +34,7 @@ These hosting statements describe the hosted Worker. The private tunnel route re
 ## Verify locally
 
 For the live laptop setup, `npm run tunnel:doctor` verifies the actual learning
-server identity and all 12 read tools without recording learning events. See
+server identity and all 14 read tools without recording learning events. See
 [local validation](LOCAL_VALIDATION.md). An old `Mock_MCP_E2E` tool inventory in
 ChatGPT indicates the wrong or stale connection, not the learning tool contract.
 
@@ -70,8 +72,8 @@ The preparation script registers a public PKCE client with Supermemory and reuse
 ## Source coverage and data boundaries
 
 - LeetCode `suvitk`: public accepted total and the latest 20 accepted submissions. Problem frontend IDs are verified using GraphQL. Recent activity is **not** complete solved history. Duplicate concept anchors are not auto-marked solved.
-- Codeforces `suvitkankariya2007`: paginated public submissions, up to 1,000 per call; continue `nextCursor` when provided. CF problems retain distinct identifiers and are not guessed to match LeetCode problems.
-- GitHub `suvitkankariya2007-debug/LeetCode-Challenge`: public current tree, exact normalized filename matching, commit-pinned code links. Exporter folder numbers are not LeetCode problem IDs. A code file is revision evidence, not an accepted verdict.
+- Codeforces `suvitkankariya2007`: paginated public submissions contributing external problems and evidence to recommendations, up to 1,000 per call; continue `nextCursor` when provided. CF problems retain distinct identifiers and are not guessed to match LeetCode problems.
+- GitHub `suvitkankariya2007-debug/LeetCode-Challenge`: public current tree, exact normalized filename matching for canonical problems, plus independently tracked new code files and commit-pinned code retrieval. Exporter folder numbers are not LeetCode problem IDs. A code file is revision evidence, not an accepted verdict.
 - Memory documents can restore only validated structured event/review envelopes. Free-form memories inform coaching through search; they never automatically create grades or mastery. The structured ledger retains observations independently of semantic memory extraction. Existing SQL progress is not automatically copied; the old web app retains it.
 
 ## Connection review

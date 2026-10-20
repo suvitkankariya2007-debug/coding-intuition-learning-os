@@ -24,7 +24,7 @@ export const UPSTREAM = {
 export const SCOPES = ['learning:read', 'learning:write', 'offline_access'];
 export function readNamespaces(env:Env) {
   const requested=(env.MEMORY_READ_NAMESPACES??env.MEMORY_NAMESPACE).split(',').map(s=>s.trim());
-  if(requested.some(s=>!['leetcode_problems','leetcode'].includes(s)))throw Error('Unapproved memory read space');
+  if(requested.length>8||requested.some(s=>!/^[-A-Za-z0-9_]{1,80}$/.test(s)))throw Error('Invalid configured memory read spaces');
   return [...new Set([env.MEMORY_NAMESPACE,...requested])];
 }
 export function origin(env: Env) {

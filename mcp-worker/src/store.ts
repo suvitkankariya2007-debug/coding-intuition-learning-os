@@ -3,7 +3,9 @@ import { assertOwner, readNamespaces, type Env, type AuthProps, sha256 } from '.
 import { withMemory } from './upstream';
 import { emptySnapshot, eventEnvelope, parseEnvelope, type Snapshot, assertItem, learningDay } from './learning';
 import { review } from '../../src/lib/srs';
-import { fetchSource } from './platforms';
+import { fetchSource,readProblemCode } from './platforms';
+import {allProblems,makeProblem,mergeProblems,curriculum} from './catalog';
+const curriculumItem=(id:string)=>curriculum.some(p=>p.id===id);
 
 /** Per-owner durable cache and small structured ledger; raw memory remains in Supermemory. */
 export class LearnerStore extends DurableObject<Env> {
@@ -43,12 +45,19 @@ export class LearnerStore extends DurableObject<Env> {
   private async run(action:string,props:AuthProps,args:Record<string,any>):Promise<unknown> {
     const state=await this.snapshot();
     if(action==='snapshot')return state;
+    if(action==='code'){
+      const problem=allProblems(state.problems).find(p=>p.id===args.itemId);
+      if(!problem)throw Error('Unknown learning item');
+      const file=problem.codeFiles?.[Number(args.fileIndex??0)];
+      return file?{found:true,...await readProblemCode(file,this.env)}:{found:false,reason:'No synchronized GitHub code file for this problem.'};
+    }
     if(action==='search') {
+      if(args.refresh===true)await this.invalidateMemorySearchCache();
       const query=String(args.query).trim();if(query.length<3||query.length>250)throw Error('Invalid query');
       const namespaces=readNamespaces(this.env);
       const key='search:'+await sha256(JSON.stringify({query,namespaces}));
       const cache=await this.ctx.storage.get<{at:number;value:any}>(key);
-      if(cache&&Date.now()-cache.at<300000)return {...cache.value,cache:'hit'};
+      if(args.refresh!==true&&cache&&Date.now()-cache.at<300000)return {...cache.value,cache:'hit'};
       const searched=await withMemory(props.accessToken,async call=>{
         const items:any[]=[],unavailable:string[]=[];
         for(const namespace of namespaces) {
@@ -67,7 +76,14 @@ export class LearnerStore extends DurableObject<Env> {
       return value;
     }
     if(action==='record') {
-      const e=await eventEnvelope(args);
+      let raw={...args};
+      if(args.itemId&&!curriculumItem(args.itemId)){
+        const p=allProblems(state.problems).find(p=>p.id===args.itemId);
+        if(!p||args.problemRef&&args.problemRef!==p.problemRef)throw Error('Unknown or conflicting external problem');
+        raw={...args,itemId:null,problemRef:p.problemRef};
+      }
+      const e=await eventEnvelope(raw);
+      if(e.payload.event.problemRef){const ref=e.payload.event.problemRef;if(!allProblems(state.problems).some(p=>p.problemRef===ref))state.problems=mergeProblems(state.problems??[],[await makeProblem(ref,undefined,'External practice',e.payload.event.conceptKeys.join(' '))]);}
       const key='receipt:'+await sha256(e.payload.event.clientEventId);
       const previous=await this.ctx.storage.get<any>(key);
       if(previous) {
@@ -83,14 +99,16 @@ export class LearnerStore extends DurableObject<Env> {
       return saved;
     }
     if(action==='review') {
-      assertItem(args.itemId);
+      assertItem(args.itemId,state.problems);
       if(!Number.isInteger(args.grade)||args.grade<0||args.grade>5||typeof args.clientEventId!=='string'||!/^[A-Za-z0-9:_-]{8,100}$/.test(args.clientEventId))throw Error('Invalid review');
       const key='review:'+await sha256(args.clientEventId),fingerprint=await sha256(JSON.stringify({itemId:args.itemId,grade:args.grade}));
       const old=await this.ctx.storage.get<any>(key);if(old){if(old.fingerprint!==fingerprint)throw Error('Idempotency conflict');return {...old,duplicate:true};}
       const next=review(state.progress[args.itemId]??{ease:2.5,interval_days:0,repetitions:0},args.grade,learningDay());
       const record={itemId:args.itemId,grade:args.grade,reviewedAt:new Date().toISOString()};
+      const tracked=allProblems(state.problems).find(p=>p.id===args.itemId)!;
+      const problem=curriculumItem(args.itemId)?undefined:{problemRef:tracked.problemRef,title:tracked.title,topic:tracked.topic,idea:tracked.idea};
       await this.ctx.storage.put(key,{status:'pending',fingerprint});
-      const memory=await withMemory(props.accessToken,call=>call('add_memory',{namespace:props.namespace,content:JSON.stringify({format:'coding-intuition-review-v1',clientEventId:args.clientEventId,record,schedule:next,provenance:'learner_recall_grade_not_acceptance'})}));
+      const memory=await withMemory(props.accessToken,call=>call('add_memory',{namespace:props.namespace,content:JSON.stringify({format:'coding-intuition-review-v1',clientEventId:args.clientEventId,record,schedule:next,problem,provenance:'learner_recall_grade_not_acceptance'})}));
       if(memory.success!==true||memory.namespace!==props.namespace)throw Error('Memory write unconfirmed');
       state.progress[args.itemId]={...next,grade:args.grade};state.reviews.push(record);
       const saved={status:'stored',fingerprint,nextDue:next.due_date,documentId:memory.id??null};await this.save(state,{[key]:saved});await this.invalidateMemorySearchCache();return saved;
@@ -112,14 +130,17 @@ export class LearnerStore extends DurableObject<Env> {
           const event=parseEnvelope(content);
           if(event&&!state.events.some(e=>e.clientEventId===event.clientEventId)) {
             state.events.push(event);restored++;
+            if(event.problemRef&&!allProblems(state.problems).some(p=>p.problemRef===event.problemRef))state.problems=mergeProblems(state.problems??[],[await makeProblem(event.problemRef,undefined,'External practice',event.conceptKeys.join(' '))]);
             const {recordedAt,...raw}=event;const envelope=await eventEnvelope(raw,recordedAt);
             staged['receipt:'+await sha256(event.clientEventId)]={status:'stored',clientEventId:event.clientEventId,fingerprint:envelope.fingerprint,documentId:doc.id};
           }
           try {
             const parsed=JSON.parse(content);
             if(parsed.format==='coding-intuition-review-v1' && /^[A-Za-z0-9:_-]{8,100}$/.test(parsed.clientEventId)) {
-              const r=parsed.record;assertItem(r.itemId);
-              if(!Number.isInteger(r.grade)||r.grade<0||r.grade>5||!Number.isFinite(Date.parse(r.reviewedAt)))throw Error('Invalid review document');
+              const r=parsed.record;
+              if(!Number.isInteger(r?.grade)||r.grade<0||r.grade>5||!Number.isFinite(Date.parse(r.reviewedAt)))throw Error('Invalid review document');
+              if(parsed.problem){const p=await makeProblem(parsed.problem.problemRef,parsed.problem.title,parsed.problem.topic,parsed.problem.idea);if(p.id!==r.itemId)throw Error('Problem identity mismatch');state.problems=mergeProblems(state.problems??[],[p]);}
+              assertItem(r.itemId,state.problems);
               const key='review:'+await sha256(parsed.clientEventId);
               const previous=staged[key] as any ?? await this.ctx.storage.get<any>(key);
               if(previous?.status!=='stored') {
@@ -144,8 +165,9 @@ export class LearnerStore extends DurableObject<Env> {
     if(action==='sync_source') {
       const source=String(args.source),cursor=Number(args.cursor??1);
       const cached=state.sourceStatus[source] as any;
-      if(cached&&Date.now()-Date.parse(cached.checkedAt)<600000&&cached.pageFrom=== (source==='codeforces'?cursor:undefined))return {...cached,cache:'hit'};
+      if(args.force!==true&&cached&&Date.now()-Date.parse(cached.checkedAt)<600000&&cached.pageFrom=== (source==='codeforces'?cursor:undefined))return {...cached,cache:'hit'};
       const result=await fetchSource(source,this.env,cursor);
+      state.problems=mergeProblems(state.problems??[],result.problems??[]);
       const merged=new Map(state.evidence.map(e=>[e.provenanceId,e]));for(const e of result.evidence)merged.set(e.provenanceId,e);
       state.evidence=[...merged.values()];state.sourceStatus[source]=result.status;
       if(result.observations)await this.ctx.storage.put('codeforces:'+cursor,result.observations);

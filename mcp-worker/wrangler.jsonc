@@ -9,6 +9,7 @@
   "vars": {
     "PUBLIC_ORIGIN": "http://localhost:8787",
     "MEMORY_NAMESPACE": "leetcode_problems",
+    "MEMORY_READ_NAMESPACES": "leetcode_problems,leetcode",
     "LEETCODE_USERNAME": "suvitk",
     "CODEFORCES_HANDLE": "suvitkankariya2007",
     "GITHUB_SOLUTIONS_REPO": "suvitkankariya2007-debug/LeetCode-Challenge"
