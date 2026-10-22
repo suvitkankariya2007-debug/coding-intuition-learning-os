@@ -9,6 +9,7 @@ export const learningTools = [
   'get_learning_signals', 'record_reasoning_event', 'get_source_status',
   'sync_learning_source', 'refresh_learning_memory', 'record_review',
   'get_learning_catalog', 'get_problem_code',
+  'list_learning_documents','read_saved_discussion','get_saved_questions','get_source_submissions','configure_background_monitor','get_monitor_status',
 ];
 
 // Shared by local and authenticated hosted-runtime tests. No learning writes,
@@ -44,6 +45,10 @@ export async function inspectLearningClient(client) {
   await call('get_due_reviews', {}, Array.isArray);
   await call('get_learning_signals', {}, d => Number.isInteger(d?.eventCount));
   await call('get_source_status');
+  await call('get_monitor_status',{},d=>typeof d?.enabled==='boolean');
+  await call('get_saved_questions',{},d=>Array.isArray(d?.items));
+  await call('get_source_submissions',{source:'leetcode'},d=>Array.isArray(d?.items));
+  await call('get_source_submissions',{source:'codeforces'},d=>Array.isArray(d?.items));
   await call('diagnose_weaknesses');
   if (roadmap) {
     const itemId = roadmap.items[0].itemId;

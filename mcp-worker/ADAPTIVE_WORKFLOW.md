@@ -16,7 +16,7 @@ expanded trackedProblemCount; recommendations rank the expanded pool.
 2. Search `get_memory_patterns` for the actual question, doubts and preferences.
    Use `refresh: true` after fresh memory has been added externally. That clears
    search caches before retrieval, so later recommendations can obtain new
-   context too. Reads remain bounded to six excerpts; no full-chat copying.
+   context too. Reads remain bounded to six excerpts; use read_saved_discussion for complete available document pages.
 3. Use `get_learning_catalog` for new problems and their stable itemIds. Use
    `get_problem_code` for one synchronized GitHub file when discussing the
    learner's implementation. Code is retrieved at its pinned commit, not
@@ -39,8 +39,8 @@ expanded trackedProblemCount; recommendations rank the expanded pool.
    free-form memory is coaching context, not an automatically inferred grade.
 
 The server's tutor instructions describe this loop. ChatGPT still decides tool
-selection; the MCP does not read unshared chats, continuously watch the screen,
-retrain a model, or subscribe to pushes. Refreshes run on demand during study.
+selection; the MCP does not read unshared chats, watch the screen, or retrain a model. Refreshes can
+run on demand or through explicitly enabled periodic monitoring. See BACKGROUND_AND_DISCUSSIONS.md.
 The deployed service can support those calls with the laptop off after hosted
 OAuth, migration and live calls have been validated. No deployment is authorized
 by these changes.
@@ -81,7 +81,7 @@ space and require the intended Supermemory owner.
 
 Run `npm run verify:local` for simulated-provider unit/runtime tests, then run the
 server and `npm run tunnel:doctor` for real local reads. The discovery contract is
-now 18 tools (including get_learning_catalog and get_problem_code); ChatGPT must
+now 24 tools (including get_learning_catalog and get_problem_code); ChatGPT must
 refresh cached tool definitions. This does not create another tunnel.
 
 External observations retain stable problem references. Approved events and

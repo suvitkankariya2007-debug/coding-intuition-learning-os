@@ -16,7 +16,7 @@ Workers KV stores authentication records. One SQLite-backed Durable Object per o
 
 See [the expanding adaptive workflow](ADAPTIVE_WORKFLOW.md). `get_learning_catalog` includes newer problems outside the canonical seed; `get_problem_code` fetches bounded pinned GitHub code for discussion. Profile sync now contributes external LC/CF problems and previously unmatched GitHub files to recommendations. Approved question observations and external recall reviews persist across recovery. `refresh: true` bypasses memory caches, and source sync accepts `force: true` after new activity. Additional memory read spaces require explicit configuration.
 
-There are 18 tools. The 13 original learning tools cover the roadmap, recommendations, due reviews, progress, problem history, weaknesses, transfer, progressive hints, memory patterns, concept connections, learning signals, reasoning observations and source status. Three more provide `record_review`, `refresh_learning_memory`, and `sync_learning_source`.
+There are 24 tools. The 13 original learning tools cover the roadmap, recommendations, due reviews, progress, problem history, weaknesses, transfer, progressive hints, memory patterns, concept connections, learning signals, reasoning observations and source status. Three more provide `record_review`, `refresh_learning_memory`, and `sync_learning_source`; two add the expanded catalog and code retrieval. The six latest tools add saved-document listing/reading, question candidates, source-submission history and monitor configuration/status.
 
 Read-only permission is `learning:read`; recording needs `learning:write`. Each memory write needs an approved short structured observation, uses a stable idempotency key, and is explicitly distinguished from verified acceptance. A failed/ambiguous upstream write remains pending; do not resubmit under a new ID. Reconcile the memory documents first.
 
@@ -26,7 +26,7 @@ Read-only permission is `learning:read`; recording needs `learning:write`. Each 
 - Supermemory uses its normal MCP OAuth connection. Its existing account's limits still apply.
 - Targeted memory search caches at most 50 queries for five minutes. Source sync caches for ten minutes.
 - Sync reads one page of three documents; unchanged document versions do not download again. Follow `nextPage` until null. Source and memory completeness are reported explicitly.
-- No scheduled polling, cron, automatic bulk indexing, or paid deployment step. CI checks only code/build/tests.
+- Optional periodic source/document reads use durable alarms, one bounded task per wake-up with backoff. No paid deployment step is part of verification; CI runs code/build/tests only.
 - The hosting account must be on its intended free plan; do not enable a paid plan or upgrade to satisfy deployment.
 
 These hosting statements describe the hosted Worker. The private tunnel route requires the existing tunnel-client's restricted OpenAI runtime key for tunnel access, not model inference. It does not require Cloudflare. Tunnel traffic, Supermemory and Go remain subject to their own limits and billing; no unlimited-use claim is made.
@@ -34,7 +34,7 @@ These hosting statements describe the hosted Worker. The private tunnel route re
 ## Verify locally
 
 For the live laptop setup, `npm run tunnel:doctor` verifies the actual learning
-server identity and all 14 read tools without recording learning events. See
+server identity with 18 read calls, without recording learning events or enabling monitoring. See
 [local validation](LOCAL_VALIDATION.md). An old `Mock_MCP_E2E` tool inventory in
 ChatGPT indicates the wrong or stale connection, not the learning tool contract.
 
@@ -74,7 +74,7 @@ The preparation script registers a public PKCE client with Supermemory and reuse
 - LeetCode `suvitk`: public accepted total and the latest 20 accepted submissions. Problem frontend IDs are verified using GraphQL. Recent activity is **not** complete solved history. Duplicate concept anchors are not auto-marked solved.
 - Codeforces `suvitkankariya2007`: paginated public submissions contributing external problems and evidence to recommendations, up to 1,000 per call; continue `nextCursor` when provided. CF problems retain distinct identifiers and are not guessed to match LeetCode problems.
 - GitHub `suvitkankariya2007-debug/LeetCode-Challenge`: public current tree, exact normalized filename matching for canonical problems, plus independently tracked new code files and commit-pinned code retrieval. Exporter folder numbers are not LeetCode problem IDs. A code file is revision evidence, not an accepted verdict.
-- Memory documents can restore only validated structured event/review envelopes. Free-form memories inform coaching through search; they never automatically create grades or mastery. The structured ledger retains observations independently of semantic memory extraction. Existing SQL progress is not automatically copied; the old web app retains it.
+- Memory documents restore validated structured event/review envelopes and index literal question candidates with provenance. Complete available discussions can be read in versioned pages. Free-form memories inform coaching through search; they never automatically create grades or mastery. The structured ledger retains observations independently of semantic memory extraction. Existing SQL progress is not automatically copied; the old web app retains it.
 
 ## Connection review
 
@@ -87,3 +87,6 @@ Deployment is paused at the user's request. Finish local implementation and veri
 The private tunnel implementation can be verified on the user's laptop without cloud deployment. Its remaining live gates are Supermemory OAuth on that laptop and actual learning-tool calls through the existing tunnel. The mock-server report is account-specific evidence of tunnel read/write support; it does not establish these real-service gates.
 
 Implementation and local protocol verification are separate from deployment. Hosting authentication, live Supermemory OAuth, and the final ChatGPT Go tool call remain release gates until observed. No public MCP URL is claimed ready by this source alone.
+
+
+For full saved-discussion reading, source submission history, periodic monitoring, the runnable isolated demo, and remaining live gates, see [BACKGROUND_AND_DISCUSSIONS.md](BACKGROUND_AND_DISCUSSIONS.md).

@@ -54,7 +54,7 @@ The process refuses to start without verified, usable credentials. Once connecte
 npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID --allow-writes
 ```
 
-Stop the earlier process before restarting. Opt-in enables only brief learning observations and recall reviews; the tutor must still obtain agreement before each save. There is no delete tool or automatic bulk ingestion. Learning improvements are new observations in the history, not overwrites of earlier attempts. Do not save synthetic test performance in the real learning ledger.
+Stop the earlier process before restarting. Opt-in enables only brief learning observations and recall reviews; the tutor must still obtain agreement before each save. There is no generic delete tool. Explicit monitoring can index saved question candidates without inventing performance records. Learning improvements are new observations in the history, not overwrites of earlier attempts. Do not save synthetic test performance in the real learning ledger.
 
 Before testing through ChatGPT, run `npm run tunnel:doctor` in a second terminal.
 It initializes an actual SDK client, checks the real learning-tool inventory and
@@ -98,6 +98,6 @@ Still required on the laptop: real Supermemory public-client registration and br
 
 ## Limits and costs
 
-No model API inference, embeddings API, scheduled crawling or extra hosting service is used. The tunnel needs an OpenAI runtime API key for tunnel access; this is distinct from making billable model API requests. Provider billing and quotas still apply; this implementation does not guarantee unlimited or free tunnel traffic. Supermemory account limits and ChatGPT Go limits remain independent. Memory searches return at most six excerpts of 1,200 characters each and cache for five minutes; source sync is on demand and cached for ten minutes.
+No model inference or embeddings API is used. Optional monitoring performs bounded periodic source and document reads using Durable Object alarms. The tunnel needs an OpenAI runtime API key for tunnel access; this is distinct from making billable model API requests. Provider billing and quotas still apply; this implementation does not guarantee unlimited or free tunnel traffic. Supermemory account limits and ChatGPT Go limits remain independent. Memory searches return at most six excerpts of 1,200 characters each and cache for five minutes; source sync is on demand and cached for ten minutes.
 
 Official tunnel guide: https://developers.openai.com/api/docs/guides/secure-mcp-tunnels

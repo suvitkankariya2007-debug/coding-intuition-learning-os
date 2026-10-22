@@ -61,7 +61,7 @@ export async function fetchSource(source:string,env:Env,cursor=1) {
       const p=await makeProblem(`lc:${d.questionFrontendId}`,d.title??r.titleSlug,(d.topicTags?.[0]?.name??'External practice').slice(0,80),(d.topicTags??[]).map((t:any)=>String(t.name)).join(', ').slice(0,700),'leetcode');problems.push(p);
       evidence.push({itemId:p.id,source:'leetcode',accepted:true,verdict:'Accepted',observedAt:new Date(Number(r.timestamp)*1000).toISOString(),provenanceId:`lc:${r.id}`});
     }
-    return {evidence,problems:mergeProblems([],problems),status:{checkedAt,available:true,username:env.LEETCODE_USERNAME,coverage:'recent_accepted_only',historyComplete:false,publicAcceptedTotals:body.data.matchedUser.submitStatsGlobal?.acSubmissionNum??[],observed:rows.length}};
+    return {evidence,problems:mergeProblems([],problems),status:{checkedAt,available:true,username:env.LEETCODE_USERNAME,coverage:'recent_accepted_only',windowLimit:20,windowMovesOnRefresh:true,coverageGapPossible:true,historyComplete:false,publicAcceptedTotals:body.data.matchedUser.submitStatsGlobal?.acSubmissionNum??[],observed:rows.length,imported:evidence.length,rejectedRows:rows.length-evidence.length}};
   }
   if(source==='codeforces') {
     if(!/^[A-Za-z0-9_.-]{1,40}$/.test(env.CODEFORCES_HANDLE)||!Number.isSafeInteger(cursor)||cursor<1||cursor>100001)throw Error('Invalid Codeforces cursor');

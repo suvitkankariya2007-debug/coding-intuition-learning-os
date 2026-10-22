@@ -1,3 +1,4 @@
+import type {SavedQuestion} from './discussions';
 import {curriculum,allProblems,type TrackedProblem} from './catalog';
 export {curriculum} from './catalog';
 import { recommendDSA, type Evidence, type LearningItem } from '../../src/lib/evidence-intelligence';
@@ -6,7 +7,7 @@ import { parseLearningEvent, type LearningEventRecord } from '../../src/lib/lear
 import type { ToolData, ReviewRecord } from '../../src/lib/mcp-core';
 import { sha256 } from './config';
 
-export type Snapshot = { events: LearningEventRecord[]; reviews: ReviewRecord[]; evidence: Evidence[]; progress: Record<string,{due_date:string;ease:number;interval_days:number;repetitions:number;grade:number}>; sourceStatus: Record<string,unknown>; problems?:TrackedProblem[] };
+export type Snapshot = { events: LearningEventRecord[]; reviews: ReviewRecord[]; evidence: Evidence[]; progress: Record<string,{due_date:string;ease:number;interval_days:number;repetitions:number;grade:number}>; sourceStatus: Record<string,unknown>; problems?:TrackedProblem[];questions?:SavedQuestion[] };
 export const emptySnapshot = ():Snapshot => ({events:[],reviews:[],evidence:[],progress:{},sourceStatus:{}});
 /** Stable IDs belong to this canonical MCP view, not the old per-user SQL row IDs. */
 export function assertItem(id: string,extra:TrackedProblem[]=[]) {if(!allProblems(extra).some(p=>p.id===id))throw Error('Unknown learning item');}

@@ -6,7 +6,7 @@ export function page(title: string, body: string) {
   return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><style>body{background:#0c1420;color:#eaf0fa;font:17px/1.6 system-ui;margin:0;padding:6vh 6vw}main{max-width:640px;margin:auto;background:#142236;border:1px solid #2b405b;border-radius:20px;padding:32px}h1{line-height:1.2}small{color:#b0c4da}button,a.button{display:inline-block;background:#a8e6cf;color:#10251e;border:0;padding:12px 20px;border-radius:10px;font:inherit;text-decoration:none;margin:8px 8px 0 0}button[value=deny]{background:#30435b;color:white}code{overflow-wrap:anywhere}label{display:block;margin:12px 0}a{color:#b6e6ff}</style><main><small>CODING INTUITION · PRIVATE LEARNING</small><h1>${escapeHtml(title)}</h1>${body}</main></html>`;
 }
 export function consentPage(d: ConsentDescription, handle: string, namespace: string) {
-  const labels: Record<string,string> = {'learning:read':'Read learning memories and practice recommendations','learning:write':'Save brief learning observations you approve','offline_access':'Keep this connection available between sessions'};
+  const labels: Record<string,string> = {'learning:read':'Read learning memories and practice recommendations','learning:write':'Save observations you approve and control background synchronization','offline_access':'Keep this connection available between sessions'};
   return page('Connect your learning memory', `<p><strong>${escapeHtml(d.clientName)}</strong> requests access to <code>${escapeHtml(namespace)}</code>.</p><p>Return destination: <strong>${escapeHtml(d.redirectHost)}</strong>.</p><p>${d.clientDomain ? `Client metadata published by ${escapeHtml(d.clientDomain)}.` : 'The client name is self-declared.'}</p>${d.redirectIsLoopback?'<p>This sends access to an application on your computer.</p>':''}<p>Next, sign in on Supermemory. Your password stays with Supermemory. Memory content is treated as learning context, never as proof that you solved a problem.</p><form method="post" action="/authorize"><input type="hidden" name="handle" value="${escapeHtml(handle)}">${d.scope.map(s=>`<label><input type="checkbox" name="scope" value="${escapeHtml(s)}" checked> ${escapeHtml(labels[s]??s)}</label>`).join('')}<button name="decision" value="approve">Continue to Supermemory</button><button name="decision" value="deny">Cancel</button></form>`);
 }
 export async function exchangeUpstream(env: Env, params: Record<string,string>): Promise<Omit<AuthProps,'userId'|'namespace'>> {
@@ -21,12 +21,21 @@ export async function exchangeUpstream(env: Env, params: Record<string,string>):
   if (typeof data.access_token !== 'string' || String(data.token_type).toLowerCase() !== 'bearer' || !Number.isFinite(data.expires_in) || Number(data.expires_in)<60) throw new OAuthError('temporarily_unavailable',{description:'Unexpected Supermemory token response',statusCode:503});
   return { accessToken:data.access_token, refreshToken:typeof data.refresh_token==='string'?data.refresh_token:undefined, expiresAt:Date.now()+Number(data.expires_in)*1000 };
 }
-export async function refreshProps(env: Env, props: AuthProps) {
+export async function rotateUpstreamProps(env: Env, props: AuthProps) {
   assertOwner(env, props);
   if (props.expiresAt > Date.now()+120000) return props;
   if (!props.refreshToken) throw new OAuthError('invalid_grant',{description:'Reconnect Supermemory to continue'});
   const next = await exchangeUpstream(env,{grant_type:'refresh_token',refresh_token:props.refreshToken,resource:UPSTREAM.mcp});
   return {...props,...next,refreshToken:next.refreshToken??props.refreshToken};
+}
+// Share refresh rotation with background alarms through the same serialized owner store.
+export async function refreshProps(env:Env,props:AuthProps){
+  assertOwner(env,props);
+  if(!env.MONITOR_ENCRYPTION_KEY)return rotateUpstreamProps(env,props);
+  const actor=env.LEARNERS.get(env.LEARNERS.idFromName(props.userId+':'+props.namespace));
+  const response=await actor.fetch('https://learner.internal/',{method:'POST',body:JSON.stringify({action:'refresh_credentials',props,args:{}})});
+  if(!response.ok)throw new OAuthError('invalid_grant',{description:'Reconnect Supermemory to continue'});
+  return response.json() as Promise<AuthProps>;
 }
 export async function authHandler(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url), base = origin(env), oauth = env.OAUTH_PROVIDER;

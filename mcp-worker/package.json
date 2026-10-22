@@ -13,7 +13,11 @@
     "build:tunnel": "wrangler deploy --dry-run --config wrangler.tunnel.jsonc --outdir dist-tunnel",
     "memory:login": "node local/login.mjs",
     "tunnel:serve": "node local/server.mjs",
-    "tunnel:doctor": "node local/doctor.mjs"
+    "tunnel:doctor": "node local/doctor.mjs",
+    "monitor:start": "node local/monitor.mjs start",
+    "monitor:stop": "node local/monitor.mjs stop",
+    "monitor:status": "node local/monitor.mjs status",
+    "demo:adaptive": "node scripts/demo-adaptive.mjs"
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "1.2.3",

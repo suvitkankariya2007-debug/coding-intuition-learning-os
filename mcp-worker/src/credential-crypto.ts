@@ -1,0 +1,5 @@
+import {type Env,type AuthProps,assertOwner} from './config';
+const aad=(env:Env)=>new TextEncoder().encode(env.OWNER_SUPERMEMORY_ID+':'+env.MEMORY_NAMESPACE);
+async function key(env:Env){if(!/^[a-f0-9]{64}$/i.test(env.MONITOR_ENCRYPTION_KEY??''))throw Error('Monitor key required');return crypto.subtle.importKey('raw',Uint8Array.from(env.MONITOR_ENCRYPTION_KEY!.match(/../g)!,s=>parseInt(s,16)),'AES-GCM',false,['encrypt','decrypt']);}
+export async function sealCredentials(env:Env,props:AuthProps){assertOwner(env,props);const iv=crypto.getRandomValues(new Uint8Array(12));const value=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(env)},await key(env),new TextEncoder().encode(JSON.stringify(props)));return {iv:[...iv],data:[...new Uint8Array(value)]};}
+export async function openCredentials(env:Env,sealed:{iv:number[];data:number[]}){const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(sealed.iv),additionalData:aad(env)},await key(env),new Uint8Array(sealed.data));const props=JSON.parse(new TextDecoder().decode(plain)) as AuthProps;assertOwner(env,props);return props;}

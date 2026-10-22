@@ -1,5 +1,7 @@
 import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 export interface Env {
+  MONITOR_ENCRYPTION_KEY?: string;
+  LOCAL_CREDENTIALS?: Fetcher;
   PUBLIC_ORIGIN: string;
   MEMORY_NAMESPACE: string;
   MEMORY_READ_NAMESPACES?: string;

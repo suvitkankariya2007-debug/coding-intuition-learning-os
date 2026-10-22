@@ -1,3 +1,6 @@
+import { discussionPage,extractQuestions } from './discussions';
+import {rotateUpstreamProps} from './auth';
+import {initialMonitor,sealCredentials,openCredentials,monitorCredentials,type MonitorState} from './monitor';
 import { DurableObject } from 'cloudflare:workers';
 import { assertOwner, readNamespaces, type Env, type AuthProps, sha256 } from './config';
 import { withMemory } from './upstream';
@@ -24,6 +27,28 @@ export class LearnerStore extends DurableObject<Env> {
     this.tail=operation.catch(()=>{});
     return operation;
   }
+  async alarm(){
+    const operation=this.tail.then(()=>this.monitorTick());this.tail=operation.catch(()=>{});await operation;
+  }
+  private async monitorTick(){
+    const m=await this.ctx.storage.get<MonitorState>('monitor:state')??initialMonitor();
+    if(!m.enabled)return m;
+    const tasks=['leetcode','codeforces',...(this.env.GITHUB_SOLUTIONS_REPO?['github']:[]),'memory'];
+    const task=tasks[m.taskIndex%tasks.length];m.lastRunAt=new Date().toISOString();
+    try{
+      const props=await monitorCredentials(this.env,await this.ctx.storage.get('monitor:credentials'));
+      if(!this.env.LOCAL_CREDENTIALS)await this.ctx.storage.put('monitor:credentials',await sealCredentials(this.env,props));
+      const r:any=await this.run(task==='memory'?'sync_memory':'sync_source',props,task==='memory'?{page:m.memoryPage}:{source:task,force:true,cursor:task==='codeforces'?m.cfCursor:1});
+      if(r.available===false)throw Error('Source unavailable');
+      if(task==='memory')m.memoryPage=r.nextPage??1;
+      if(task==='codeforces')m.cfCursor=r.nextCursor??1;
+      m.tasks[task]={status:r.incompleteDocuments?.length?'partial_provider_truncation':'success',checkedAt:m.lastRunAt};m.lastSuccessAt=m.lastRunAt;m.consecutiveFailures=0;
+    }catch{m.tasks[task]={status:'failed_reconnect_or_retry',checkedAt:m.lastRunAt};m.consecutiveFailures++;}
+    if(task!=='memory'||m.memoryPage===1)m.taskIndex=(m.taskIndex+1)%tasks.length;
+    // One bounded task per wake-up; capped retry delay avoids tight failure loops.
+    const delay=m.consecutiveFailures?Math.min(3600000,60000*2**Math.min(6,m.consecutiveFailures)):m.taskIndex===0?m.intervalMinutes*60000:60000;
+    m.nextRunAt=Date.now()+delay;await this.ctx.storage.put('monitor:state',m);await this.ctx.storage.setAlarm(m.nextRunAt);return m;
+  }
   private async snapshot(){
     const count=await this.ctx.storage.get<number>('snapshot:count');
     if(count===undefined)return await this.ctx.storage.get<Snapshot>('snapshot')??emptySnapshot();
@@ -45,6 +70,35 @@ export class LearnerStore extends DurableObject<Env> {
   private async run(action:string,props:AuthProps,args:Record<string,any>):Promise<unknown> {
     const state=await this.snapshot();
     if(action==='snapshot')return state;
+    if(action==='refresh_credentials'){
+      let current=props;const sealed=await this.ctx.storage.get<any>('monitor:credentials');
+      if(sealed){const stored=await openCredentials(this.env,sealed);if(stored.expiresAt>=current.expiresAt)current=stored;}
+      current=await rotateUpstreamProps(this.env,current);await this.ctx.storage.put('monitor:credentials',await sealCredentials(this.env,current));return current;
+    }
+    if(action==='monitor_status')return await this.ctx.storage.get('monitor:state')??initialMonitor();
+    if(action==='configure_monitor'){
+      const m=await this.ctx.storage.get<MonitorState>('monitor:state')??initialMonitor();
+      if(!args.enabled){m.enabled=false;m.nextRunAt=null;await this.ctx.storage.deleteAlarm();await this.ctx.storage.put('monitor:state',m);return m;}
+      if(!this.env.LOCAL_CREDENTIALS){if(!props.refreshToken||!this.env.SUPERMEMORY_CLIENT_ID||!/^[a-f0-9]{64}$/i.test(this.env.MONITOR_ENCRYPTION_KEY??''))return {enabled:false,setupRequired:'Hosted monitoring requires offline Supermemory authorization and MONITOR_ENCRYPTION_KEY.'};await this.run('refresh_credentials',props,{});}
+      m.enabled=true;m.credentialMode=this.env.LOCAL_CREDENTIALS?'local':'encrypted';m.intervalMinutes=args.intervalMinutes??30;m.nextRunAt=Date.now()+1000;
+      await this.ctx.storage.put('monitor:state',m);await this.ctx.storage.setAlarm(m.nextRunAt);return m;
+    }
+    if(action==='list_documents')return withMemory(props.accessToken,call=>call('list_documents',{namespace:props.namespace,page:args.page??1,limit:10}));
+    if(action==='read_discussion')return withMemory(props.accessToken,async call=>{
+      const r=await call('get_document',{namespace:props.namespace,documentId:args.documentId});if(r.namespace!==props.namespace||r.document?.id!==args.documentId)throw Error('Document mismatch');
+      return discussionPage(props.namespace,r.document,args.offset??0,args.limit??8000,args.version);
+    });
+    if(action==='questions'){
+      const rows=state.questions??[],offset=args.offset??0,limit=args.limit??25;
+      return {total:rows.length,items:rows.slice(offset,offset+limit),nextOffset:offset+limit<rows.length?offset+limit:null,extraction:'literal_question_candidates_not_a_diagnosis',coverage:'only_synced_documents; role-labeled user turns or question lines; not guaranteed exhaustive'};
+    }
+    if(action==='submissions'){
+      const offset=args.offset??0,limit=args.limit??20,catalog=allProblems(state.problems),rows=state.evidence.filter(e=>e.source===args.source).sort((a,b)=>b.observedAt.localeCompare(a.observedAt));
+      return {source:args.source,status:state.sourceStatus[args.source]??null,totalStored:rows.length,uniqueProblems:new Set(rows.map(e=>e.itemId)).size,offset,nextOffset:offset+limit<rows.length?offset+limit:null,items:rows.slice(offset,offset+limit).map(e=>{
+        const p=catalog.find(p=>p.id===e.itemId),id=e.provenanceId?.split(':')[1];
+        return {...e,title:p?.title??null,problemRef:p?.problemRef??null,submissionUrl:args.source==='leetcode'?`https://leetcode.com/submissions/detail/${id}/`:`https://codeforces.com/contest/${p?.problemRef.match(/^cf:(\d+)/)?.[1]}/submission/${id}`};
+      }),coverage:'accumulated_observed_submissions_not_complete_platform_history'};
+    }
     if(action==='code'){
       const problem=allProblems(state.problems).find(p=>p.id===args.itemId);
       if(!problem)throw Error('Unknown learning item');
@@ -119,14 +173,17 @@ export class LearnerStore extends DurableObject<Env> {
       const result=await withMemory(props.accessToken,async call=>{
         const listed=await call('list_documents',{namespace:props.namespace,page,limit:3});
         if(!Array.isArray(listed.documents))throw Error('Invalid document list');
-        let changed=0,restored=0;
+        let changed=0,restored=0,extracted=0;const incomplete:string[]=[];
         for(const doc of listed.documents) {
-          const key='document:'+doc.id;
+          const key='document:v2:'+doc.id;
           if(await this.ctx.storage.get(key)===doc.updatedAt)continue;
           const fetched=await call('get_document',{namespace:props.namespace,documentId:doc.id});
-          if(fetched.namespace!==props.namespace||fetched.document?.contentTruncated)continue;
+          if(fetched.namespace!==props.namespace)throw Error('Space mismatch');
+          if(fetched.document?.contentTruncated){incomplete.push(doc.id);continue;}
           const content=fetched.document?.content;
           if(typeof content!=='string')continue;
+          const candidates=await extractQuestions({...fetched.document,id:doc.id,updatedAt:doc.updatedAt});
+          state.questions=[...(state.questions??[]).filter(q=>q.documentId!==doc.id),...candidates];extracted+=candidates.length;
           const event=parseEnvelope(content);
           if(event&&!state.events.some(e=>e.clientEventId===event.clientEventId)) {
             state.events.push(event);restored++;
@@ -156,22 +213,24 @@ export class LearnerStore extends DurableObject<Env> {
           // Unknown/free-form documents stay in Supermemory and are retrieved semantically.
           staged[key]=doc.updatedAt;changed++;
         }
-        return {changed,restored,page,totalPages:listed.pagination?.totalPages??null,nextPage:page<(listed.pagination?.totalPages??page)?page+1:null};
+        return {changed,restored,extracted,incompleteDocuments:incomplete,page,totalPages:listed.pagination?.totalPages??null,nextPage:page<(listed.pagination?.totalPages??page)?page+1:null};
       });
       await this.save(state,staged);
       await this.invalidateMemorySearchCache();
-      return {...result,coverage:'one_document_page',historyComplete:result.page===1&&result.nextPage===null};
+      return {...result,coverage:'one_document_page',historyComplete:result.page===1&&result.nextPage===null&&result.incompleteDocuments.length===0};
     }
     if(action==='sync_source') {
       const source=String(args.source),cursor=Number(args.cursor??1);
       const cached=state.sourceStatus[source] as any;
-      if(args.force!==true&&cached&&Date.now()-Date.parse(cached.checkedAt)<600000&&cached.pageFrom=== (source==='codeforces'?cursor:undefined))return {...cached,cache:'hit'};
-      const result=await fetchSource(source,this.env,cursor);
+      if(args.force!==true&&cached?.available===true&&Date.now()-Date.parse(cached.checkedAt)<600000&&cached.pageFrom=== (source==='codeforces'?cursor:undefined))return {...cached,cache:'hit'};
+      let result;
+      try{result=await fetchSource(source,this.env,cursor);}
+      catch{const failed={...cached,available:false,checkedAt:new Date().toISOString(),lastSuccessAt:cached?.lastSuccessAt??(cached?.available?cached.checkedAt:null),error:'public_source_unavailable',cache:'miss'};state.sourceStatus[source]=failed;await this.save(state);return failed;}
       state.problems=mergeProblems(state.problems??[],result.problems??[]);
       const merged=new Map(state.evidence.map(e=>[e.provenanceId,e]));for(const e of result.evidence)merged.set(e.provenanceId,e);
-      state.evidence=[...merged.values()];state.sourceStatus[source]=result.status;
+      state.evidence=[...merged.values()];state.sourceStatus[source]={...result.status,lastSuccessAt:result.status.checkedAt};
       if(result.observations)await this.ctx.storage.put('codeforces:'+cursor,result.observations);
-      await this.save(state);return {...result.status,cache:'miss',recentObservations:result.observations?.slice(0,20)};
+      await this.save(state);const catalog=allProblems(state.problems);return {...result.status,cache:'miss',recentSubmissions:result.evidence.slice(0,20).map(e=>({...e,title:catalog.find(p=>p.id===e.itemId)?.title,problemRef:catalog.find(p=>p.id===e.itemId)?.problemRef})),recentObservations:result.observations?.slice(0,20)};
     }
     throw Error('Unsupported operation');
   }
