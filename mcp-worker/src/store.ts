@@ -34,7 +34,7 @@ export class LearnerStore extends DurableObject<Env> {
     const m=await this.ctx.storage.get<MonitorState>('monitor:state')??initialMonitor();
     if(!m.enabled)return m;
     const tasks=['leetcode','codeforces',...(this.env.GITHUB_SOLUTIONS_REPO?['github']:[]),'memory'];
-    const task=tasks[m.taskIndex%tasks.length];m.lastRunAt=new Date().toISOString();
+    const task=tasks[m.taskIndex%tasks.length],started=Date.now(),previous=m.tasks[task];let succeeded=false;m.lastRunAt=new Date().toISOString();
     try{
       const props=await monitorCredentials(this.env,await this.ctx.storage.get('monitor:credentials'));
       if(!this.env.LOCAL_CREDENTIALS)await this.ctx.storage.put('monitor:credentials',await sealCredentials(this.env,props));
@@ -42,9 +42,10 @@ export class LearnerStore extends DurableObject<Env> {
       if(r.available===false)throw Error('Source unavailable');
       if(task==='memory')m.memoryPage=r.nextPage??1;
       if(task==='codeforces')m.cfCursor=r.nextCursor??1;
-      m.tasks[task]={status:r.incompleteDocuments?.length?'partial_provider_truncation':'success',checkedAt:m.lastRunAt};m.lastSuccessAt=m.lastRunAt;m.consecutiveFailures=0;
-    }catch{m.tasks[task]={status:'failed_reconnect_or_retry',checkedAt:m.lastRunAt};m.consecutiveFailures++;}
-    if(task!=='memory'||m.memoryPage===1)m.taskIndex=(m.taskIndex+1)%tasks.length;
+      m.tasks[task]={status:r.incompleteDocuments?.length?'partial_provider_truncation':'success',checkedAt:m.lastRunAt,lastSuccessAt:new Date().toISOString(),failureCount:0,durationMs:Date.now()-started};m.lastSuccessAt=m.tasks[task].lastSuccessAt;m.consecutiveFailures=0;succeeded=true;
+    }catch{m.tasks[task]={status:'failed_reconnect_or_retry',checkedAt:m.lastRunAt,lastSuccessAt:previous?.lastSuccessAt,failureCount:(previous?.failureCount??0)+1,durationMs:Date.now()-started};m.consecutiveFailures++;}
+    if(task==='memory'&&succeeded)m.memoryPagesThisCycle=(m.memoryPagesThisCycle??0)+1;
+    if(!succeeded||task!=='memory'||m.memoryPage===1||(m.memoryPagesThisCycle??0)>=3){m.taskIndex=(m.taskIndex+1)%tasks.length;if(task==='memory')m.memoryPagesThisCycle=0;}
     // One bounded task per wake-up; capped retry delay avoids tight failure loops.
     const delay=m.consecutiveFailures?Math.min(3600000,60000*2**Math.min(6,m.consecutiveFailures)):m.taskIndex===0?m.intervalMinutes*60000:60000;
     m.nextRunAt=Date.now()+delay;await this.ctx.storage.put('monitor:state',m);await this.ctx.storage.setAlarm(m.nextRunAt);return m;
@@ -175,13 +176,13 @@ export class LearnerStore extends DurableObject<Env> {
         if(!Array.isArray(listed.documents))throw Error('Invalid document list');
         let changed=0,restored=0,extracted=0;const incomplete:string[]=[];
         for(const doc of listed.documents) {
-          const key='document:v2:'+doc.id;
+          const key='document:v3:'+doc.id;
           if(await this.ctx.storage.get(key)===doc.updatedAt)continue;
           const fetched=await call('get_document',{namespace:props.namespace,documentId:doc.id});
           if(fetched.namespace!==props.namespace)throw Error('Space mismatch');
-          if(fetched.document?.contentTruncated){incomplete.push(doc.id);continue;}
+          if(fetched.document?.contentTruncated){state.questions=(state.questions??[]).filter(q=>q.documentId!==doc.id);incomplete.push(doc.id);continue;}
           const content=fetched.document?.content;
-          if(typeof content!=='string')continue;
+          if(typeof content!=='string'){state.questions=(state.questions??[]).filter(q=>q.documentId!==doc.id);incomplete.push(doc.id);continue;}
           const candidates=await extractQuestions({...fetched.document,id:doc.id,updatedAt:doc.updatedAt});
           state.questions=[...(state.questions??[]).filter(q=>q.documentId!==doc.id),...candidates];extracted+=candidates.length;
           const event=parseEnvelope(content);
@@ -213,11 +214,31 @@ export class LearnerStore extends DurableObject<Env> {
           // Unknown/free-form documents stay in Supermemory and are retrieved semantically.
           staged[key]=doc.updatedAt;changed++;
         }
-        return {changed,restored,extracted,incompleteDocuments:incomplete,page,totalPages:listed.pagination?.totalPages??null,nextPage:page<(listed.pagination?.totalPages??page)?page+1:null};
+        const totalPages=listed.pagination?.totalPages;
+        const validTotal=Number.isSafeInteger(totalPages)&&totalPages>=0;
+        const normalizedPages=validTotal?Math.max(1,totalPages):null;
+        let sweep=page===1?{expectedPage:1,pages:normalizedPages,ids:[] as string[],incomplete:[] as string[],valid:validTotal}:await this.ctx.storage.get<any>('inventory:sweep');
+        if(!sweep||sweep.expectedPage!==page||sweep.pages!==normalizedPages)sweep={expectedPage:page,pages:normalizedPages,ids:[],incomplete:[],valid:false};
+        sweep.ids.push(...listed.documents.map((d:any)=>d.id));sweep.incomplete.push(...incomplete);sweep.expectedPage=page+1;
+        const nextPage=normalizedPages&&page<normalizedPages?page+1:null;
+        if(sweep.ids.some((id:any)=>typeof id!=='string')||new Set(sweep.ids).size!==sweep.ids.length)sweep.valid=false;
+        if(!nextPage&&Number.isSafeInteger(listed.pagination?.totalItems)&&listed.pagination.totalItems!==sweep.ids.length)sweep.valid=false;
+        const sweepComplete=!nextPage&&sweep.valid;
+        let removedQuestions=0;
+        if(sweepComplete){
+          const ids=[...new Set(sweep.ids as string[])].sort();
+          const signature=await sha256(JSON.stringify(ids));
+          const previous=await this.ctx.storage.get<string>('inventory:signature');
+          // Require two matching complete inventories; partial/out-of-order reads cannot delete candidates.
+          if(previous===signature){const keep=new Set(ids),old=state.questions??[];const removed=old.filter(q=>!keep.has(q.documentId));state.questions=old.filter(q=>keep.has(q.documentId));removedQuestions=removed.length;for(const q of removed)staged['document:v3:'+q.documentId]=null;}
+          staged['inventory:signature']=signature;
+        }
+        staged['inventory:sweep']=sweep;
+        return {changed,restored,extracted,removedQuestions,sweepComplete,incompleteDocuments:[...new Set(sweep.incomplete as string[])],page,totalPages:normalizedPages,nextPage};
       });
       await this.save(state,staged);
       await this.invalidateMemorySearchCache();
-      return {...result,coverage:'one_document_page',historyComplete:result.page===1&&result.nextPage===null&&result.incompleteDocuments.length===0};
+      return {...result,coverage:'one_document_page',historyComplete:result.page===1&&result.sweepComplete&&result.incompleteDocuments.length===0};
     }
     if(action==='sync_source') {
       const source=String(args.source),cursor=Number(args.cursor??1);

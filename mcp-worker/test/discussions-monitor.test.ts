@@ -92,3 +92,78 @@ describe('hosted background credential rotation',()=>{
     }finally{await mf.dispose();}
   });
 });
+
+
+// @ts-ignore Native privacy-safe live verifier.
+import {verifyLiveClient} from '../local/verify-live.mjs';
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';
+import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+describe('robust source attribution and document reconciliation',()=>{
+ it('handles Markdown roles and tilde fences without extracting assistant or code questions',async()=>{
+   const content='### User\nWhy do bounds propagate?\n~~~~cpp\nAssistant: why is this code not a user turn?\n~~~\nWhy is this still inside a longer fence?\n~~~~\n### Assistant\nWhy should all items be mastered?\n### Human\nHow can I verify the invariant?';
+   const rows=await extractQuestions({id:'roles',content,contentTruncated:false});
+   expect(rows.map(r=>r.excerpt)).toEqual(['Why do bounds propagate?','How can I verify the invariant?']);
+ });
+ it('does not let a role label inside code hide standalone questions',async()=>{
+   const rows=await extractQuestions({id:'code-roles',content:'```\nAssistant: ignored code label\n```\nWhy does this boundary work?',contentTruncated:false});expect(rows).toHaveLength(1);
+ });
+ it('removes candidates for changed incomplete documents and reconciles deleted sources after two complete inventories',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;
+   try{
+     await f.rpc('refresh_learning_memory');expect((await f.rpc('get_saved_questions')).total).toBe(2);
+     f.state.documents[0].contentTruncated=true;f.state.documents[0].updatedAt='v2';await f.rpc('refresh_learning_memory');expect((await f.rpc('get_saved_questions')).total).toBe(0);
+     f.state.documents[0].contentTruncated=false;f.state.documents[0].updatedAt='v3';await f.rpc('refresh_learning_memory');expect((await f.rpc('get_saved_questions')).total).toBe(2);
+     const original=f.state.documents.shift();await f.rpc('refresh_learning_memory');expect((await f.rpc('get_saved_questions')).total).toBe(2);
+     const reconciled=await f.rpc('refresh_learning_memory');expect(reconciled.removedQuestions).toBe(2);expect((await f.rpc('get_saved_questions')).total).toBe(0);
+     f.state.documents.unshift(original);await f.rpc('refresh_learning_memory');expect((await f.rpc('get_saved_questions')).total).toBe(2);
+   }finally{await f.mf.dispose();}
+ });
+});
+describe('live validation contract and monitor task isolation',()=>{
+ it('reports actual document completion and fresh task results without claiming Go verification',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;f.state.documents.splice(1,1);
+   const client=new Client({name:'verification-fixture',version:'1'});
+   try{
+     await client.connect(new StreamableHTTPClientTransport(new URL('http://127.0.0.1:8787/mcp'),{fetch:(url:any,init:any)=>f.mf.dispatchFetch(String(url),init)}));
+     const pending=await verifyLiveClient(client);expect(pending.status).toBe('PARTIAL');expect(pending.document.complete).toBe(true);expect(pending.liveChatGPTGoVerified).toBe(false);
+     for(const task of ['leetcode','codeforces','github','memory']){
+       await f.rpc('configure_background_monitor',{enabled:true});await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks[task]?.status,{timeout:10000,interval:100}).toBe('success');
+     }
+     const report=await verifyLiveClient(client);expect(report.status).toBe('PASS');expect(report.liveChatGPTGoVerified).toBe(false);
+     expect(JSON.stringify(report)).not.toContain('ancestor bounds');expect(JSON.stringify(report)).not.toContain('fixture-access');
+     const stale=await verifyLiveClient(client,{now:Date.now()+86400000});expect(stale.status).toBe('PARTIAL');
+     await f.rpc('configure_background_monitor',{enabled:false});
+   }finally{await client.close().catch(()=>{});await f.mf.dispose();}
+ },30000);
+ it('advances other sources after a later memory page fails and preserves last success evidence',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;
+   f.state.documents.push({id:'extra-3',content:'Why do invariants matter?',updatedAt:'v1',contentTruncated:false},{id:'extra-4',content:'How do I reason independently?',updatedAt:'v1',contentTruncated:false});
+   try{
+     for(const task of ['leetcode','codeforces','github','memory']){
+       await f.rpc('configure_background_monitor',{enabled:true});await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks[task]?.status,{timeout:10000,interval:100}).toMatch(/success|partial_provider_truncation/);
+     }
+     let status=await f.rpc('get_monitor_status');expect(status.memoryPage).toBe(2);const lastSuccess=status.tasks.memory.lastSuccessAt;
+     f.state.failDocumentId='extra-4';await f.rpc('configure_background_monitor',{enabled:true});
+     await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks.memory.status,{timeout:10000,interval:100}).toBe('failed_reconnect_or_retry');
+     status=await f.rpc('get_monitor_status');expect(status.taskIndex).toBe(0);expect(status.tasks.memory.lastSuccessAt).toBe(lastSuccess);expect(status.tasks.memory.failureCount).toBe(1);
+     f.state.failDocumentId=null;const checked=status.tasks.leetcode.checkedAt;await f.rpc('configure_background_monitor',{enabled:true});
+     await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks.leetcode.checkedAt,{timeout:10000,interval:100}).not.toBe(checked);
+     await f.rpc('configure_background_monitor',{enabled:false});
+   }finally{await f.mf.dispose();}
+ },40000);
+});
+
+
+describe('bounded monitor fairness',()=>{
+ it('continues profile updates after three memory pages while preserving the document cursor',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;
+   for(let i=2;i<10;i++)f.state.documents.push({id:'many-'+i,content:'Why does example '+i+' work?',updatedAt:'v1',contentTruncated:false});
+   try{
+     for(const task of ['leetcode','codeforces','github']){await f.rpc('configure_background_monitor',{enabled:true});await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks[task]?.status,{timeout:10000,interval:100}).toBe('success');}
+     for(let page=2;page<=4;page++){await f.rpc('configure_background_monitor',{enabled:true});await expect.poll(async()=>(await f.rpc('get_monitor_status')).memoryPage,{timeout:10000,interval:100}).toBe(page);}
+     const status=await f.rpc('get_monitor_status');expect(status.taskIndex).toBe(0);expect(status.memoryPage).toBe(4);
+     await f.rpc('configure_background_monitor',{enabled:false});
+   }finally{await f.mf.dispose();}
+ },40000);
+});

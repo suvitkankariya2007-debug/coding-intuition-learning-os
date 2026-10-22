@@ -17,7 +17,8 @@
     "monitor:start": "node local/monitor.mjs start",
     "monitor:stop": "node local/monitor.mjs stop",
     "monitor:status": "node local/monitor.mjs status",
-    "demo:adaptive": "node scripts/demo-adaptive.mjs"
+    "demo:adaptive": "node scripts/demo-adaptive.mjs",
+    "verify:live": "node local/verify-live.mjs"
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "1.2.3",

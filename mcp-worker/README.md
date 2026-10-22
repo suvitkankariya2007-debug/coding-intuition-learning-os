@@ -90,3 +90,5 @@ Implementation and local protocol verification are separate from deployment. Hos
 
 
 For full saved-discussion reading, source submission history, periodic monitoring, the runnable isolated demo, and remaining live gates, see [BACKGROUND_AND_DISCUSSIONS.md](BACKGROUND_AND_DISCUSSIONS.md).
+
+For a privacy-safe real local document/monitor report, run `npm run verify:live`. It cannot claim verification of the separate ChatGPT Go account.

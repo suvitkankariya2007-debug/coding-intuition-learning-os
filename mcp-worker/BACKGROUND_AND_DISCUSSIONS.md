@@ -21,14 +21,15 @@ summary/note was saved. This feature does not ingest unseen ChatGPT conversation
 
 refresh_learning_memory also indexes literal question candidates with document,
 version and character-span provenance. It prefers labeled User/Human turns,
-excludes Assistant/ChatGPT turns and fenced code, and recognizes simple standalone
+excludes Assistant/ChatGPT turns and backtick/tilde fenced code (including Markdown role headings), and recognizes simple standalone
 question lines. This is a bounded heuristic, not exhaustive semantic extraction:
 it does not invent missing questions, automatically diagnose a mistake, or write
 mastery/recall grades. Updated document versions replace candidates rather than
 duplicate them. Up to 200 candidates are indexed per document; the complete
-available discussion can still be read separately. Deleted source documents are
-not automatically purged from the candidate index yet; re-read a candidate's
-source/version before using it. Saved notes remain searchable even when they
+available discussion can still be read separately. Changed incomplete documents immediately lose old candidates. Deleted-source
+candidates are removed after two matching complete document inventories;
+partial or out-of-order scans cannot remove them. Re-read a candidate source/version
+before coaching. Saved notes remain searchable even when they
 contain no literal question. Only approved structured observations affect the
 reasoning ledger. No extra paid model inference is used.
 
@@ -52,7 +53,8 @@ configure_background_monitor(enabled=true, intervalMinutes=30) enables durable
 alarms for this owner. Polling performs one bounded task per wake-up: LeetCode,
 Codeforces, configured GitHub, then the primary Supermemory space. Tasks are
 staggered by one minute; after a cycle the configured interval is applied.
-Additional memory pages continue on subsequent minute wake-ups. Codeforces
+Additional memory pages continue on subsequent minute wake-ups, with at most
+three pages per cycle so large memory spaces cannot starve coding-profile refreshes. Codeforces
 backfill follows its cursor across cycles. Failures use a capped exponential
 backoff, continue other sources, and expose task status and nextRunAt. Monitoring
 creates no reasoning observations or recall grades. It is polling, not push events.
@@ -122,3 +124,32 @@ A real provider-truncated document remains blocked unless its full content is
 made available upstream. Hosted OAuth, migration, full live write/read-back,
 and laptop-off checks remain paused until deployment is authorized. No automatic
 ChatGPT conversation importer or private GitHub runtime authentication is claimed.
+
+
+## Live proof and ongoing development gates
+
+Run npm run verify:live against the running authenticated local MCP. The report
+checks updated tool discovery, reads one saved document fully through versioned
+pages, and checks that every expected monitor task has a fresh successful result.
+It excludes document text and credentials. Missing tasks, disabled polling,
+provider truncation, stale timestamps and read failures cannot produce PASS.
+This SDK report always has liveChatGPTGoVerified=false: it proves the local
+transport, not a call made inside the separate Go account.
+
+To finish the Go boundary, use the existing Go chat/connection to call
+list_learning_documents, read_saved_discussion (following all pages with the
+same version), and get_monitor_status. Report the tool results and task timestamps
+without saving invented performance. An enabled timer alone is insufficient.
+
+When monitoring has just started, tasks are staggered by one minute. Wait for
+all configured task results; repeated configure calls are not necessary. The
+live checker reports PARTIAL until the evidence exists. Failures preserve the
+last successful per-task timestamp, increase that task's failure count, and allow
+other sources to continue even if a later memory page fails.
+
+Each future intelligence change must document its data provenance, include a
+meaningful before/after scenario, preserve the distinction between context and
+verified performance, pass applicable automated/local runtime gates, and expose
+live failures clearly. The system continuously refreshes data when monitoring is
+enabled; it does not autonomously rewrite its code or tune scoring weights without
+validation. Use real learner feedback to choose and evaluate later changes.
