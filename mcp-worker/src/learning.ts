@@ -32,7 +32,12 @@ export function buildData(s:Snapshot,options:{focusItemId?:string}={}):ToolData 
     const history=s.events.filter(e=>e.itemId===p.id||e.problemRef===p.problemRef).sort((a,b)=>a.recordedAt.localeCompare(b.recordedAt));
     let lastMistake=-1;history.forEach((e,i)=>{if(e.kind==='mistake'||e.kind==='recall_check'&&e.confidence!==null&&e.confidence<=2)lastMistake=i;});
     const improvement=lastMistake<0?0:history.slice(lastMistake+1).filter(e=>e.independentlyExplained===true&&(!e.hintStage||e.hintStage==='none')&&['reasoning_insight','recall_check','transfer_attempt'].includes(e.kind)).length;
-    return improvement?{...rec,score:rec.score-Math.min(18,improvement*6),reason:[...rec.reason,'Later independently explained reasoning reduced practice priority; self-report does not establish mastery.']}:rec;
+    const lastReview=s.reviews.filter(r=>r.itemId===p.id).sort((a,b)=>a.reviewedAt.localeCompare(b.reviewedAt)).at(-1);
+    const reviewAt=lastReview?Date.parse(lastReview.reviewedAt):NaN;
+    const laterDifficulty=history.some(e=>Date.parse(e.recordedAt)>reviewAt&&(e.kind==='mistake'||e.kind==='recall_check'&&e.confidence!==null&&e.confidence<=2||e.kind==='transfer_attempt'&&e.independentlyExplained===false));
+    const laterFailure=s.evidence.some(e=>e.itemId===p.id&&['leetcode','codeforces'].includes(e.source)&&e.accepted!==true&&!!e.verdict&&Date.parse(e.observedAt)>reviewAt);
+    const cooling=!!lastReview&&lastReview.grade>=3&&s.progress[p.id]?.due_date>learningDay()&&!laterDifficulty&&!laterFailure;
+    return {...rec,score:rec.score-Math.min(18,improvement*6)-(cooling?25:0),reason:[...rec.reason,...(improvement?['Later independently explained reasoning reduced practice priority; self-report does not establish mastery.']:[]),...(cooling?['Successful recall review is scheduled for later; prioritize other practice until due or new difficulty appears.']:[])]};
   });
   const position=new Map(items.map(p=>[p.id,p.position]));
   if(options.focusItemId){

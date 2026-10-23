@@ -6,7 +6,7 @@ not proof of live account access or production operation.
 ## Completed automatically
 
 - TypeScript/native-script syntax and both non-deploying Worker bundles.
-- 81 automated cases covering local and OAuth runtimes, owner/scope boundaries,
+- 82 automated cases covering local and OAuth runtimes, owner/scope boundaries,
   memory pagination and recovery, actual alarms, source failures, persistence,
   idempotency, source attribution and evidence-based ranking.
 - Background simulation: explicit truncated-memory PARTIAL; recovery after complete

@@ -89,5 +89,13 @@ describe('memory-first learning',()=>{
    s.events=[mistake,independent];const after=buildData(s).recommendations.find(r=>r.itemId===bst.id)!.score;expect(after).toBeLessThan(before);
    s.events.push({...mistake,clientEventId:'pattern-relapse-0001',recordedAt:'2026-10-23T04:00:00Z'});expect(buildData(s).recommendations.find(r=>r.itemId===bst.id)!.score).toBeGreaterThan(after);
  });
+ it('does not repeat a successful review before its due date and reopens priority after a later mistake',async()=>{
+   const s=emptySnapshot(),bst=curriculum.find(p=>p.leetcode_id===98)!,reviewedAt=new Date(Date.now()-10000).toISOString();
+   s.reviews=[{itemId:bst.id,grade:4,reviewedAt,clientEventId:'successful-review-0001'}];s.progress[bst.id]={due_date:learningDay(Date.now()+86400000),ease:2.5,interval_days:1,repetitions:1,grade:4};
+   expect(buildData(s).recommendations.some(r=>r.itemId===bst.id)).toBe(false);
+   s.events=[(await eventEnvelope({clientEventId:'post-review-mistake-0001',itemId:bst.id,kind:'mistake',summary:'I again confused tree shape with the BST ordering rule.',conceptKeys:['bst-ordering'],origin:'chatgpt'})).payload.event];
+   expect(buildData(s).recommendations[0].itemId).toBe(bst.id);
+   s.events=[];s.progress[bst.id].due_date=learningDay();expect(buildData(s).recommendations[0].itemId).toBe(bst.id);
+ });
 
 });

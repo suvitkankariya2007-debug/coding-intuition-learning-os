@@ -17,6 +17,8 @@ updating the server; the tool count remains 24.
   within a 30-day window, with a bounded lower weight. Historical records remain.
   The window/weights are product heuristics, not validated learning probabilities.
 - Due reviews and actual approved reasoning observations receive stronger weight.
+  A successful review with a future due date temporarily lowers repeat priority;
+  a later explicit difficulty or unsuccessful submission can reopen it.
 - focusItemId applies temporary current-session relevance. It saves no learner
   event and does not imply the focused problem is a weakness.
 - Historical weakConcepts remain auditable. activeWeakConcepts counts unresolved
