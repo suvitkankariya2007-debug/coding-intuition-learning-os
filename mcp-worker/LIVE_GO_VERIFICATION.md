@@ -11,7 +11,7 @@ MCP to read an actual saved document, verify commit-pinned GitHub code and inspe
 recorded monitor task results.
 It emits no raw text or credentials. It deliberately cannot certify Go access.
 
-Paste the following into the existing Go connection after refreshing its 25 tools:
+Paste the following into the existing Go connection after refreshing its 29 tools:
 
 ```text
 Verify the actual Coding Intuition MCP connection with live tool calls.

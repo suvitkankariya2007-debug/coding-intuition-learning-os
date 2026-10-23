@@ -29,7 +29,7 @@ not proof of live account access or production operation.
 1. Updated laptop runtime: pull the feature branch, rebuild and restart. Run
    npm run verify:live. This must read an actual nonempty saved discussion fully
    verify commit-pinned GitHub code and see fresh successful results for each expected monitor task.
-2. Updated Go connection: refresh the existing connection's 25 tools and execute
+2. Updated Go connection: refresh the existing connection's 29 tools and execute
    the prompt in LIVE_GO_VERIFICATION.md. Capture actual Go tool-call evidence.
 3. Real approved learning write/review: preserve the returned receipt and confirm
    read-back in a fresh chat after restart. Earlier prompt passes were user-reported;
@@ -89,3 +89,5 @@ common pitfalls, fallback approaches, review reasons and real platform catalog
 problems without saving proposed observations. Saved excerpts are checked
 against exact versions/offsets. See DISCUSSION_REVIEW.md for the Go prompt and
 current-chat access limitations.
+
+Cross-chat continuity now has versioned durable question records and full-payload write queuing. Search TTL is one hour; records do not expire. Automated fixtures cover independent questions, concurrent revision conflicts, restart/outage recovery and response-lost reconciliation. Refresh Go discovery to 29 tools and run the real-question workflow in CROSS_CHAT_CONTINUITY.md. A provider write with an ambiguous outcome remains pending until reconciliation finds it; automatic blind resends are disabled. An acknowledged targeted resend is available only after a complete nontruncated absence scan. Actual Go continuity, real account recovery and hosted laptop-off operation remain live gates.

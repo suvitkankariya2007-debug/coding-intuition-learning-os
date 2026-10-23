@@ -98,6 +98,6 @@ Still required on the laptop: real Supermemory public-client registration and br
 
 ## Limits and costs
 
-No model inference or embeddings API is used. Optional monitoring performs bounded periodic source and document reads using Durable Object alarms. The tunnel needs an OpenAI runtime API key for tunnel access; this is distinct from making billable model API requests. Provider billing and quotas still apply; this implementation does not guarantee unlimited or free tunnel traffic. Supermemory account limits and ChatGPT Go limits remain independent. Memory searches return at most six excerpts of 1,200 characters each and cache for five minutes; source sync is on demand and cached for ten minutes.
+No model inference or embeddings API is used. Optional monitoring performs bounded periodic source and document reads using Durable Object alarms. The tunnel needs an OpenAI runtime API key for tunnel access; this is distinct from making billable model API requests. Provider billing and quotas still apply; this implementation does not guarantee unlimited or free tunnel traffic. Supermemory account limits and ChatGPT Go limits remain independent. Memory searches return at most six excerpts of 1,200 characters each and cache for one hour; source sync is on demand and cached for ten minutes.
 
 Official tunnel guide: https://developers.openai.com/api/docs/guides/secure-mcp-tunnels
