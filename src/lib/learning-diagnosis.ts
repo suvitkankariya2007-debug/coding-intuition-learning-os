@@ -9,6 +9,7 @@ export type Weakness={
   affectedProblems:number; lastObservedAt:string|null; recommendation:string
 };
 const advice:Record<string,string>={
+ "conceptual-understanding":"Distinguish the structure's definition from the property required by the problem; test one counterexample before coding.",
  "base-case":"Write the stopping condition before recursive steps and test the smallest input.",
  "boundary":"Trace first, last, empty and single-item cases before coding.",
  "invariant":"State what remains true after every iteration or recursive call.",

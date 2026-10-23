@@ -5,6 +5,8 @@ import {makeProblem} from '../src/catalog';
 import {assertOwner,readNamespaces} from '../src/config';
 import {diagnoseWeaknesses} from '../../src/lib/learning-diagnosis';
 import {respondToMcp} from '../../src/lib/mcp-core';
+import {recommendDSA} from '../../src/lib/evidence-intelligence';
+import {deriveLearningSignals} from '../../src/lib/learning-events';
 
 describe('memory-first learning',()=>{
  it('preserves the canonical 188 and unique stable IDs',()=>{expect(curriculum).toHaveLength(188);expect(new Set(curriculum.map(x=>x.id)).size).toBe(188);});
@@ -49,6 +51,43 @@ describe('memory-first learning',()=>{
    const call=async(row:any)=>JSON.parse((await respondToMcp({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'get_transfer_problem',arguments:{itemId:row.itemId}}},async()=>({recommendations:[],due:[],roadmap:[row,candidate]})) as any).result.content[0].text);
    expect(await call(source)).toMatchObject({found:true,basis:'shared_concept_heuristic',verificationRequired:true});
    expect(await call({...source,title:'Make It Zero',topic:'External practice',idea:null})).toMatchObject({found:false});
+ });
+ it('keeps GitHub-only files from crowding out unassessed practice or creating learner attempts',()=>{
+   const s=emptySnapshot();s.evidence=curriculum.slice(0,50).map(p=>({itemId:p.id,source:'github',accepted:false,observedAt:new Date().toISOString(),provenanceId:p.id,codeUrl:'https://github.com/fixture/solution'}));
+   const data=buildData(s);
+   expect(data.roadmap!.slice(0,50).every(p=>p.status==='not_started')).toBe(true);
+   expect(data.recommendations.every(r=>r.evidence.codeFiles===0)).toBe(true);
+   expect(data.recommendations.every(r=>r.score===10)).toBe(true);
+ });
+ it('retains failure history but stops ranking resolved and old platform failures as current difficulty',()=>{
+   const item={id:'cf',title:'Make It Zero',topic:'math',position:1,status:'solved' as const,practiceEvidence:'platform_observation' as const};
+   const now='2026-10-23T00:00:00Z';
+   const failures=[{itemId:'cf',source:'codeforces' as const,observedAt:'2026-10-21T00:00:00Z',verdict:'WRONG_ANSWER',provenanceId:'wa'}];
+   const accepted={...failures[0],observedAt:'2026-10-22T00:00:00Z',verdict:'OK',accepted:true,provenanceId:'ac'};
+   const result=recommendDSA([item],[...failures,accepted],{now})[0];expect(result.evidence).toMatchObject({rejected:1,unresolvedRejected:0,accepted:1});expect(result.score).toBeLessThan(0);
+   const stale=recommendDSA([{...item,status:'attempted'}],[{...failures[0],observedAt:'2026-08-01T00:00:00Z'}],{now})[0];expect(stale.evidence.unresolvedRejected).toBe(0);
+   const fresh=recommendDSA([{...item,status:'attempted'}],failures,{now})[0];expect(fresh.evidence.unresolvedRejected).toBe(1);expect(fresh.score).toBeLessThan(18);
+ });
+ it('prioritizes an approved BST misconception over source-only failures and supports temporary focus without writes',async()=>{
+   const s=emptySnapshot(),bst=curriculum.find(p=>p.leetcode_id===98)!,cf=await makeProblem('cf:1869A','Make It Zero','math',null,'codeforces');s.problems=[cf];
+   s.evidence=Array.from({length:3},(_,i)=>({itemId:cf.id,source:'codeforces',accepted:false,observedAt:new Date().toISOString(),provenanceId:'cf-'+i,verdict:'WRONG_ANSWER'}));
+   expect(buildData(s).recommendations[0].itemId).toBe(cf.id);
+   expect(buildData(s,{focusItemId:bst.id}).recommendations[0].itemId).toBe(bst.id);expect(s.events).toHaveLength(0);
+   const event=await eventEnvelope({clientEventId:'bst-concept-0001',itemId:bst.id,kind:'mistake',summary:'I confused the number of children with the BST ancestor ordering rule.',conceptKeys:['bst-ordering'],mistakeClass:'conceptual-understanding',origin:'chatgpt'});s.events=[event.payload.event];
+   const ranked=buildData(s).recommendations;expect(ranked[0].itemId).toBe(bst.id);expect(ranked[0].reason.join(' ')).toContain('bst-ordering');
+ });
+ it('reduces active pattern pressure after independent learning, preserves history and reopens it on relapse',async()=>{
+   const bst=curriculum.find(p=>p.leetcode_id===98)!,s=emptySnapshot();
+   const mistake=(await eventEnvelope({clientEventId:'pattern-mistake-0001',itemId:bst.id,kind:'mistake',summary:'I confused binary tree shape with the BST ordering property.',conceptKeys:['bst-ordering'],origin:'chatgpt'},'2026-10-23T01:00:00Z')).payload.event;
+   const assisted={...mistake,itemId:null,problemRef:'lc:98',clientEventId:'pattern-assisted-0001',kind:'reasoning_insight' as const,hintStage:'gentle',independentlyExplained:true,recordedAt:'2026-10-23T02:00:00Z'};
+   const independent={...assisted,clientEventId:'pattern-independent-0001',hintStage:'none',recordedAt:'2026-10-23T03:00:00Z'};
+   const aliases={[bst.id]:'lc:98'};
+   expect(deriveLearningSignals([assisted,mistake],aliases).activeWeakConcepts).toHaveLength(1);
+   const recovered=deriveLearningSignals([independent,mistake,assisted,independent],aliases);expect(recovered.activeWeakConcepts).toEqual([]);expect(recovered.weakConcepts[0].count).toBe(1);expect(recovered.eventCount).toBe(3);
+   s.events=[mistake];const before=buildData(s).recommendations.find(r=>r.itemId===bst.id)!.score;
+   s.events=[mistake,assisted];expect(buildData(s).recommendations.find(r=>r.itemId===bst.id)!.score).toBe(before);
+   s.events=[mistake,independent];const after=buildData(s).recommendations.find(r=>r.itemId===bst.id)!.score;expect(after).toBeLessThan(before);
+   s.events.push({...mistake,clientEventId:'pattern-relapse-0001',recordedAt:'2026-10-23T04:00:00Z'});expect(buildData(s).recommendations.find(r=>r.itemId===bst.id)!.score).toBeGreaterThan(after);
  });
 
 });

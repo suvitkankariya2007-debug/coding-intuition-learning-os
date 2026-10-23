@@ -6,7 +6,7 @@ not proof of live account access or production operation.
 ## Completed automatically
 
 - TypeScript/native-script syntax and both non-deploying Worker bundles.
-- 76 automated cases covering local and OAuth runtimes, owner/scope boundaries,
+- 81 automated cases covering local and OAuth runtimes, owner/scope boundaries,
   memory pagination and recovery, actual alarms, source failures, persistence,
   idempotency, source attribution and evidence-based ranking.
 - Background simulation: explicit truncated-memory PARTIAL; recovery after complete
@@ -74,3 +74,10 @@ not proof of live account access or production operation.
 - Old successful timestamps: they remain historical evidence, not a fresh pass.
 - Go remains unverified until its actual tool-call report is available, regardless
   of the result from the local SDK checker.
+
+## Recommendation acceptance update
+
+See RECOMMENDATION_ACCEPTANCE.md for same-version, same-focus baseline tests,
+valid event tags, a genuine recall/improvement cycle, restart readback and a
+new-pattern update. Source-only items receive conservative scores; saved
+historical mistakes and active weakness pressure are distinguished.

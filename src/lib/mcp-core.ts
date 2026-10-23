@@ -1,8 +1,8 @@
 import { progressiveHint } from "./progressive-coaching";
 import { proposeTransferProblem } from "./transfer-intelligence";
-import { diagnoseWeaknesses } from "./learning-diagnosis";
+import { diagnoseWeaknesses,MISTAKE_CLASSES,HINT_STAGES } from "./learning-diagnosis";
 import type { Recommendation } from "./evidence-intelligence";
-import {connectUnfamiliarProblems,type ConceptProblem} from "./concept-graph";
+import {connectUnfamiliarProblems,CONCEPT_KEYS,type ConceptProblem} from "./concept-graph";
 import {parseLearningEvent,deriveLearningSignals,type LearningEventInput,type LearningEventRecord} from "./learning-events";
 
 type JsonId = string | number | null;
@@ -39,7 +39,7 @@ const tools:ToolSpec[] = [
   {name:"get_memory_patterns",description:"Search fresh learning preferences and notes in explicitly configured DSA Supermemory spaces. Use refresh after externally added notes; memories are context, never proof of mastery.",inputSchema:{type:"object",properties:{query:{type:"string",minLength:3,maxLength:250},refresh:{type:"boolean",description:"Bypass the five-minute cache to retrieve newly added memory now."}},required:["query"],additionalProperties:false}},
   {name:"get_concept_connections",description:"Recommend unfamiliar linked curriculum problems with a contrast question; metadata is heuristic, not proof of mastery.",inputSchema:{type:"object",properties:{itemId:{type:"string",format:"uuid"}},required:["itemId"],additionalProperties:false}},
   {name:"get_learning_signals",description:"Show the authenticated user's explicit recorded reasoning weaknesses, hint usage and self-reported insights.",inputSchema:{type:"object",properties:{},additionalProperties:false}},
-  {name:"record_reasoning_event",description:"Save a brief user-approved structured reasoning observation during tutoring. Do not record full chat transcripts, raw copyrighted problems, code, passwords or secrets. Never claims acceptance or mastery.",inputSchema:{type:"object",properties:{clientEventId:{type:"string",minLength:8,maxLength:100},itemId:{type:"string",format:"uuid"},problemRef:{type:"string"},kind:{type:"string",enum:["problem_attempt","reasoning_insight","mistake","approach_comparison","transfer_attempt","recall_check"]},summary:{type:"string",minLength:10,maxLength:700},conceptKeys:{type:"array",items:{type:"string"},maxItems:6},mistakeClass:{type:"string"},hintStage:{type:"string"},confidence:{type:"integer",minimum:1,maximum:5},independentlyExplained:{type:"boolean"},origin:{type:"string",enum:["chatgpt","app"]}},required:["clientEventId","kind","summary","origin"],additionalProperties:false}},
+  {name:"record_reasoning_event",description:"Save a brief user-approved structured reasoning observation during tutoring. Do not record full chat transcripts, raw copyrighted problems, code, passwords or secrets. Never claims acceptance or mastery.",inputSchema:{type:"object",properties:{clientEventId:{type:"string",minLength:8,maxLength:100},itemId:{type:"string",format:"uuid"},problemRef:{type:"string"},kind:{type:"string",enum:["problem_attempt","reasoning_insight","mistake","approach_comparison","transfer_attempt","recall_check"]},summary:{type:"string",minLength:10,maxLength:700},conceptKeys:{type:"array",items:{type:"string",enum:CONCEPT_KEYS},maxItems:6},mistakeClass:{type:"string",enum:MISTAKE_CLASSES},hintStage:{type:"string",enum:HINT_STAGES},confidence:{type:"integer",minimum:1,maximum:5},independentlyExplained:{type:"boolean"},origin:{type:"string",enum:["chatgpt","app"]}},required:["clientEventId","kind","summary","origin"],additionalProperties:false}},
   {name:"get_source_status",description:"Count stored evidence per coding source and report the latest observed timestamp; does not claim a live connection.",inputSchema:{type:"object",properties:{},additionalProperties:false}}
 ];
 const success=(id:JsonId,result:unknown)=>({jsonrpc:"2.0" as const,id,result});
@@ -106,7 +106,7 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
    if(!data.memorySearch||data.memorySearch.query!==String(a.query).trim())throw Error("Memory search unavailable");
    return data.memorySearch;
  }
- if(name==="get_learning_signals")return deriveLearningSignals(data.learningEvents??[]);
+ if(name==="get_learning_signals")return deriveLearningSignals(data.learningEvents??[],Object.fromEntries(roadmap.filter(p=>p.problemRef).map(p=>[p.itemId,p.problemRef!])));
  if(name==="get_concept_connections"){
   const source=roadmap.find(x=>x.itemId===a.itemId);
   if(!source)return {found:false,reason:"Unknown curriculum problem"};

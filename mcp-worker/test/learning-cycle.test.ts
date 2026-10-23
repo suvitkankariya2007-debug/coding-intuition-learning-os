@@ -10,6 +10,20 @@ import {fixtureRuntime,originalDiscussion} from '../scripts/demo-fixture.mjs';
 import {verifyLearningClient} from '../local/verify-learning.mjs';
 
 describe('complete isolated learning cycle',()=>{
+ it('advertises valid tags, reports limited personalization, and keeps session focus ephemeral',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;
+   const client=new Client({name:'baseline-contract-fixture',version:'1'});
+   try{
+     await client.connect(new StreamableHTTPClientTransport(new URL('http://127.0.0.1:8787/mcp'),{fetch:(url:any,init:any)=>f.mf.dispatchFetch(String(url),init)}));
+     const tools=(await client.listTools()).tools,event=tools.find(t=>t.name==='record_reasoning_event')!;
+     expect((event.inputSchema.properties!.conceptKeys as any).items.enum).toContain('bst-ordering');expect((event.inputSchema.properties!.mistakeClass as any).enum).toContain('conceptual-understanding');
+     const problem=(await f.rpc('get_learning_catalog')).items[0],before=f.state.documents.length;
+     const focused=await f.rpc('get_recommendations',{focusItemId:problem.itemId});expect(focused.personalization).toMatchObject({status:'limited_learning_evidence',focusItemId:problem.itemId,focusPersisted:false,eventCount:0});
+     expect((await f.rpc('get_recommendations')).personalization.focusItemId).toBeNull();expect(f.state.documents).toHaveLength(before);
+     const invalid=await client.callTool({name:'record_reasoning_event',arguments:{clientEventId:'invalid-schema-0001',itemId:problem.itemId,kind:'mistake',summary:'Fixture only unsupported conceptual labels must not be silently saved.',conceptKeys:['tree-invariants'],mistakeClass:'conceptual_misunderstanding',origin:'chatgpt'}});
+     expect(invalid.isError).toBe(true);expect(invalid.structuredContent).toMatchObject({error:'INVALID_LEARNING_EVENT'});expect(f.state.documents).toHaveLength(before);
+   }finally{await client.close().catch(()=>{});await f.mf.dispose();}
+ });
  it('reads source/context, writes an observed difficulty and recall grade, then verifies restart and Supermemory recovery',async()=>{
    const directory=await mkdtemp(join(tmpdir(),'learning-cycle-')),recovery=await mkdtemp(join(tmpdir(),'learning-cycle-recovery-'));
    let f=fixtureRuntime(directory);await f.mf.ready;
@@ -29,12 +43,12 @@ describe('complete isolated learning cycle',()=>{
      const refs={itemId:problem.itemId,eventId:'cycle-mistake-0001',reviewId:'cycle-review-0001'};
      expect((await verifyLearningClient(client,refs)).status).toBe('PARTIAL');
      expect(await f.rpc('diagnose_weaknesses')).toEqual([]);
-     const baseline=(await f.rpc('get_recommendations')).recommendations.find((r:any)=>r.itemId===problem.itemId);
+     const baseline=(await f.rpc('get_recommendations',{focusItemId:problem.itemId})).recommendations.find((r:any)=>r.itemId===problem.itemId);
      const docsBefore=f.state.documents.length;
      const event={clientEventId:refs.eventId,itemId:problem.itemId,kind:'mistake',summary:'Simulated learner omitted the boundary invariant in this isolated test.',mistakeClass:'boundary',conceptKeys:['binary-search'],hintStage:'gentle',origin:'chatgpt'};
      const eventReceipt=await f.rpc('record_reasoning_event',event);
      expect(eventReceipt.status).toBe('stored');
-     const adapted=(await f.rpc('get_recommendations')).recommendations.find((r:any)=>r.itemId===problem.itemId);
+     const adapted=(await f.rpc('get_recommendations',{focusItemId:problem.itemId})).recommendations.find((r:any)=>r.itemId===problem.itemId);
      expect(adapted.score).toBeGreaterThan(baseline.score);expect(adapted.reason.join(' ')).toContain('binary-search');
      expect((await f.rpc('diagnose_weaknesses'))[0]).toMatchObject({pattern:'boundary',occurrences:1,lowRecall:0});
      const reviewArgs={itemId:problem.itemId,grade:2,clientEventId:refs.reviewId};
@@ -46,7 +60,7 @@ describe('complete isolated learning cycle',()=>{
      const history=await f.rpc('get_problem_history',{itemId:problem.itemId});
      expect(history.problem.status).toBe('attempted');expect(history.problem.dueDate).toBe(receipt.nextDue);
      expect(history.reviews[0].clientEventId).toBe(refs.reviewId);
-     const reviewed=(await f.rpc('get_recommendations')).recommendations.find((r:any)=>r.itemId===problem.itemId);
+     const reviewed=(await f.rpc('get_recommendations',{focusItemId:problem.itemId})).recommendations.find((r:any)=>r.itemId===problem.itemId);
      expect(reviewed.score).toBeGreaterThan(adapted.score);expect(reviewed.reason).toContain('Previous recall was difficult');
      const privateDocuments=f.state.documents;
      await client.close();await f.mf.dispose();f=fixtureRuntime(directory);f.state.documents=privateDocuments;await f.mf.ready;

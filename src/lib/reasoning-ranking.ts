@@ -3,7 +3,7 @@ import {deriveLearningSignals,type LearningEventRecord} from "./learning-events"
 import type {Recommendation} from "./evidence-intelligence";
 /** Ranks SRS work using learner-reported weak techniques, never fabricated accepted verdicts. */
 export function rankWithReasoning(base:Recommendation[],roadmap:ConceptProblem[],events:LearningEventRecord[]):Recommendation[]{
- const weaknesses=new Map(deriveLearningSignals(events).weakConcepts.map(x=>[x.concept,x.count]));
+ const weaknesses=new Map(deriveLearningSignals(events,Object.fromEntries(roadmap.filter(p=>p.problemRef).map(p=>[p.itemId,p.problemRef!]))).activeWeakConcepts.map(x=>[x.concept,x.count]));
  if(!weaknesses.size)return base;
  const items=new Map(roadmap.map(p=>[p.itemId,p]));
  return base.map(rec=>{

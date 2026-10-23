@@ -37,20 +37,28 @@ export function parseLearningEvent(raw:unknown):LearningEventInput{
  if(independent!==null&&typeof independent!=="boolean")throw Error("Invalid self-report");
  return {clientEventId:a.clientEventId,itemId:item as string|null,problemRef:ref as string|null,kind:a.kind as LearningEventKind,summary:a.summary.trim(),conceptKeys:keys as ConceptKey[],mistakeClass:mistake as string|null,hintStage:hint as string|null,confidence:confidence as number|null,independentlyExplained:independent as boolean|null,origin:a.origin};
 }
-export function deriveLearningSignals(events:LearningEventRecord[]){
+export function deriveLearningSignals(events:LearningEventRecord[],problemRefs:Record<string,string>={}){
  const seen=new Set<string>(),weak=new Map<ConceptKey,number>(),mistakes=new Map<string,number>();
- let hintDependent=0,reportedIndependent=0;const problemRefs:string[]=[];
- for(const e of events){
+ const active=new Map<string,{concept:ConceptKey;count:number}>();
+ let hintDependent=0,reportedIndependent=0;const observedRefs:string[]=[];
+ for(const e of events.slice().sort((a,b)=>a.recordedAt.localeCompare(b.recordedAt))){
   if(!eventId.test(e.clientEventId)||seen.has(e.clientEventId)||!Number.isFinite(Date.parse(e.recordedAt)))continue;
   seen.add(e.clientEventId);
-  if(e.problemRef&&!problemRefs.includes(e.problemRef))problemRefs.push(e.problemRef);
+  if(e.problemRef&&!observedRefs.includes(e.problemRef))observedRefs.push(e.problemRef);
   const struggling=e.kind==="mistake"||e.kind==="recall_check"&&e.confidence!==null&&e.confidence<=2||e.kind==="transfer_attempt"&&e.independentlyExplained===false;
-  if(struggling)for(const k of new Set(e.conceptKeys))if(CONCEPT_KEYS.includes(k))weak.set(k,(weak.get(k)??0)+1);
+  for(const k of new Set(e.conceptKeys))if(CONCEPT_KEYS.includes(k)){
+   const key=(e.problemRef??(e.itemId?problemRefs[e.itemId]:null)??e.itemId??'unknown')+'|'+k,row=active.get(key)??{concept:k,count:0};
+   if(struggling){weak.set(k,(weak.get(k)??0)+1);row.count++;}
+   else if(e.independentlyExplained===true&&['reasoning_insight','recall_check','transfer_attempt'].includes(e.kind)&&(!e.hintStage||e.hintStage==='none'))row.count=Math.max(0,row.count-1);
+   active.set(key,row);
+  }
   if(e.mistakeClass)mistakes.set(e.mistakeClass,(mistakes.get(e.mistakeClass)??0)+1);
   if(e.hintStage&&e.hintStage!=="none")hintDependent++;
   if(e.independentlyExplained===true)reportedIndependent++;
  }
- return {eventCount:seen.size,weakConcepts:[...weak].map(([concept,count])=>({concept,count})).sort((a,b)=>b.count-a.count||a.concept.localeCompare(b.concept)),
+ const activeCounts=new Map<ConceptKey,number>();for(const row of active.values())if(row.count)activeCounts.set(row.concept,(activeCounts.get(row.concept)??0)+row.count);
+ return {eventCount:seen.size,weakConcepts:[...weak].map(([concept,count])=>({concept,count})).sort((a,b)=>b.count-a.count||a.concept.localeCompare(b.concept)),activeWeakConcepts:[...activeCounts].map(([concept,count])=>({concept,count})).sort((a,b)=>b.count-a.count||a.concept.localeCompare(b.concept)),
  mistakeCounts:[...mistakes].map(([mistakeClass,count])=>({mistakeClass,count})).sort((a,b)=>b.count-a.count||a.mistakeClass.localeCompare(b.mistakeClass)),
- hintDependent,selfReportedIndependent:reportedIndependent,problemRefs:problemRefs.slice(0,20)};
+ hintDependent,selfReportedIndependent:reportedIndependent,problemRefs:observedRefs.slice(0,20)};
 }
+

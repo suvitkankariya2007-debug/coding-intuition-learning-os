@@ -7,7 +7,7 @@ export const CONCEPTS={
  "backtracking":"Backtracking/pruning","dynamic-programming":"Dynamic programming state",
  "stack-invariant":"Stack invariant","monotonic-stack":"Monotonic stack",
  "greedy":"Greedy exchange proof","heap":"Priority queue","cycle-detection":"Cycle detection",
- "intervals":"Interval ordering","bitmask":"Bitwise representation"
+ "intervals":"Interval ordering","bitmask":"Bitwise representation","bst-ordering":"BST ancestor bounds"
 } as const;
 export type ConceptKey=keyof typeof CONCEPTS;
 export const CONCEPT_KEYS=Object.keys(CONCEPTS) as ConceptKey[];
@@ -28,6 +28,7 @@ export const CONCEPT_EDGES:readonly {from:ConceptKey;to:ConceptKey;relation:Conc
  {from:"cycle-detection",to:"two-pointers",relation:"builds-on",question:"Why do different pointer speeds meet if a cycle exists?"}
 ];
 const RULES:readonly {key:ConceptKey;pattern:RegExp}[]=[
+ {key:"bst-ordering",pattern:/\bbst\b|binary\s*search\s*tree|ancestor\s*(bound|constraint)|inherited\s*bound/i},
  {key:"hash-lookup",pattern:/hash\s*(map|set|table)|frequency\s*(map|count)/i},
  {key:"sorting",pattern:/sort(ing|ed)?|sorted/i},
  {key:"two-pointers",pattern:/two[\s-]?pointer|opposite[\s-]direction pointer/i},

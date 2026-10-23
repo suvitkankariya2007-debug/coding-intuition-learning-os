@@ -30,13 +30,14 @@ export type LearningItem = {
   mistakeClass?: string | null;
   hintStage?: "none" | "gentle" | "deeper" | "solution" | null;
   confidence?: number | null;
+  practiceEvidence?: "learner_report" | "platform_observation" | "code_only" | "none";
 };
 export type Recommendation = {
   itemId: string;
   title: string;
   score: number;
   reason: string[];
-  evidence: { accepted: number; rejected: number; codeFiles: number; latestAt: string | null };
+  evidence: { accepted: number; rejected: number; codeFiles: number; latestAt: string | null; unresolvedRejected?:number };
 };
 const DAY = 86400000;
 function validDate(x: string | null | undefined): number | null {
@@ -71,12 +72,16 @@ export function recommendDSA(
     const rejected = ev.filter(e => (e.source === "codeforces" || e.source === "leetcode") &&
       !!e.verdict && !verdictAccepted(e)).length;
     const codeFiles = ev.filter(e => e.source === "github" && !!e.codeUrl).length;
+    const acceptedTimes=ev.filter(verdictAccepted).map(e=>validDate(e.observedAt)!).filter(Number.isFinite);
+    const lastAcceptance=acceptedTimes.length?Math.max(...acceptedTimes):-Infinity;
+    const unresolvedRejected=ev.filter(e=>(e.source==='codeforces'||e.source==='leetcode')&&!!e.verdict&&!verdictAccepted(e)&&validDate(e.observedAt)!>lastAcceptance&&now-validDate(e.observedAt)!<=30*DAY).length;
+    const conservative=item.practiceEvidence!==undefined;
     const latest = ev.map(e => validDate(e.observedAt)).filter((x): x is number => x !== null);
     const due = validDate(item.dueDate);
     const daysOverdue = due === null ? 0 : Math.max(0, Math.floor((now - due) / DAY));
     const isDue = due !== null && due <= now;
     const weakRecall = item.recallGrade != null && item.recallGrade <= 1;
-    const attempted = item.status === "attempted" || (item.attemptCount ?? 0) > 0 || rejected > 0;
+    const attempted = item.status === "attempted" || (item.attemptCount ?? 0) > 0 || (conservative?unresolvedRejected:rejected) > 0;
     const solved = item.status === "solved" || item.status === "mastered" || accepted > 0;
     const reason: string[] = [];
     let score = 0;
@@ -85,10 +90,11 @@ export function recommendDSA(
     if(item.mistakeClass && weakRecall) { score += 14; reason.push(`Revisit reasoning error: ${item.mistakeClass.replaceAll("-", " ")}`); }
     if(item.hintStage && item.hintStage !== "none" && !solved) { score += 8; reason.push("Needed hints in the previous review"); }
     if(item.confidence != null && item.confidence <= 2 && !solved) { score += 8; reason.push("Low confidence in independent reasoning"); }
-    if (rejected) { score += Math.min(rejected, 5) * 6; reason.push(`${rejected} observed non-accepted submission(s)`); }
-    if(options.mode==="competitive" && rejected) { score+=10; reason.push("Competitive practice: revisit unsuccessful attempts"); }
-    if (attempted && !solved) { score += 18; reason.push("Attempted but no verified acceptance recorded"); }
-    if (!attempted && !solved) { score += options.mode === "contest" || options.mode === "revision" ? 0 : 10; reason.push("New curriculum problem"); }
+    const failures=conservative?unresolvedRejected:rejected;
+    if (failures) { score += conservative?Math.min(failures,3)*2:Math.min(failures,5)*6; reason.push(conservative?`${failures} recent non-accepted submission(s) after the latest observed acceptance; follow-up signal, not a diagnosis`:`${failures} observed non-accepted submission(s)`); }
+    if(options.mode==="competitive" && failures) { score+=conservative?4:10; reason.push("Competitive practice: revisit unsuccessful attempts"); }
+    if (attempted && !solved) { score += item.practiceEvidence==='platform_observation'?6:18; reason.push(item.practiceEvidence==='platform_observation'?"Platform activity observed; independent understanding is unassessed":"Attempted but no verified acceptance recorded"); }
+    if (!attempted && !solved) { score += options.mode === "contest" || options.mode === "revision" ? 0 : item.practiceEvidence==='code_only'?2:10; reason.push(item.practiceEvidence==='code_only'?"GitHub code available; learner attempt and recall are unassessed":"New curriculum problem"); }
     if (solved && !isDue && !weakRecall) score -= 25;
     if (codeFiles) reason.push(`${codeFiles} GitHub solution file(s) available for revision; not acceptance proof`);
     if (accepted) reason.push(`${accepted} accepted submission(s) observed`);
@@ -96,7 +102,7 @@ export function recommendDSA(
     score += Math.max(0, Math.min(item.priority ?? 0, 10));
     // Curriculum order only breaks ties; it never overrides a due or weak problem.
     return { itemId: item.id, title: item.title, score,
-      reason, evidence: { accepted, rejected, codeFiles,
+      reason, evidence: { accepted, rejected, codeFiles,...(conservative?{unresolvedRejected}:{}),
         latestAt: latest.length ? new Date(Math.max(...latest)).toISOString() : null },
       position: item.position, isNew: !attempted && !solved, due: isDue };
   }).filter(r => !["contest","revision"].includes(options.mode ?? "interview") || !r.isNew || r.due)
@@ -104,3 +110,4 @@ export function recommendDSA(
     .slice(0,limit)
     .map(({position: _position,isNew: _isNew,due: _due,...rest}) => rest);
 }
+

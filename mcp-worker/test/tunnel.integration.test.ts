@@ -105,11 +105,11 @@ describe('private local tunnel learning runtime',()=>{
     expect(catalog.total).toBe(191);expect(catalog.externalCount).toBe(3);
     expect((await read('get_roadmap',{limit:1})).total).toBe(188);
     const github=catalog.items.find((p:any)=>p.origin==='github'),lc=catalog.items.find((p:any)=>p.problemRef==='lc:999999'),cf=catalog.items.find((p:any)=>p.problemRef==='cf:9999A');
-    expect(github.status).toBe('attempted');expect(lc.status).toBe('solved');expect(cf.status).toBe('attempted');
+    expect(github.status).toBe('not_started');expect(lc.status).toBe('solved');expect(cf.status).toBe('attempted');
     const code=await read('get_problem_code',{itemId:github.itemId});
     expect(code.content).toContain('boundary');expect(code.commit).toBe(commit);expect(code.commit).not.toBe(treeSha);expect(code.acceptanceVerified).toBe(false);
     const recommendations=await read('get_recommendations');expect(recommendations.trackedProblemCount).toBe(191);
-    expect(recommendations.recommendations.some((r:any)=>r.itemId===cf.itemId)).toBe(true);
+    expect(recommendations.personalization.status).toBe('learner_records_available');expect(recommendations.recommendations.some((r:any)=>r.itemId===cf.itemId)).toBe(false);
     for(const source of ['github','leetcode','codeforces'])await rpc('sync_learning_source',{source,force:true});
     expect((await read('get_learning_catalog')).total).toBe(191);
   });

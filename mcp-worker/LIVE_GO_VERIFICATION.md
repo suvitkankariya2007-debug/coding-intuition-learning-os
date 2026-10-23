@@ -69,3 +69,7 @@ npm run verify:learning -- --item-id ACTUAL_UUID --event-id ACTUAL_EVENT_ID --re
 It checks stored IDs and the current review schedule, without creating records
 or printing private reasoning text. It cannot certify Go calls or learner
 understanding. Old history is bounded; missing old IDs need source retrieval.
+
+For the updated baseline and continuous pattern-adjustment test, use the three
+sequenced prompts in RECOMMENDATION_ACCEPTANCE.md. Get a fresh learning-v2
+baseline and keep focusItemId identical for before/after comparisons.
