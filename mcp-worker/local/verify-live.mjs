@@ -34,7 +34,7 @@ export async function verifyLiveClient(client,{now=Date.now()}={}){
     const m=await call('get_monitor_status'),sources=await call('get_source_status');
     const expected=['leetcode','codeforces',...(sources.sources?.github?['github']:[]),'memory'];
     const maxAge=(m.intervalMinutes??30)*60000+10*60000;
-    const tasks=Object.fromEntries(expected.map(task=>{const row=m.tasks?.[task],at=Date.parse(row?.checkedAt),fresh=Number.isFinite(at)&&now-at<=maxAge&&at<=now+30000;return [task,{status:!row?'PENDING':row.status==='success'&&fresh?'PASS':'PARTIAL',lastResult:row?.status??null,checkedAt:row?.checkedAt??null}];}));
+    const tasks=Object.fromEntries(expected.map(task=>{const row=m.tasks?.[task],source=sources.sources?.[task],sourceAt=Date.parse(source?.checkedAt),sourceReady=task==='memory'||source?.available===true&&Number.isFinite(sourceAt)&&now-sourceAt<=maxAge&&sourceAt<=now+30000,at=Date.parse(row?.checkedAt),fresh=Number.isFinite(at)&&now-at<=maxAge&&at<=now+30000;return [task,{status:!row?'PENDING':row.status==='success'&&fresh&&sourceReady?'PASS':'PARTIAL',lastResult:row?.status??null,checkedAt:row?.checkedAt??null}];}));
     report.monitor={enabled:m.enabled===true,nextRunAt:m.nextRunAt??null,tasks};
     add('monitor_enabled',m.enabled?'PASS':'PARTIAL');
     for(const [task,result]of Object.entries(tasks))add('monitor_'+task,result.status,{lastResult:result.lastResult,checkedAt:result.checkedAt});

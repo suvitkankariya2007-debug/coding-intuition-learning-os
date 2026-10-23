@@ -133,6 +133,7 @@ describe('live validation contract and monitor task isolation',()=>{
      const report=await verifyLiveClient(client);expect(report.status).toBe('PASS');expect(report.liveChatGPTGoVerified).toBe(false);
      expect(JSON.stringify(report)).not.toContain('ancestor bounds');expect(JSON.stringify(report)).not.toContain('fixture-access');
      const stale=await verifyLiveClient(client,{now:Date.now()+86400000});expect(stale.status).toBe('PARTIAL');
+     f.state.offlineHosts=['leetcode.com'];await f.rpc('sync_learning_source',{source:'leetcode',force:true});const unavailable=await verifyLiveClient(client);expect(unavailable.status).toBe('PARTIAL');expect(unavailable.monitor.tasks.leetcode.status).toBe('PARTIAL');f.state.offlineHosts=[];
      await f.rpc('configure_background_monitor',{enabled:false});
    }finally{await client.close().catch(()=>{});await f.mf.dispose();}
  },30000);
@@ -166,4 +167,43 @@ describe('bounded monitor fairness',()=>{
      await f.rpc('configure_background_monitor',{enabled:false});
    }finally{await f.mf.dispose();}
  },40000);
+});
+
+describe('remaining partial-state regressions',()=>{
+ it('refreshes saved content when provider timestamps are absent instead of silently skipping it',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;delete f.state.documents[0].updatedAt;
+   try{
+     await f.rpc('refresh_learning_memory');const first=await f.rpc('get_saved_questions');expect(first.total).toBe(2);
+     f.state.documents[0].content='User: Why does the revised bound work?';await f.rpc('refresh_learning_memory');
+     const revised=await f.rpc('get_saved_questions');expect(revised.total).toBe(1);expect(revised.items[0].excerpt).toContain('revised bound');expect(revised.items[0].version).not.toBe(first.items[0].version);
+   }finally{await f.mf.dispose();}
+ });
+ it('rejects provider documents whose identities do not match the requested source',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;f.state.mismatchedDocument=true;
+   try{await expect(f.rpc('refresh_learning_memory')).rejects.toThrow();expect((await f.rpc('get_saved_questions')).total).toBe(0);}
+   finally{await f.mf.dispose();}
+ });
+ it('keeps an unfinished document sweep partial until the final page actually completes',async()=>{
+   const f=fixtureRuntime();await f.mf.ready;f.state.documents.splice(1,1);
+   for(let i=1;i<4;i++)f.state.documents.push({id:'pending-'+i,content:'Why is pending question '+i+' useful?',updatedAt:'v1',contentTruncated:false});
+   try{
+     for(const task of ['leetcode','codeforces','github']){await f.rpc('configure_background_monitor',{enabled:true});await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks[task]?.status,{timeout:10000,interval:100}).toBe('success');}
+     await f.rpc('configure_background_monitor',{enabled:true});await expect.poll(async()=>(await f.rpc('get_monitor_status')).memoryPage,{timeout:10000,interval:100}).toBe(2);
+     expect((await f.rpc('get_monitor_status')).tasks.memory.status).toBe('partial_indexing');
+     await f.rpc('configure_background_monitor',{enabled:true});await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks.memory.status,{timeout:10000,interval:100}).toBe('success');
+     await f.rpc('configure_background_monitor',{enabled:false});
+   }finally{await f.mf.dispose();}
+ },30000);
+});
+
+
+describe('persisted alarm execution',()=>{
+ it('executes an already scheduled alarm after restart without re-enabling monitoring',async()=>{
+   const directory=await mkdtemp(join(tmpdir(),'resume-alarm-'));let f=fixtureRuntime(directory);await f.mf.ready;
+   try{
+     await f.rpc('configure_background_monitor',{enabled:true});await f.mf.dispose();f=fixtureRuntime(directory);await f.mf.ready;
+     await expect.poll(async()=>(await f.rpc('get_monitor_status')).tasks.leetcode?.status,{timeout:12000,interval:100}).toBe('success');
+     expect(f.state.requests).toContain('leetcode.com');await f.rpc('configure_background_monitor',{enabled:false});
+   }finally{await f.mf.dispose();await rm(directory,{recursive:true,force:true});}
+ },20000);
 });

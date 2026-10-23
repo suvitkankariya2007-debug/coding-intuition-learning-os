@@ -153,3 +153,25 @@ verified performance, pass applicable automated/local runtime gates, and expose
 live failures clearly. The system continuously refreshes data when monitoring is
 enabled; it does not autonomously rewrite its code or tune scoring weights without
 validation. Use real learner feedback to choose and evaluate later changes.
+
+
+## Complete background simulation
+
+Run npm run simulate:background after building the current tunnel bundle. It
+executes actual Durable Object alarms against isolated providers and writes
+`demo/background-simulation.json`. Only fixture alarm wake-ups are accelerated;
+the production polling interval remains 30 minutes. It verifies truncated-memory
+PARTIAL, full-content recovery to PASS, a LeetCode outage with backoff, source
+recovery, an already scheduled alarm firing after process restart without
+re-enabling it, and stop control. No real account records are written.
+
+Task success now means a complete memory inventory scan; an unfinished or
+unverifiable inventory is partial_indexing. Provider-truncated content is
+partial_provider_truncation. lastCompletedAt records a completed request, while
+lastSuccessAt advances only for a successful task. Per-task coverage remains
+visible: a successful LeetCode poll still has partial platform-history coverage.
+The live checker also rejects a source currently marked unavailable even if an
+older monitor task succeeded. Documents without timestamps are re-read rather
+than silently skipped, and imported document identities must match requests.
+
+See REMAINING_CHECKS.md for the release checklist and explicit live boundaries.

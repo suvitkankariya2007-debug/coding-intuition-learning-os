@@ -35,7 +35,7 @@ function runtime(){return new Miniflare({modules:true,scriptPath:'dist-tunnel/tu
     if(name==='search_memory'){if(memoryDown)return new Response('Unavailable',{status:503});searches++;data={namespace:args.namespace,results:[{id:'context-'+args.namespace,text:args.namespace==='leetcode'?'Use gentle progressive hints from previous DSA sessions.':'Recent reasoning context.',similarity:0.9}]};}
     else if(name==='add_memory'){expect(args.namespace).toBe('leetcode_problems');documents.push(args.content);data={success:true,namespace:args.namespace,id:'saved-'+documents.length};}
     else if(name==='list_documents')data={documents:documents.slice((args.page-1)*3,args.page*3).map((content,i)=>({id:'saved-'+((args.page-1)*3+i+1),updatedAt:'2026-10-20T00:00:00Z'})),pagination:{totalPages:Math.ceil(documents.length/3)}};
-    else if(name==='get_document')data={namespace:args.namespace,document:{content:documents[Number(args.documentId.split('-')[1])-1],contentTruncated:false}};
+    else if(name==='get_document')data={namespace:args.namespace,document:{id:args.documentId,content:documents[Number(args.documentId.split('-')[1])-1],contentTruncated:false}};
     else throw Error('Unexpected tool');
     return Response.json({jsonrpc:'2.0',id:msg.id,result:{content:[{type:'text',text:JSON.stringify(data)}],structuredContent:data}});
   }});}

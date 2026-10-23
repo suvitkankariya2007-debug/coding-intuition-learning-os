@@ -42,7 +42,8 @@ export class LearnerStore extends DurableObject<Env> {
       if(r.available===false)throw Error('Source unavailable');
       if(task==='memory')m.memoryPage=r.nextPage??1;
       if(task==='codeforces')m.cfCursor=r.nextCursor??1;
-      m.tasks[task]={status:r.incompleteDocuments?.length?'partial_provider_truncation':'success',checkedAt:m.lastRunAt,lastSuccessAt:new Date().toISOString(),failureCount:0,durationMs:Date.now()-started};m.lastSuccessAt=m.tasks[task].lastSuccessAt;m.consecutiveFailures=0;succeeded=true;
+      const taskStatus=r.incompleteDocuments?.length?'partial_provider_truncation':task==='memory'&&!r.sweepComplete?'partial_indexing':'success';
+      m.tasks[task]={status:taskStatus,checkedAt:m.lastRunAt,lastSuccessAt:taskStatus==='success'?new Date().toISOString():previous?.lastSuccessAt,lastCompletedAt:new Date().toISOString(),failureCount:0,durationMs:Date.now()-started,coverage:r.coverage,historyComplete:task==='memory'?r.sweepComplete&&!r.incompleteDocuments?.length:r.historyComplete};if(taskStatus==='success')m.lastSuccessAt=m.tasks[task].lastSuccessAt;m.consecutiveFailures=0;succeeded=true;
     }catch{m.tasks[task]={status:'failed_reconnect_or_retry',checkedAt:m.lastRunAt,lastSuccessAt:previous?.lastSuccessAt,failureCount:(previous?.failureCount??0)+1,durationMs:Date.now()-started};m.consecutiveFailures++;}
     if(task==='memory'&&succeeded)m.memoryPagesThisCycle=(m.memoryPagesThisCycle??0)+1;
     if(!succeeded||task!=='memory'||m.memoryPage===1||(m.memoryPagesThisCycle??0)>=3){m.taskIndex=(m.taskIndex+1)%tasks.length;if(task==='memory')m.memoryPagesThisCycle=0;}
@@ -176,10 +177,11 @@ export class LearnerStore extends DurableObject<Env> {
         if(!Array.isArray(listed.documents))throw Error('Invalid document list');
         let changed=0,restored=0,extracted=0;const incomplete:string[]=[];
         for(const doc of listed.documents) {
-          const key='document:v3:'+doc.id;
-          if(await this.ctx.storage.get(key)===doc.updatedAt)continue;
+          if(typeof doc.id!=='string'||!/^[-A-Za-z0-9_]{1,200}$/.test(doc.id))throw Error('Invalid document identity');
+          const key='document:v4:'+doc.id;
+          if(typeof doc.updatedAt==='string'&&await this.ctx.storage.get(key)===doc.updatedAt)continue;
           const fetched=await call('get_document',{namespace:props.namespace,documentId:doc.id});
-          if(fetched.namespace!==props.namespace)throw Error('Space mismatch');
+          if(fetched.namespace!==props.namespace||fetched.document?.id!==doc.id)throw Error('Document identity mismatch');
           if(fetched.document?.contentTruncated){state.questions=(state.questions??[]).filter(q=>q.documentId!==doc.id);incomplete.push(doc.id);continue;}
           const content=fetched.document?.content;
           if(typeof content!=='string'){state.questions=(state.questions??[]).filter(q=>q.documentId!==doc.id);incomplete.push(doc.id);continue;}
@@ -212,7 +214,7 @@ export class LearnerStore extends DurableObject<Env> {
             }
           } catch { /* Free-form and malformed documents never become structured grades. */ }
           // Unknown/free-form documents stay in Supermemory and are retrieved semantically.
-          staged[key]=doc.updatedAt;changed++;
+          if(typeof doc.updatedAt==='string')staged[key]=doc.updatedAt;changed++;
         }
         const totalPages=listed.pagination?.totalPages;
         const validTotal=Number.isSafeInteger(totalPages)&&totalPages>=0;
@@ -230,7 +232,7 @@ export class LearnerStore extends DurableObject<Env> {
           const signature=await sha256(JSON.stringify(ids));
           const previous=await this.ctx.storage.get<string>('inventory:signature');
           // Require two matching complete inventories; partial/out-of-order reads cannot delete candidates.
-          if(previous===signature){const keep=new Set(ids),old=state.questions??[];const removed=old.filter(q=>!keep.has(q.documentId));state.questions=old.filter(q=>keep.has(q.documentId));removedQuestions=removed.length;for(const q of removed)staged['document:v3:'+q.documentId]=null;}
+          if(previous===signature){const keep=new Set(ids),old=state.questions??[];const removed=old.filter(q=>!keep.has(q.documentId));state.questions=old.filter(q=>keep.has(q.documentId));removedQuestions=removed.length;for(const q of removed)staged['document:v4:'+q.documentId]=null;}
           staged['inventory:signature']=signature;
         }
         staged['inventory:sweep']=sweep;

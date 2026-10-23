@@ -1,0 +1,89 @@
+{
+  "status": "PASS",
+  "mode": "simulated_providers_real_local_alarms",
+  "timing": "fixture wake-ups accelerated; production interval unchanged",
+  "productionIntervalMinutes": 30,
+  "liveChatGPTGoVerified": false,
+  "realUserRecordsWritten": false,
+  "deployed": false,
+  "stages": [
+    {
+      "check": "provider_truncation_detected",
+      "status": "PASS",
+      "observedStatus": "PARTIAL",
+      "tasks": {
+        "leetcode": {
+          "status": "PASS",
+          "lastResult": "success",
+          "checkedAt": "2026-10-23T06:17:30.971Z"
+        },
+        "codeforces": {
+          "status": "PASS",
+          "lastResult": "success",
+          "checkedAt": "2026-10-23T06:17:32.120Z"
+        },
+        "github": {
+          "status": "PASS",
+          "lastResult": "success",
+          "checkedAt": "2026-10-23T06:17:33.259Z"
+        },
+        "memory": {
+          "status": "PARTIAL",
+          "lastResult": "partial_provider_truncation",
+          "checkedAt": "2026-10-23T06:17:34.389Z"
+        }
+      }
+    },
+    {
+      "check": "complete_content_recovery",
+      "status": "PASS",
+      "observedStatus": "PASS",
+      "tasks": {
+        "leetcode": {
+          "status": "PASS",
+          "lastResult": "success",
+          "checkedAt": "2026-10-23T06:17:35.554Z"
+        },
+        "codeforces": {
+          "status": "PASS",
+          "lastResult": "success",
+          "checkedAt": "2026-10-23T06:17:36.662Z"
+        },
+        "github": {
+          "status": "PASS",
+          "lastResult": "success",
+          "checkedAt": "2026-10-23T06:17:37.777Z"
+        },
+        "memory": {
+          "status": "PASS",
+          "lastResult": "success",
+          "checkedAt": "2026-10-23T06:17:38.889Z"
+        }
+      }
+    },
+    {
+      "check": "source_outage_and_backoff",
+      "status": "PASS",
+      "observedStatus": "PARTIAL",
+      "task": {
+        "status": "failed_reconnect_or_retry",
+        "checkedAt": "2026-10-23T06:17:40.066Z",
+        "lastSuccessAt": "2026-10-23T06:17:35.562Z",
+        "failureCount": 1,
+        "durationMs": 5
+      }
+    },
+    {
+      "check": "source_recovery",
+      "status": "PASS"
+    },
+    {
+      "check": "restart_persistence_and_alarm_resume",
+      "status": "PASS"
+    },
+    {
+      "check": "stop_control",
+      "status": "PASS"
+    }
+  ]
+}
