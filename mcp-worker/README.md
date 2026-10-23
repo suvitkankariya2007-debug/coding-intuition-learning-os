@@ -16,7 +16,7 @@ Workers KV stores authentication records. One SQLite-backed Durable Object per o
 
 See [the expanding adaptive workflow](ADAPTIVE_WORKFLOW.md). `get_learning_catalog` includes newer problems outside the canonical seed; `get_problem_code` fetches bounded pinned GitHub code for discussion. Profile sync now contributes external LC/CF problems and previously unmatched GitHub files to recommendations. Approved question observations and external recall reviews persist across recovery. `refresh: true` bypasses memory caches, and source sync accepts `force: true` after new activity. Additional memory read spaces require explicit configuration.
 
-There are 24 tools. The 13 original learning tools cover the roadmap, recommendations, due reviews, progress, problem history, weaknesses, transfer, progressive hints, memory patterns, concept connections, learning signals, reasoning observations and source status. Three more provide `record_review`, `refresh_learning_memory`, and `sync_learning_source`; two add the expanded catalog and code retrieval. The six latest tools add saved-document listing/reading, question candidates, source-submission history and monitor configuration/status.
+There are 25 tools. The 13 original learning tools cover the roadmap, recommendations, due reviews, progress, problem history, weaknesses, transfer, progressive hints, memory patterns, concept connections, learning signals, reasoning observations and source status. Three more provide `record_review`, `refresh_learning_memory`, and `sync_learning_source`; two add the expanded catalog and code retrieval. The six latest tools add saved-document listing/reading, question candidates, source-submission history and monitor configuration/status.
 
 Read-only permission is `learning:read`; recording needs `learning:write`. Each memory write needs an approved short structured observation, uses a stable idempotency key, and is explicitly distinguished from verified acceptance. A failed/ambiguous upstream write remains pending; do not resubmit under a new ID. Reconcile the memory documents first.
 
@@ -92,3 +92,5 @@ Implementation and local protocol verification are separate from deployment. Hos
 For full saved-discussion reading, source submission history, periodic monitoring, the runnable isolated demo, and remaining live gates, see [BACKGROUND_AND_DISCUSSIONS.md](BACKGROUND_AND_DISCUSSIONS.md).
 
 For a privacy-safe real local document/monitor report, run `npm run verify:live`. It cannot claim verification of the separate ChatGPT Go account.
+
+The read-only review_learning_discussion tool combines quoted discussion observations with concept reminders, common pitfalls, fallback approaches, review reasons and catalog-backed platform practice. See DISCUSSION_REVIEW.md.

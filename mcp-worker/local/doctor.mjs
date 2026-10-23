@@ -10,6 +10,7 @@ export const learningTools = [
   'sync_learning_source', 'refresh_learning_memory', 'record_review',
   'get_learning_catalog', 'get_problem_code',
   'list_learning_documents','read_saved_discussion','get_saved_questions','get_source_submissions','configure_background_monitor','get_monitor_status',
+  'review_learning_discussion',
 ];
 
 // Shared by local and authenticated hosted-runtime tests. No learning writes,

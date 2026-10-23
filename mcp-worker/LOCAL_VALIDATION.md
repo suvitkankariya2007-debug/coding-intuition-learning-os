@@ -7,7 +7,7 @@ separate Supermemory connector call also does not test this application.
 See [the expanding learning workflow](ADAPTIVE_WORKFLOW.md) for newer problems, code discussion, profile refresh and configured memory spaces.
 
 The learning server identifies itself as `coding-intuition-learning` and exposes
-24 tools. In particular, expect `get_roadmap`, `get_memory_patterns`,
+25 tools. In particular, expect `get_roadmap`, `get_memory_patterns`,
 `get_recommendations`, `record_reasoning_event`, and `record_review`.
 Do not proceed with learning writes while only mock tools are visible.
 
@@ -21,7 +21,7 @@ Do not proceed with learning writes while only mock tools are visible.
 3. Start `npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID` and leave it running.
    Start read-only; `--allow-writes` is a later explicit opt-in.
 4. In a second terminal run `npm run tunnel:doctor`. It performs an initialized
-   SDK handshake, checks the actual 24-tool inventory, and calls the 18 read
+   SDK handshake, checks the actual 25-tool inventory, and calls the 18 read
    tools, including bounded Supermemory retrieval. It prints status, not private
    memory text or credentials. Empty memory results do not prove your existing
    memories were retrieved: inspect the results in ChatGPT separately.
@@ -105,7 +105,7 @@ selection in ordinary conversations. Obtain each result before claiming it.
 
 ## Hosted switch (still paused)
 
-Both entrypoints use the same MCP handler and 24 tools. The integration suite
+Both entrypoints use the same MCP handler and 25 tools. The integration suite
 runs the same initialized SDK read contract against local and OAuth-protected
 hosted Workers, using a simulated upstream. It also tests write idempotency,
 cache invalidation, OAuth boundaries, and persistence. No public deployment or
@@ -146,5 +146,5 @@ After the success page, start npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID
 --allow-writes. In a separate terminal run npm run tunnel:doctor. Only after PASS,
 restart the installed tunnel-client with the existing coding-intuition-local
 profile and existing tunnel ID. Run its doctor before run. Refresh the existing
-ChatGPT connection and open a fresh Go chat; expect 24 learning tools. Keep the
+ChatGPT connection and open a fresh Go chat; expect 25 learning tools. Keep the
 MCP server and tunnel client running. Do not save synthetic reasoning or reviews.

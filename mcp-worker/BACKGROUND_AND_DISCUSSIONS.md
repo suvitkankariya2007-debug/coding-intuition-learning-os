@@ -2,7 +2,7 @@
 
 ## What is implemented
 
-The MCP now advertises 24 tools. Six additions are list_learning_documents,
+The MCP now advertises 25 tools. Six additions are list_learning_documents,
 read_saved_discussion, get_saved_questions, get_source_submissions,
 configure_background_monitor, and get_monitor_status. Existing source sync
 also returns actual recent submission titles and references.
@@ -117,7 +117,7 @@ monitor restart persistence, failure backoff, stopping, encrypted credential
 owner binding, shared refresh rotation, and write-scope enforcement.
 
 Live checks still need the updated user laptop process: refresh tool discovery
-for 24 tools; list/read a real primary-space document; synchronize actual source
+for 25 tools; list/read a real primary-space document; synchronize actual source
 submissions; enable monitoring and inspect actual task success. These runtime
 operations cannot be performed on the user's laptop from this build workspace.
 A real provider-truncated document remains blocked unless its full content is
@@ -175,3 +175,7 @@ older monitor task succeeded. Documents without timestamps are re-read rather
 than silently skipped, and imported document identities must match requests.
 
 See REMAINING_CHECKS.md for the release checklist and explicit live boundaries.
+
+Discussion-to-practice planning is available through the read-only
+review_learning_discussion tool. See DISCUSSION_REVIEW.md. It makes no
+learning writes and cannot retrieve unsaved ChatGPT conversations.

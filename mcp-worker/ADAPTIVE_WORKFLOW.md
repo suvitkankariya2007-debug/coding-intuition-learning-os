@@ -81,7 +81,7 @@ space and require the intended Supermemory owner.
 
 Run `npm run verify:local` for simulated-provider unit/runtime tests, then run the
 server and `npm run tunnel:doctor` for real local reads. The discovery contract is
-now 24 tools (including get_learning_catalog and get_problem_code); ChatGPT must
+now 25 tools (including get_learning_catalog and get_problem_code); ChatGPT must
 refresh cached tool definitions. This does not create another tunnel.
 
 External observations retain stable problem references. Approved events and

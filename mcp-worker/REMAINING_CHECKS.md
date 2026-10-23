@@ -6,7 +6,7 @@ not proof of live account access or production operation.
 ## Completed automatically
 
 - TypeScript/native-script syntax and both non-deploying Worker bundles.
-- 82 automated cases covering local and OAuth runtimes, owner/scope boundaries,
+- 86 automated cases covering local and OAuth runtimes, owner/scope boundaries,
   memory pagination and recovery, actual alarms, source failures, persistence,
   idempotency, source attribution and evidence-based ranking.
 - Background simulation: explicit truncated-memory PARTIAL; recovery after complete
@@ -29,7 +29,7 @@ not proof of live account access or production operation.
 1. Updated laptop runtime: pull the feature branch, rebuild and restart. Run
    npm run verify:live. This must read an actual nonempty saved discussion fully
    verify commit-pinned GitHub code and see fresh successful results for each expected monitor task.
-2. Updated Go connection: refresh the existing connection's 24 tools and execute
+2. Updated Go connection: refresh the existing connection's 25 tools and execute
    the prompt in LIVE_GO_VERIFICATION.md. Capture actual Go tool-call evidence.
 3. Real approved learning write/review: preserve the returned receipt and confirm
    read-back in a fresh chat after restart. Earlier prompt passes were user-reported;
@@ -81,3 +81,11 @@ See RECOMMENDATION_ACCEPTANCE.md for same-version, same-focus baseline tests,
 valid event tags, a genuine recall/improvement cycle, restart readback and a
 new-pattern update. Source-only items receive conservative scores; saved
 historical mistakes and active weakness pressure are distinguished.
+
+## Discussion-to-practice review
+
+The 25th tool, review_learning_discussion, returns quoted doubts, key concepts,
+common pitfalls, fallback approaches, review reasons and real platform catalog
+problems without saving proposed observations. Saved excerpts are checked
+against exact versions/offsets. See DISCUSSION_REVIEW.md for the Go prompt and
+current-chat access limitations.
