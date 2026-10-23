@@ -3,6 +3,8 @@ import {curriculum,buildData,emptySnapshot,eventEnvelope,parseEnvelope,learningD
 import {mapGithub,discoverGithub,readProblemCode} from '../src/platforms';
 import {makeProblem} from '../src/catalog';
 import {assertOwner,readNamespaces} from '../src/config';
+import {diagnoseWeaknesses} from '../../src/lib/learning-diagnosis';
+import {respondToMcp} from '../../src/lib/mcp-core';
 
 describe('memory-first learning',()=>{
  it('preserves the canonical 188 and unique stable IDs',()=>{expect(curriculum).toHaveLength(188);expect(new Set(curriculum.map(x=>x.id)).size).toBe(188);});
@@ -34,6 +36,19 @@ describe('memory-first learning',()=>{
    expect(()=>readNamespaces({MEMORY_NAMESPACE:'leetcode_problems',MEMORY_READ_NAMESPACES:'../../other'} as any)).toThrow();
    await expect(readProblemCode({repo:'other/repo',path:'x.cpp',commit:'a'.repeat(40),blobSha:'b'.repeat(40)},{GITHUB_SOLUTIONS_REPO:'owner/solutions'} as any)).rejects.toThrow();
    await expect(readProblemCode({repo:'owner/solutions',path:'x.cpp',commit:'a'.repeat(40),blobSha:'b'.repeat(40),size:65537},{GITHUB_SOLUTIONS_REPO:'owner/solutions'} as any)).rejects.toThrow();
+ });
+ it('diagnoses approved reasoning mistakes without inventing recall grades or counting duplicate insights',async()=>{
+   const mistake=(await eventEnvelope({clientEventId:'diagnosis-mistake-0001',problemRef:'lc:98',kind:'mistake',summary:'I checked direct children instead of inherited bounds.',mistakeClass:'boundary',hintStage:'gentle',origin:'chatgpt'})).payload.event;
+   const insight={...mistake,clientEventId:'diagnosis-insight-0001',kind:'reasoning_insight' as const,independentlyExplained:true};
+   const result=diagnoseWeaknesses([],5,[mistake,mistake,insight]);
+   expect(result).toHaveLength(1);expect(result[0]).toMatchObject({pattern:'boundary',occurrences:1,lowRecall:0,hintDependent:1,affectedProblems:1});
+ });
+ it('offers a shared-concept transfer across topic labels and refuses unrelated generic metadata',async()=>{
+   const source={itemId:curriculum[0].id,title:'Binary search boundary',topic:'Custom practice',position:1,status:'attempted',dueDate:null,idea:'binary search'};
+   const candidate={itemId:curriculum[1].id,title:'Find a lower bound',topic:'Binary Search',position:2,status:'not_started',dueDate:null,idea:'binary search'};
+   const call=async(row:any)=>JSON.parse((await respondToMcp({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'get_transfer_problem',arguments:{itemId:row.itemId}}},async()=>({recommendations:[],due:[],roadmap:[row,candidate]})) as any).result.content[0].text);
+   expect(await call(source)).toMatchObject({found:true,basis:'shared_concept_heuristic',verificationRequired:true});
+   expect(await call({...source,title:'Make It Zero',topic:'External practice',idea:null})).toMatchObject({found:false});
  });
 
 });

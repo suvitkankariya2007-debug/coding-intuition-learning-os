@@ -160,14 +160,14 @@ export class LearnerStore extends DurableObject<Env> {
       const key='review:'+await sha256(args.clientEventId),fingerprint=await sha256(JSON.stringify({itemId:args.itemId,grade:args.grade}));
       const old=await this.ctx.storage.get<any>(key);if(old){if(old.fingerprint!==fingerprint)throw Error('Idempotency conflict');return {...old,duplicate:true};}
       const next=review(state.progress[args.itemId]??{ease:2.5,interval_days:0,repetitions:0},args.grade,learningDay());
-      const record={itemId:args.itemId,grade:args.grade,reviewedAt:new Date().toISOString()};
+      const record={itemId:args.itemId,grade:args.grade,reviewedAt:new Date().toISOString(),clientEventId:args.clientEventId};
       const tracked=allProblems(state.problems).find(p=>p.id===args.itemId)!;
       const problem=curriculumItem(args.itemId)?undefined:{problemRef:tracked.problemRef,title:tracked.title,topic:tracked.topic,idea:tracked.idea};
       await this.ctx.storage.put(key,{status:'pending',fingerprint});
       const memory=await withMemory(props.accessToken,call=>call('add_memory',{namespace:props.namespace,content:JSON.stringify({format:'coding-intuition-review-v1',clientEventId:args.clientEventId,record,schedule:next,problem,provenance:'learner_recall_grade_not_acceptance'})}));
       if(memory.success!==true||memory.namespace!==props.namespace)throw Error('Memory write unconfirmed');
       state.progress[args.itemId]={...next,grade:args.grade};state.reviews.push(record);
-      const saved={status:'stored',fingerprint,nextDue:next.due_date,documentId:memory.id??null};await this.save(state,{[key]:saved});await this.invalidateMemorySearchCache();return saved;
+      const saved={status:'stored',clientEventId:args.clientEventId,itemId:args.itemId,grade:args.grade,reviewedAt:record.reviewedAt,fingerprint,nextDue:next.due_date,documentId:memory.id??null,provenance:'learner_recall_grade_not_acceptance'};await this.save(state,{[key]:saved});await this.invalidateMemorySearchCache();return saved;
     }
     if(action==='sync_memory') {
       const page=Number(args.page??1);if(!Number.isSafeInteger(page)||page<1||page>10000)throw Error('Invalid page');
@@ -204,12 +204,12 @@ export class LearnerStore extends DurableObject<Env> {
               const key='review:'+await sha256(parsed.clientEventId);
               const previous=staged[key] as any ?? await this.ctx.storage.get<any>(key);
               if(previous?.status!=='stored') {
-                state.reviews.push({itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt});
+                state.reviews.push({itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt,clientEventId:parsed.clientEventId});
                 const history=state.reviews.filter(x=>x.itemId===r.itemId).sort((a,b)=>a.reviewedAt.localeCompare(b.reviewedAt));
                 let schedule={ease:2.5,interval_days:0,repetitions:0,due_date:learningDay()};
                 for(const row of history) schedule=review(schedule,row.grade,learningDay(Date.parse(row.reviewedAt)));
                 state.progress[r.itemId]={...schedule,grade:history.at(-1)!.grade};
-                staged[key]={status:'stored',fingerprint:await sha256(JSON.stringify({itemId:r.itemId,grade:r.grade})),nextDue:schedule.due_date,documentId:doc.id};restored++;
+                staged[key]={status:'stored',clientEventId:parsed.clientEventId,itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt,fingerprint:await sha256(JSON.stringify({itemId:r.itemId,grade:r.grade})),nextDue:schedule.due_date,documentId:doc.id,provenance:'learner_recall_grade_not_acceptance'};restored++;
               }
             }
           } catch { /* Free-form and malformed documents never become structured grades. */ }

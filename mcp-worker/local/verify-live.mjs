@@ -32,6 +32,14 @@ export async function verifyLiveClient(client,{now=Date.now()}={}){
     }
     add('complete_saved_document_read',report.document?'PASS':'PARTIAL',report.document?{pages:report.document.pages,characters:report.document.characters}:'No complete nonempty document was verified among the first three returned documents.');
     const m=await call('get_monitor_status'),sources=await call('get_source_status');
+    if(sources.sources?.github){
+      let offset=0,inspected=0,candidate;
+      do{const page=await call('get_learning_catalog',{offset,limit:50});candidate=page.items?.find(p=>p.codeFileCount>0);offset=page.nextOffset;inspected++;}while(!candidate&&offset!==null&&Number.isInteger(offset)&&inspected<20);
+      let code;
+      try{if(candidate)code=await call('get_problem_code',{itemId:candidate.itemId});}catch{}
+      const readable=code?.found===true&&typeof code.content==='string'&&code.content.trim().length>0&&typeof code.path==='string'&&typeof code.repo==='string'&&/^[a-f0-9]{40}$/i.test(code.commit??'');
+      add('github_code_read',readable?'PASS':'PARTIAL',readable?{itemId:candidate.itemId,repo:code.repo,path:code.path,commit:code.commit,characters:Array.from(code.content).length,truncated:code.truncated===true}:'No readable commit-pinned GitHub code verified. Source text is omitted from this report.');
+    }
     const expected=['leetcode','codeforces',...(sources.sources?.github?['github']:[]),'memory'];
     const maxAge=(m.intervalMinutes??30)*60000+10*60000;
     const tasks=Object.fromEntries(expected.map(task=>{const row=m.tasks?.[task],source=sources.sources?.[task],sourceAt=Date.parse(source?.checkedAt),sourceReady=task==='memory'||source?.available===true&&Number.isFinite(sourceAt)&&now-sourceAt<=maxAge&&sourceAt<=now+30000,at=Date.parse(row?.checkedAt),fresh=Number.isFinite(at)&&now-at<=maxAge&&at<=now+30000;return [task,{status:!row?'PENDING':row.status==='success'&&fresh&&sourceReady?'PASS':'PARTIAL',lastResult:row?.status??null,checkedAt:row?.checkedAt??null}];}));

@@ -6,7 +6,7 @@ not proof of live account access or production operation.
 ## Completed automatically
 
 - TypeScript/native-script syntax and both non-deploying Worker bundles.
-- 73 automated cases covering local and OAuth runtimes, owner/scope boundaries,
+- 76 automated cases covering local and OAuth runtimes, owner/scope boundaries,
   memory pagination and recovery, actual alarms, source failures, persistence,
   idempotency, source attribution and evidence-based ranking.
 - Background simulation: explicit truncated-memory PARTIAL; recovery after complete
@@ -14,17 +14,28 @@ not proof of live account access or production operation.
   after restart; stopping. See demo/background-simulation.json.
 - Rolling LeetCode windows accumulate records beyond 20; duplicates are prevented.
 - Stale, missing, incomplete or failed evidence cannot pass the live verifier.
+- Isolated full learning cycle: source and discussion retrieval, approved fixture
+  reasoning observation, diagnosis and ranking update, recall-grade scheduling,
+  duplicate/conflict handling, local restart and recovery from saved memory.
+  This uses fixture observations and proves software behavior only.
+- Reasoning diagnoses now include explicit approved mistakes, and explicitly
+  tagged new-problem difficulties affect ranking without guessing from titles.
+- Reviews return attributable receipts and remain identifiable after recovery.
+- Object tool results provide both readable text JSON and structuredContent.
+  This improves client compatibility; actual Go readability still needs retesting.
 
 ## Required live checks still unverified here
 
 1. Updated laptop runtime: pull the feature branch, rebuild and restart. Run
    npm run verify:live. This must read an actual nonempty saved discussion fully
-   and see fresh successful results for each expected monitor task.
+   verify commit-pinned GitHub code and see fresh successful results for each expected monitor task.
 2. Updated Go connection: refresh the existing connection's 24 tools and execute
    the prompt in LIVE_GO_VERIFICATION.md. Capture actual Go tool-call evidence.
 3. Real approved learning write/review: preserve the returned receipt and confirm
    read-back in a fresh chat after restart. Earlier prompt passes were user-reported;
-   full evidence has not been independently reviewed in this workspace.
+   the screenshots explicitly show both writes pending. Complete the genuine
+   attempt/consent/grade flow in LIVE_GO_VERIFICATION.md, then use verify:learning
+   with the returned IDs for read-only restart verification.
 4. Real polling interval: inspect success across ordinary 30-minute cycles and
    a restart without re-enabling monitoring. Fast isolated alarms verify the
    scheduler logic, but do not establish a long-running laptop/provider session.

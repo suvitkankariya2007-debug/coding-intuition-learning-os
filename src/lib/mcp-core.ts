@@ -11,7 +11,7 @@ export type RoadmapProblem = {
   itemId:string; title:string; topic:string; position:number; status:string; dueDate:string|null; idea?:string|null;problemRef?:string;origin?:string
 };
 export type ReviewRecord = {
-  itemId:string; grade:number; reviewedAt:string; mistakeClass?:string|null; hintStage?:string|null; confidence?:number|null
+  itemId:string; grade:number; reviewedAt:string; clientEventId?:string; mistakeClass?:string|null; hintStage?:string|null; confidence?:number|null
 };
 export type EvidenceRecord = {
   itemId:string|null; source:string; observedAt:string; accepted:boolean; verdict?:string|null
@@ -87,12 +87,15 @@ function invoke(name:string,a:Record<string,unknown>,data:ToolData):unknown{
    return {found:true,problem,reviews:reviews.filter(x=>x.itemId===itemId).slice(0,25),
      evidence:evidence.filter(x=>x.itemId===itemId).slice(0,50),learningEvents:(data.learningEvents??[]).filter(e=>e.itemId===itemId||problem.problemRef&&e.problemRef===problem.problemRef).slice(-25)};
  }
- if(name==="diagnose_weaknesses")return diagnoseWeaknesses(reviews.map(r=>({itemId:r.itemId,reviewedAt:r.reviewedAt,grade:r.grade,mistakeClass:r.mistakeClass??null,hintStage:r.hintStage??null,confidence:r.confidence??null})));
+ if(name==="diagnose_weaknesses")return diagnoseWeaknesses(reviews.map(r=>({itemId:r.itemId,reviewedAt:r.reviewedAt,grade:r.grade,mistakeClass:r.mistakeClass??null,hintStage:r.hintStage??null,confidence:r.confidence??null})),5,data.learningEvents??[]);
  if(name==="get_transfer_problem"){
    const source=roadmap.find(x=>x.itemId===a.itemId);
    if(!source)return {found:false,reason:"Unknown curriculum item"};
    const next=proposeTransferProblem({id:source.itemId,title:source.title,topic:source.topic,position:source.position,status:source.status},roadmap.map(x=>({id:x.itemId,title:x.title,topic:x.topic,position:x.position,status:x.status})));
-   return next?{found:true,sourceItemId:source.itemId,candidate:{itemId:next.id,title:next.title,topic:next.topic}}:{found:false,reason:"No unattempted transfer candidate in this topic"};
+   if(next)return {found:true,sourceItemId:source.itemId,candidate:{itemId:next.id,title:next.title,topic:next.topic},basis:'same_topic_heuristic',verificationRequired:true};
+   const converted:ConceptProblem[]=roadmap.map(p=>({itemId:p.itemId,title:p.title,topic:p.topic,position:p.position,status:p.status,idea:p.idea}));
+   const linked=connectUnfamiliarProblems(converted.find(p=>p.itemId===source.itemId)!,converted,20).find(p=>p.relation==='same-concept');
+   return linked?{found:true,sourceItemId:source.itemId,candidate:linked.candidate,basis:'shared_concept_heuristic',concept:linked.sourceConcept,question:linked.question,verificationRequired:true}:{found:false,reason:"No grounded unattempted transfer candidate; verify source metadata or add a suitable problem."};
  }
  if(name==="get_progressive_hint"){
    const row=roadmap.find(x=>x.itemId===a.itemId);

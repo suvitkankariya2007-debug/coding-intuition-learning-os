@@ -48,7 +48,7 @@ const RULES:readonly {key:ConceptKey;pattern:RegExp}[]=[
  {key:"intervals",pattern:/interval\s*(merge|sort|overlap)|overlapping\s*interval/i},
  {key:"bitmask",pattern:/bitmask|bitwise|xor\s*cancellation/i}
 ];
-export type ConceptProblem={itemId:string;title:string;topic:string;idea?:string|null;status:string;position:number};
+export type ConceptProblem={itemId:string;title:string;topic:string;idea?:string|null;status:string;position:number;problemRef?:string};
 export function inferCurriculumConcepts(p:Pick<ConceptProblem,"title"|"topic"|"idea">):ConceptKey[]{
  // The general topic is deliberately excluded: Arrays does not imply hashing.
  const description=p.title+" "+(p.idea??"");
@@ -74,3 +74,4 @@ export function connectUnfamiliarProblems(source:ConceptProblem,candidates:Conce
  }
  return output.sort((x,y)=>y.score-x.score||x.candidate.itemId.localeCompare(y.candidate.itemId)).slice(0,Math.max(0,Math.min(20,limit)));
 }
+

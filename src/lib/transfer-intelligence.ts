@@ -11,7 +11,9 @@ export function proposeTransferProblem(
  source:TransferCandidate, candidates:TransferCandidate[],
  excludedIds:ReadonlySet<string>=new Set()
 ):TransferCandidate|null{
- const eligible=candidates.filter(x=>x.id!==source.id&&x.topic===source.topic&&
+ const topic=(value:string)=>value.trim().toLowerCase().replace(/\s+/g,' ');
+ if(['external practice','unknown',''].includes(topic(source.topic)))return null;
+ const eligible=candidates.filter(x=>x.id!==source.id&&topic(x.topic)===topic(source.topic)&&
    x.status==="not_started"&&!excludedIds.has(x.id));
  eligible.sort((a,b)=>Math.abs(a.position-source.position)-Math.abs(b.position-source.position) || a.position-b.position || a.id.localeCompare(b.id));
  return eligible[0]??null;
@@ -32,3 +34,4 @@ export function evaluateTransfer(a:TransferAssessment){
      "Independent transfer reported. Recheck with another unfamiliar problem later."
  };
 }
+

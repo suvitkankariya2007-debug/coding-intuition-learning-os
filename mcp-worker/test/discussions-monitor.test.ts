@@ -132,6 +132,8 @@ describe('live validation contract and monitor task isolation',()=>{
      }
      const report=await verifyLiveClient(client);expect(report.status).toBe('PASS');expect(report.liveChatGPTGoVerified).toBe(false);
      expect(JSON.stringify(report)).not.toContain('ancestor bounds');expect(JSON.stringify(report)).not.toContain('fixture-access');
+     expect(report.checks.find((c:any)=>c.check==='github_code_read').status).toBe('PASS');expect(JSON.stringify(report)).not.toContain('int boundary');
+     f.state.offlineHosts=['api.github.com'];const unreadable=await verifyLiveClient(client);expect(unreadable.status).toBe('PARTIAL');expect(unreadable.checks.find((c:any)=>c.check==='github_code_read').status).toBe('PARTIAL');f.state.offlineHosts=[];
      const stale=await verifyLiveClient(client,{now:Date.now()+86400000});expect(stale.status).toBe('PARTIAL');
      f.state.offlineHosts=['leetcode.com'];await f.rpc('sync_learning_source',{source:'leetcode',force:true});const unavailable=await verifyLiveClient(client);expect(unavailable.status).toBe('PARTIAL');expect(unavailable.monitor.tasks.leetcode.status).toBe('PARTIAL');f.state.offlineHosts=[];
      await f.rpc('configure_background_monitor',{enabled:false});
