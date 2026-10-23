@@ -75,6 +75,8 @@ describe('memory-first learning',()=>{
    expect(buildData(s,{focusItemId:bst.id}).recommendations[0].itemId).toBe(bst.id);expect(s.events).toHaveLength(0);
    const event=await eventEnvelope({clientEventId:'bst-concept-0001',itemId:bst.id,kind:'mistake',summary:'I confused the number of children with the BST ancestor ordering rule.',conceptKeys:['bst-ordering'],mistakeClass:'conceptual-understanding',origin:'chatgpt'});s.events=[event.payload.event];
    const ranked=buildData(s).recommendations;expect(ranked[0].itemId).toBe(bst.id);expect(ranked[0].reason.join(' ')).toContain('bst-ordering');
+   s.evidence.push({itemId:bst.id,source:'leetcode',accepted:true,verdict:'Accepted',observedAt:new Date(Date.now()-86400000).toISOString(),provenanceId:'older-bst-acceptance'});
+   expect(buildData(s).recommendations[0].itemId).toBe(bst.id);expect(buildData(s).roadmap!.find(p=>p.itemId===bst.id)!.status).toBe('solved');
  });
  it('reduces active pattern pressure after independent learning, preserves history and reopens it on relapse',async()=>{
    const bst=curriculum.find(p=>p.leetcode_id===98)!,s=emptySnapshot();

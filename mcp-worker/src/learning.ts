@@ -3,7 +3,7 @@ import {curriculum,allProblems,type TrackedProblem} from './catalog';
 export {curriculum} from './catalog';
 import { recommendDSA, type Evidence, type LearningItem } from '../../src/lib/evidence-intelligence';
 import { rankWithReasoning } from '../../src/lib/reasoning-ranking';
-import { parseLearningEvent, type LearningEventRecord } from '../../src/lib/learning-events';
+import { parseLearningEvent,deriveLearningSignals, type LearningEventRecord } from '../../src/lib/learning-events';
 import type { ToolData, ReviewRecord } from '../../src/lib/mcp-core';
 import { sha256 } from './config';
 import {inferCurriculumConcepts} from '../../src/lib/concept-graph';
@@ -22,7 +22,7 @@ export function buildData(s:Snapshot,options:{focusItemId?:string}={}):ToolData 
     const platform=s.evidence.some(e=>e.itemId===p.id&&['leetcode','codeforces'].includes(e.source));
     const code=s.evidence.some(e=>e.itemId===p.id&&e.source==='github');
     const attempted=observations.length>0||platform;
-    return {id:p.id,title:p.title,topic:p.topic,position:index+1,practiceEvidence:observations.length||review?'learner_report':platform?'platform_observation':code?'code_only':'none',status:accepted?'solved':attempted||review?'attempted':'not_started',dueDate:review?.due_date??null,recallGrade:review?review.grade<=1?0:review.grade===2?1:review.grade===3?2:3:null};
+    return {id:p.id,title:p.title,topic:p.topic,position:index+1,activeDifficulty:deriveLearningSignals(observations,{[p.id]:p.problemRef}).activeWeakConcepts.length>0,practiceEvidence:observations.length||review?'learner_report':platform?'platform_observation':code?'code_only':'none',status:accepted?'solved':attempted||review?'attempted':'not_started',dueDate:review?.due_date??null,recallGrade:review?review.grade<=1?0:review.grade===2?1:review.grade===3?2:3:null};
   });
   const roadmap=items.map((p,i)=>({itemId:p.id,title:p.title,topic:p.topic,position:p.position,status:p.status!,dueDate:p.dueDate??null,idea:[catalog[i].idea,...s.events.filter(e=>e.itemId===p.id||e.problemRef===catalog[i].problemRef).flatMap(e=>e.conceptKeys)].filter(Boolean).join(' '),problemRef:catalog[i].problemRef,origin:catalog[i].origin}));
   // Rank the entire roadmap by weakness before choosing five, avoiding the old top-50 cutoff.

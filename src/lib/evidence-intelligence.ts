@@ -31,6 +31,7 @@ export type LearningItem = {
   hintStage?: "none" | "gentle" | "deeper" | "solution" | null;
   confidence?: number | null;
   practiceEvidence?: "learner_report" | "platform_observation" | "code_only" | "none";
+  activeDifficulty?: boolean;
 };
 export type Recommendation = {
   itemId: string;
@@ -95,7 +96,8 @@ export function recommendDSA(
     if(options.mode==="competitive" && failures) { score+=conservative?4:10; reason.push("Competitive practice: revisit unsuccessful attempts"); }
     if (attempted && !solved) { score += item.practiceEvidence==='platform_observation'?6:18; reason.push(item.practiceEvidence==='platform_observation'?"Platform activity observed; independent understanding is unassessed":"Attempted but no verified acceptance recorded"); }
     if (!attempted && !solved) { score += options.mode === "contest" || options.mode === "revision" ? 0 : item.practiceEvidence==='code_only'?2:10; reason.push(item.practiceEvidence==='code_only'?"GitHub code available; learner attempt and recall are unassessed":"New curriculum problem"); }
-    if (solved && !isDue && !weakRecall) score -= 25;
+    if (conservative&&solved&&item.activeDifficulty) {score+=18;reason.push('Approved current reasoning difficulty overrides the old acceptance-based practice discount');}
+    if (solved && !isDue && !weakRecall && !item.activeDifficulty) score -= 25;
     if (codeFiles) reason.push(`${codeFiles} GitHub solution file(s) available for revision; not acceptance proof`);
     if (accepted) reason.push(`${accepted} accepted submission(s) observed`);
     if (focus.has(item.topic.toLowerCase())) { score += 22; reason.push("Matches selected focus topic"); }
