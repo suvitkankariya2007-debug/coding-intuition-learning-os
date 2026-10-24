@@ -1,5 +1,7 @@
+import {createHash} from 'node:crypto';
 import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 export interface Env {
+  MULTI_USER_ENABLED?: string;
   MONITOR_ENCRYPTION_KEY?: string;
   LOCAL_CREDENTIALS?: Fetcher;
   PUBLIC_ORIGIN: string;
@@ -24,7 +26,13 @@ export const UPSTREAM = {
   mcp: 'https://mcp.supermemory.ai/mcp',
 } as const;
 export const SCOPES = ['learning:read', 'learning:write', 'offline_access'];
-export function readNamespaces(env:Env) {
+export const multiUserEnabled=(env:Env)=>env.MULTI_USER_ENABLED==='true'&&!env.LOCAL_CREDENTIALS;
+export function namespaceForLearner(env:Env,userId:string){
+  if(typeof userId!=='string'||!/^[-A-Za-z0-9_]{1,200}$/.test(userId))throw Error('Invalid authenticated learner identity');
+  return userId===env.OWNER_SUPERMEMORY_ID?env.MEMORY_NAMESPACE:'dsa_'+createHash('sha256').update(userId).digest('hex').slice(0,40);
+}
+export function readNamespaces(env:Env,props?:AuthProps) {
+  if(multiUserEnabled(env)&&props?.userId!==env.OWNER_SUPERMEMORY_ID){if(!props)throw Error('Authenticated learner required');assertOwner(env,props);return [props.namespace];}
   const requested=(env.MEMORY_READ_NAMESPACES??env.MEMORY_NAMESPACE).split(',').map(s=>s.trim());
   if(requested.length>8||requested.some(s=>!/^[-A-Za-z0-9_]{1,80}$/.test(s)))throw Error('Invalid configured memory read spaces');
   return [...new Set([env.MEMORY_NAMESPACE,...requested])];
@@ -36,6 +44,8 @@ export function origin(env: Env) {
   return u.origin;
 }
 export function assertOwner(env: Env, props: AuthProps) {
+  if(env.MULTI_USER_ENABLED!==undefined&&!['true','false'].includes(env.MULTI_USER_ENABLED))throw Error('Invalid multi-user mode');
+  if(multiUserEnabled(env)){if(props.namespace!==namespaceForLearner(env,props.userId))throw Error('Account or private space is not authorized');return;}
   if (!env.OWNER_SUPERMEMORY_ID || props.userId !== env.OWNER_SUPERMEMORY_ID || props.namespace !== env.MEMORY_NAMESPACE || env.MEMORY_NAMESPACE !== 'leetcode_problems') throw Error('Account or space is not authorized');
 }
 export const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);

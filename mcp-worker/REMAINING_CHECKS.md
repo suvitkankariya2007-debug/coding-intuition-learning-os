@@ -6,7 +6,7 @@ not proof of live account access or production operation.
 ## Completed automatically
 
 - TypeScript/native-script syntax and both non-deploying Worker bundles.
-- 86 automated cases covering local and OAuth runtimes, owner/scope boundaries,
+- 109 automated cases covering local and OAuth runtimes, owner/scope boundaries,
   memory pagination and recovery, actual alarms, source failures, persistence,
   idempotency, source attribution and evidence-based ranking.
 - Background simulation: explicit truncated-memory PARTIAL; recovery after complete
@@ -29,7 +29,7 @@ not proof of live account access or production operation.
 1. Updated laptop runtime: pull the feature branch, rebuild and restart. Run
    npm run verify:live. This must read an actual nonempty saved discussion fully
    verify commit-pinned GitHub code and see fresh successful results for each expected monitor task.
-2. Updated Go connection: refresh the existing connection's 29 tools and execute
+2. Updated Go connection: refresh the existing connection's 31 tools and execute
    the prompt in LIVE_GO_VERIFICATION.md. Capture actual Go tool-call evidence.
 3. Real approved learning write/review: preserve the returned receipt and confirm
    read-back in a fresh chat after restart. Earlier prompt passes were user-reported;
@@ -90,4 +90,10 @@ problems without saving proposed observations. Saved excerpts are checked
 against exact versions/offsets. See DISCUSSION_REVIEW.md for the Go prompt and
 current-chat access limitations.
 
-Cross-chat continuity now has versioned durable question records and full-payload write queuing. Search TTL is one hour; records do not expire. Automated fixtures cover independent questions, concurrent revision conflicts, restart/outage recovery and response-lost reconciliation. Refresh Go discovery to 29 tools and run the real-question workflow in CROSS_CHAT_CONTINUITY.md. A provider write with an ambiguous outcome remains pending until reconciliation finds it; automatic blind resends are disabled. An acknowledged targeted resend is available only after a complete nontruncated absence scan. Actual Go continuity, real account recovery and hosted laptop-off operation remain live gates.
+Cross-chat continuity now has versioned durable question records and full-payload write queuing. Search TTL is one hour; records do not expire. Automated fixtures cover independent questions, concurrent revision conflicts, restart/outage recovery and response-lost reconciliation. Refresh Go discovery to 31 tools and run the real-question workflow in CROSS_CHAT_CONTINUITY.md. A provider write with an ambiguous outcome remains pending until reconciliation finds it; automatic blind resends are disabled. An acknowledged targeted resend is available only after a complete nontruncated absence scan. Actual Go continuity, real account recovery and hosted laptop-off operation remain live gates.
+
+## Learner profiles and multi-user adaptation
+
+Implemented: 31 tools; versioned explicit preferences with immutable history and revision protection; continuously derived knowledge/hint/recall signals; bounded preference-based ranking and session-size policy; durable profile writes and recovery; per-account OAuth/namespace/cache/ledger isolation; per-learner source accounts, source-change archival and cursor reset; tenant-bound monitor credential encryption. Hosted multi-user mode is opt-in and requires each learner to prepare the displayed private Supermemory namespace. The single-user tunnel remains private.
+
+Profile and isolation fixtures cover actual OAuth connections for two simulated users, different presentation/practice policies, no owner-handle inheritance, cross-account document/argument rejection, encrypted-token boundaries, background source selection, profile outage/restart/reconciliation, out-of-order queued revisions, history pagination and invalid inputs. Actual hosted onboarding with two real accounts and educational-effectiveness tests remain live gates. This work does not import or train on all previous chats. See LEARNER_PROFILES.md for setup and real-account prompts.

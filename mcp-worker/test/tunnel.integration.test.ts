@@ -54,7 +54,7 @@ describe('private local tunnel learning runtime',()=>{
   it('fails closed when Supermemory is not linked',async()=>{loggedIn=false;expect((await rpc('get_roadmap')).response.status).toBe(503);loggedIn=true;});
   it('advertises tunnel authentication accurately and retains the canonical roadmap',async()=>{
     const r=await request('/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list'})});
-    const tools=(await r.json() as any).result.tools;expect(tools).toHaveLength(29);expect(tools.every((t:any)=>t.securitySchemes[0].type==='noauth')).toBe(true);
+    const tools=(await r.json() as any).result.tools;expect(tools).toHaveLength(31);expect(tools.every((t:any)=>t.securitySchemes[0].type==='noauth')).toBe(true);
     expect(JSON.parse((await rpc('get_roadmap',{limit:1})).body.result.content[0].text).total).toBe(188);
   });
   it('searches both DSA spaces with provenance and bounded cached requests',async()=>{
@@ -75,8 +75,8 @@ describe('private local tunnel learning runtime',()=>{
   });
   it('initializes a real SDK client and validates all read tools without writing learning records',async()=>{
     const report=await diagnoseLocal({fetcher:(url:any,init:any)=>mf.dispatchFetch(String(url),init)});
-    expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(29);
-    expect(report.checks.filter((c:any)=>c.status==='PASS')).toHaveLength(21);
+    expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(31);
+    expect(report.checks.filter((c:any)=>c.status==='PASS')).toHaveLength(22);
     expect(report.learningWritesPerformed).toBe(false);expect(documents).toHaveLength(0);
     expect(JSON.stringify(report)).not.toContain('upstream-fixture');
     expect(JSON.stringify(report)).not.toContain('Recent reasoning context.');
@@ -90,7 +90,7 @@ describe('private local tunnel learning runtime',()=>{
   });
   it('requires local write opt-in, then persists one event across process restart',async()=>{
     const event={clientEventId:'tunnel-event-0001',problemRef:'lc:98',kind:'mistake',summary:'I checked immediate children instead of inherited ancestor bounds.',conceptKeys:['dfs'],origin:'chatgpt'};
-    for(const name of ['save_learning_question','retry_learning_writes'])expect((await rpc(name,{})).body.result.isError).toBe(true);
+    for(const name of ['save_learning_question','retry_learning_writes','update_learner_profile'])expect((await rpc(name,{})).body.result.isError).toBe(true);
     expect((await rpc('configure_background_monitor',{enabled:true})).body.result.isError).toBe(true);
     expect((await rpc('record_reasoning_event',event)).body.result.isError).toBe(true);expect(documents).toHaveLength(0);
     await mf.dispose();writesEnabled=true;mf=runtime();await mf.ready;

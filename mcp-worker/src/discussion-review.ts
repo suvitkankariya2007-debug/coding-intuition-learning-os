@@ -1,6 +1,6 @@
 import {CONCEPTS,CONCEPT_KEYS,CONCEPT_EDGES,inferCurriculumConcepts,type ConceptKey} from '../../src/lib/concept-graph';
 import {allProblems,curriculum} from './catalog';
-import {buildData,type Snapshot} from './learning';
+import {buildData,learningDay,type Snapshot} from './learning';
 
 type Card={remember:string;pitfall:string;fallback:string;whyReview:string;recallQuestion:string};
 // Curated coaching rules, not a generative model or a diagnosis of the learner.
@@ -75,7 +75,7 @@ export function discussionReviewPlan(snapshot:Snapshot,input:DiscussionReviewInp
   const related=concepts.filter(k=>tags.some(t=>CONCEPT_EDGES.some(e=>e.from===k&&e.to===t||e.to===k&&e.from===t)));
   if(!shared.length&&!related.length)return [];
   const state=data.roadmap!.find(r=>r.itemId===p.id)!;
-  const reviewingLater=!!state.dueDate&&state.dueDate>new Date(Date.now()+19800000).toISOString().slice(0,10);
+  const reviewingLater=!!state.dueDate&&state.dueDate>learningDay(Date.now(),snapshot.learnerProfile?.preferences.timeZone);
   const foundationWeight=Math.max(0,...shared.map(k=>{const index=foundations[k].indexOf(p.problemRef);return index<0?0:index===0?40:20;}));
   return [{itemId:p.id,title:p.title,problemRef:p.problemRef,platform,url:lc?'https://leetcode.com/problemset/?search='+lc[1]:`https://codeforces.com/problemset/problem/${cf![1]}/${cf![2]}`,linkType:lc?'platform_search':'problem',matchedConcepts:shared,relatedConcepts:related,priorStatus:state.status,nextDue:state.dueDate,score:shared.length*100+related.length*30+foundationWeight+(p.id===input.focusItemId?50:0)-(state.status==='solved'?15:0)-(reviewingLater?20:0),whySelected:foundationWeight?'Curated foundation exercise for the concept implicated by the supplied discussion.':shared.length?'Practice the same concept implicated by the supplied discussion evidence.':'Compare a related technique and explain when its assumptions differ.',relationshipBasis:'curated_concept_rule_and_catalog_metadata',unfamiliarityVerified:false}];
  }).sort((a,b)=>b.score-a.score||catalog.findIndex(p=>p.id===a.itemId)-catalog.findIndex(p=>p.id===b.itemId));

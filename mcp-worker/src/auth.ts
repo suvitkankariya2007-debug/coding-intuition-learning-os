@@ -1,5 +1,5 @@
 import { AuthorizationError, CimdFetchError, OAuthError, authorizationErrorRedirect, type ConsentDescription } from '@cloudflare/workers-oauth-provider';
-import { type Env, type AuthProps, UPSTREAM, origin, escapeHtml, sha256, fetchTimed, assertOwner } from './config';
+import { type Env, type AuthProps, UPSTREAM, origin, escapeHtml, sha256, fetchTimed, assertOwner,multiUserEnabled,namespaceForLearner } from './config';
 import { withMemory } from './upstream';
 
 export function page(title: string, body: string) {
@@ -40,18 +40,18 @@ export async function refreshProps(env:Env,props:AuthProps){
 export async function authHandler(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url), base = origin(env), oauth = env.OAUTH_PROVIDER;
   if(url.pathname==='/' || url.pathname==='/health') {
-    const ready=!!env.SUPERMEMORY_CLIENT_ID && !!env.OWNER_SUPERMEMORY_ID && env.MEMORY_NAMESPACE==='leetcode_problems';
+    const ready=!!env.SUPERMEMORY_CLIENT_ID && (multiUserEnabled(env)||!!env.OWNER_SUPERMEMORY_ID&&env.MEMORY_NAMESPACE==='leetcode_problems');
     if(url.pathname==='/health')return Response.json({service:'coding-intuition-mcp',configured:ready,liveAccountVerified:false},{headers:{'Cache-Control':'no-store'}});
-    return new Response(page('Your intuition, connected',`<p>Private DSA coaching with your 188-problem roadmap and Supermemory.</p><p>${ready?'Start the connection from ChatGPT’s custom MCP form.':'Deployment configuration is incomplete. No learning account is connected yet.'}</p><p>MCP endpoint: <code>${escapeHtml(base)}/mcp</code></p><p>Authentication: OAuth. Only the configured owner and learning space are allowed.</p>`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
+    return new Response(page('Your intuition, connected',`<p>Private DSA coaching with your 188-problem roadmap and Supermemory.</p><p>${ready?'Start the connection from ChatGPT’s custom MCP form.':'Deployment configuration is incomplete. No learning account is connected yet.'}</p><p>MCP endpoint: <code>${escapeHtml(base)}/mcp</code></p><p>Authentication: OAuth. ${multiUserEnabled(env)?'Each authenticated learner uses a separate verified memory space.':'Only the configured owner and learning space are allowed.'}</p>`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
   }
-  if(!env.SUPERMEMORY_CLIENT_ID || !env.OWNER_SUPERMEMORY_ID)return new Response('Authentication setup is incomplete',{status:503});
+  if(!env.SUPERMEMORY_CLIENT_ID || !multiUserEnabled(env)&&!env.OWNER_SUPERMEMORY_ID)return new Response('Authentication setup is incomplete',{status:503});
   try {
     if(url.pathname==='/authorize' && request.method==='GET') {
       const auth=await oauth.parseAuthRequest(request);
       const details=await oauth.describeConsent(auth);
       const consent=await oauth.beginConsent(auth);
       consent.headers.set('Content-Type','text/html; charset=utf-8');
-      return new Response(consentPage(details,consent.handle,env.MEMORY_NAMESPACE),{headers:consent.headers});
+      return new Response(consentPage(details,consent.handle,multiUserEnabled(env)?'your account-specific private DSA space':env.MEMORY_NAMESPACE),{headers:consent.headers});
     }
     if(url.pathname==='/authorize' && request.method==='POST') {
       const form=await request.formData();
@@ -79,9 +79,9 @@ export async function authHandler(request: Request, env: Env): Promise<Response>
         const spaces=await call('list_spaces');
         return {who,spaces};
       });
-      const props:AuthProps={...tokens,userId:identity.who.userId,namespace:env.MEMORY_NAMESPACE};
+      const props:AuthProps={...tokens,userId:identity.who.userId,namespace:multiUserEnabled(env)?namespaceForLearner(env,identity.who.userId):env.MEMORY_NAMESPACE};
       try {assertOwner(env,props);} catch {return new Response('This Supermemory account is not the configured learning owner. Sign in with the intended account.',{status:403,headers:saved.headers});}
-      if(!identity.spaces.spaces?.some((s:any)=>s.namespace===props.namespace))return new Response('The approved learning space is unavailable',{status:403,headers:saved.headers});
+      if(!identity.spaces.spaces?.some((s:any)=>s.namespace===props.namespace))return new Response(page('Prepare your private learning space',`<p>Create a Supermemory space with namespace <code>${escapeHtml(props.namespace)}</code> in your intended account, then restart this connection and grant access to that space.</p><p><a href="https://console.supermemory.ai" rel="noreferrer">Open Supermemory Console</a></p><p>No learner records have been written. Shared generic spaces are not substituted for your private space.</p>`),{status:403,headers:{...Object.fromEntries(saved.headers),'Content-Type':'text/html; charset=utf-8'}});
       const done=await oauth.completeAuthorization({request:saved.request,userId:props.userId,metadata:{namespace:props.namespace},scope:saved.request.scope,props});
       saved.headers.set('Location',done.redirectTo);
       return new Response(null,{status:302,headers:saved.headers});

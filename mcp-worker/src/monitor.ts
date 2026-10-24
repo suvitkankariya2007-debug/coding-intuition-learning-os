@@ -1,10 +1,10 @@
 import { type Env,type AuthProps,assertOwner } from './config';
 import {rotateUpstreamProps} from './auth';
-export type MonitorState={enabled:boolean;intervalMinutes:number;nextRunAt:number|null;taskIndex:number;memoryPagesThisCycle?:number;memoryPage:number;cfCursor:number;consecutiveFailures:number;tasks:Record<string,{status:string;checkedAt:string;lastSuccessAt?:string;lastCompletedAt?:string;failureCount?:number;durationMs?:number;coverage?:string;historyComplete?:boolean}>;lastRunAt?:string;lastSuccessAt?:string;credentialMode?:'local'|'encrypted'};
-export const initialMonitor=():MonitorState=>({enabled:false,intervalMinutes:30,nextRunAt:null,taskIndex:0,memoryPage:1,cfCursor:1,consecutiveFailures:0,tasks:{}});
+export {initialMonitor,reconcileMonitorSources,type MonitorState} from './monitor-state';
 import {openCredentials} from './credential-crypto';
 export {openCredentials,sealCredentials} from './credential-crypto';
-export async function monitorCredentials(env:Env,sealed:any){
-  if(env.LOCAL_CREDENTIALS){const r=await env.LOCAL_CREDENTIALS.fetch('https://credentials.internal/props');if(!r.ok)throw Error('Reconnect');const p=await r.json() as AuthProps;assertOwner(env,p);if(p.expiresAt<=Date.now())throw Error('Expired');return p;}
-  return rotateUpstreamProps(env,await openCredentials(env,sealed));
+export async function monitorCredentials(env:Env,sealed:any,expected?:{userId:string;namespace:string}){
+  if(env.LOCAL_CREDENTIALS){const r=await env.LOCAL_CREDENTIALS.fetch('https://credentials.internal/props');if(!r.ok)throw Error('Reconnect');const p=await r.json() as AuthProps;assertOwner(env,p);if(expected&&(p.userId!==expected.userId||p.namespace!==expected.namespace))throw Error('Credential tenant mismatch');if(p.expiresAt<=Date.now())throw Error('Expired');return p;}
+  return rotateUpstreamProps(env,await openCredentials(env,sealed,expected));
 }
+

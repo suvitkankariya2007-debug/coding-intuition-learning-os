@@ -1,6 +1,6 @@
 # Discussion to practice and revision
 
-The MCP now has 29 tools. `review_learning_discussion` creates a read-only
+The MCP now has 31 tools. `review_learning_discussion` creates a read-only
 coaching plan from one to five short discussion observations supplied by
 ChatGPT. It uses curated concept rules and the real synchronized catalog.
 It does not run another language model or independently retrieve ChatGPT chats.

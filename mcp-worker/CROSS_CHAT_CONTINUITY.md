@@ -1,6 +1,6 @@
 # Persistent questions, one-hour caching and pending writes
 
-The MCP now has 29 tools. ChatGPT supplies short relevant context from the visible chat; the server cannot read arbitrary unsaved ChatGPT conversations. An explicit request to track a question authorizes saving that brief record. Otherwise proposed interpretations remain read-only until approved.
+The MCP now has 31 tools. ChatGPT supplies short relevant context from the visible chat; the server cannot read arbitrary unsaved ChatGPT conversations. An explicit request to track a question authorizes saving that brief record. Otherwise proposed interpretations remain read-only until approved.
 
 | Storage | Lifetime and behavior |
 | --- | --- |
@@ -47,7 +47,7 @@ Keep the existing tunnel client running in Terminal 2. In another terminal:
 cd ~/coding-intuition-test/mcp-worker && npm run tunnel:doctor
 ```
 
-Refresh the existing Go connection and verify discovery lists 29 tools. This update installs no dependencies and deploys nothing.
+Refresh the existing Go connection and verify discovery lists 31 tools. This update installs no dependencies and deploys nothing.
 
 ## Real cross-chat acceptance prompts
 

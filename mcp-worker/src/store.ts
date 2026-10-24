@@ -1,7 +1,8 @@
+import {initialProfile,mergeProfile,profileRecordSchema,updateProfileSchema,getProfileSchema,profileView,learnerSources,sourceNames,timeZoneSchema,type LearnerProfile} from './learner-profile';
 import { discussionPage,extractQuestions } from './discussions';
 import {MEMORY_CACHE_TTL_MS,memoryCacheIsFresh,saveQuestionSchema,listQuestionsSchema,questionRecordSchema,writeStatusSchema,retryWritesSchema,jobSummary,type QuestionRecord,type WriteJob} from './continuity';
 import {rotateUpstreamProps} from './auth';
-import {initialMonitor,sealCredentials,openCredentials,monitorCredentials,type MonitorState} from './monitor';
+import {initialMonitor,reconcileMonitorSources,sealCredentials,openCredentials,monitorCredentials,type MonitorState} from './monitor';
 import { DurableObject } from 'cloudflare:workers';
 import { assertOwner, readNamespaces, type Env, type AuthProps, sha256 } from './config';
 import { withMemory } from './upstream';
@@ -22,7 +23,11 @@ export class LearnerStore extends DurableObject<Env> {
     try {assertOwner(this.env,input.props);}catch{return new Response('Forbidden',{status:403});}
     // Serialize retries of the same observation before making any external write.
     const operation=this.tail.then(async()=>{
-      try {return Response.json(await this.run(input.action,input.props,input.args??{}));}
+      try {
+        const tenant=await this.ctx.storage.get<{userId:string;namespace:string}>('tenant:identity');
+        if(tenant&&(tenant.userId!==input.props.userId||tenant.namespace!==input.props.namespace))return new Response('Forbidden learner store',{status:403});
+        if(!tenant)await this.ctx.storage.put('tenant:identity',{userId:input.props.userId,namespace:input.props.namespace});
+        return Response.json(await this.run(input.action,input.props,input.args??{}));}
       catch{return Response.json({error:'Learning operation could not complete. Retry reads; reconcile pending writes before retrying.'},{status:502});}
     });
     this.tail=operation.catch(()=>{});
@@ -34,10 +39,13 @@ export class LearnerStore extends DurableObject<Env> {
   private async monitorTick(){
     const m=await this.ctx.storage.get<MonitorState>('monitor:state')??initialMonitor();
     if(!m.enabled)return m;
-    const tasks=['leetcode','codeforces',...(this.env.GITHUB_SOLUTIONS_REPO?['github']:[]),'memory'];
+    const tenant=await this.tenantIdentity(),profile=await this.profile(tenant);
+    const sourceEnv=learnerSources(this.env,tenant,profile);
+    reconcileMonitorSources(m,{leetcode:sourceEnv.LEETCODE_USERNAME||'',codeforces:sourceEnv.CODEFORCES_HANDLE||'',github:(sourceEnv.GITHUB_SOLUTIONS_REPO??'')+':'+(sourceEnv.GITHUB_SOLUTIONS_PATH??'')});
+    const tasks=[...sourceNames(sourceEnv),'memory'];
     const task=tasks[m.taskIndex%tasks.length],started=Date.now(),previous=m.tasks[task];let succeeded=false;m.lastRunAt=new Date().toISOString();
     try{
-      const props=await monitorCredentials(this.env,await this.ctx.storage.get('monitor:credentials'));
+      const props=await monitorCredentials(this.env,await this.ctx.storage.get('monitor:credentials'),tenant);
       if(!this.env.LOCAL_CREDENTIALS)await this.ctx.storage.put('monitor:credentials',await sealCredentials(this.env,props));
       await this.run('retry_writes',props,{limit:1});
       const r:any=await this.run(task==='memory'?'sync_memory':'sync_source',props,task==='memory'?{page:m.memoryPage}:{source:task,force:true,cursor:task==='codeforces'?m.cfCursor:1});
@@ -52,6 +60,15 @@ export class LearnerStore extends DurableObject<Env> {
     // One bounded task per wake-up; capped retry delay avoids tight failure loops.
     const delay=m.consecutiveFailures?Math.min(3600000,60000*2**Math.min(6,m.consecutiveFailures)):m.taskIndex===0?m.intervalMinutes*60000:60000;
     m.nextRunAt=Date.now()+delay;await this.ctx.storage.put('monitor:state',m);await this.ctx.storage.setAlarm(m.nextRunAt);return m;
+  }
+  private async tenantIdentity(){return await this.ctx.storage.get<{userId:string;namespace:string}>('tenant:identity')??{userId:this.env.OWNER_SUPERMEMORY_ID,namespace:this.env.MEMORY_NAMESPACE};}
+  private async profile(props:Pick<AuthProps,'userId'>){return await this.ctx.storage.get<LearnerProfile>('profile:current')??initialProfile(this.env,props);}
+  private applyChangedSources(state:Snapshot,props:Pick<AuthProps,'userId'>,old:LearnerProfile,next:LearnerProfile){
+    const a=learnerSources(this.env,props,old),b=learnerSources(this.env,props,next),changed:string[]=[];
+    for(const [source,keys] of [['leetcode',['LEETCODE_USERNAME']],['codeforces',['CODEFORCES_HANDLE']],['github',['GITHUB_SOLUTIONS_REPO','GITHUB_SOLUTIONS_PATH']]] as const){
+      if(keys.some(k=>a[k]!==b[k])){changed.push(source);state.evidence=state.evidence.map(e=>e.source===source?{...e,inactive:true}:e);state.sourceStatus[source]={available:false,reason:'account_changed_resync_required',checkedAt:new Date().toISOString()};}
+    }
+    return changed;
   }
   private async snapshot(){
     const count=await this.ctx.storage.get<number>('snapshot:count');
@@ -84,13 +101,15 @@ export class LearnerStore extends DurableObject<Env> {
       if(!state.reviews.some(x=>x.clientEventId===r.clientEventId))state.reviews.push(r);
       const history=state.reviews.filter(x=>x.itemId===r.itemId).sort((a,b)=>a.reviewedAt.localeCompare(b.reviewedAt)||String(a.clientEventId).localeCompare(String(b.clientEventId)));
       let schedule={ease:2.5,interval_days:0,repetitions:0,due_date:learningDay()};
-      for(const row of history)schedule=review(schedule,row.grade,learningDay(Date.parse(row.reviewedAt)));
+      for(const row of history)schedule=review(schedule,row.grade,learningDay(Date.parse(row.reviewedAt),row.timeZone??'Asia/Kolkata'));
       state.progress[r.itemId]={...schedule,grade:history.at(-1)!.grade};
       receipt={...receipt,itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt,nextDue:schedule.due_date,provenance:'learner_recall_grade_not_acceptance'};
-    }else{
+    }else if(job.kind==='question'){
       const r=questionRecordSchema.parse(data.record);
       receipt={...receipt,questionId:r.questionId,revision:r.revision};
       extra['thread-sync:'+r.questionId+':'+r.revision]={status:'stored',documentId};
+    }else{
+      const p=profileRecordSchema.parse(data.profile);receipt={...receipt,profileRevision:p.revision};extra['profile-sync:'+p.revision]={status:'stored',documentId};
     }
     await this.save(state,{...extra,[job.receiptKey]:receipt});
     // Crash before removal is safe: the stored receipt is checked before delivery.
@@ -144,10 +163,27 @@ export class LearnerStore extends DurableObject<Env> {
   }
   private async run(action:string,props:AuthProps,args:Record<string,any>):Promise<unknown> {
     const state=await this.snapshot();
-    if(action==='snapshot')return state;
+    const profile=await this.profile(props),sources=learnerSources(this.env,props,profile);
+    if(action==='snapshot')return {...state,learnerProfile:profile,evidence:state.evidence.filter(e=>!e.inactive),problems:state.problems?.map(p=>({...p,codeFiles:p.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))})),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null}};
+    if(action==='get_profile'){
+      const input=getProfileSchema.parse(args),prefix='profile-revision:';
+      const history=input.includeHistory?[...(await this.ctx.storage.list<LearnerProfile>({prefix,...(input.beforeRevision?{end:prefix+String(input.beforeRevision).padStart(7,'0')}:{}),reverse:true,limit:input.limit+1})).values()]:[];
+      return {...profileView(profile,state),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null},configured:profile.revision>0,memorySync:profile.revision?await this.ctx.storage.get('profile-sync:'+profile.revision)??{status:'pending'}:{status:'not_saved'},...(input.includeHistory?{history:history.slice(0,input.limit),nextBeforeRevision:history.length>input.limit?history[input.limit-1].revision:null}:{})};
+    }
+    if(action==='update_profile'){
+      const input=updateProfileSchema.parse(args),fingerprint=await sha256(JSON.stringify(input)),key='profile-receipt:'+await sha256(input.clientEventId),jobKey='outbox:profile:'+await sha256(input.clientEventId);
+      const old=await this.ctx.storage.get<any>(key);
+      if(old){if(old.fingerprint!==fingerprint)throw Error('Idempotency conflict');if(old.status==='stored')return {...old,duplicate:true};const job=await this.ctx.storage.get<WriteJob>(jobKey);if(!job)throw Error('Missing profile payload');return this.deliver(jobKey,job,props);}
+      if(profile.revision!==input.expectedRevision)return {status:'revision_conflict',currentRevision:profile.revision,writePerformed:false};
+      const next=mergeProfile(profile,input),changed=this.applyChangedSources(state,props,profile,next);
+      const job:WriteJob={kind:'profile',clientEventId:input.clientEventId,receiptKey:key,fingerprint,content:JSON.stringify({format:'coding-intuition-learner-profile-v1',learnerId:props.userId,namespace:props.namespace,clientEventId:input.clientEventId,fingerprint,profile:next}),createdAt:new Date().toISOString(),status:'queued',attempts:0,nextAttemptAt:0};
+      const extras:Record<string,unknown>={'profile:current':next,['profile-revision:'+String(next.revision).padStart(7,'0')]:next,[key]:{status:'pending',clientEventId:input.clientEventId,fingerprint,profileRevision:next.revision},[jobKey]:job};
+      if(changed.length){const m=await this.ctx.storage.get<MonitorState>('monitor:state')??initialMonitor();for(const source of changed)delete m.tasks[source];if(changed.includes('codeforces'))m.cfCursor=1;m.taskIndex=0;extras['monitor:state']=m;}
+      await this.save(state,extras);await this.invalidateMemorySearchCache();return this.deliver(jobKey,job,props);
+    }
     if(action==='refresh_credentials'){
       let current=props;const sealed=await this.ctx.storage.get<any>('monitor:credentials');
-      if(sealed){const stored=await openCredentials(this.env,sealed);if(stored.expiresAt>=current.expiresAt)current=stored;}
+      if(sealed){const stored=await openCredentials(this.env,sealed,props);if(stored.expiresAt>=current.expiresAt)current=stored;}
       current=await rotateUpstreamProps(this.env,current);await this.ctx.storage.put('monitor:credentials',await sealCredentials(this.env,current));return current;
     }
     if(action==='monitor_status')return await this.ctx.storage.get('monitor:state')??initialMonitor();
@@ -168,7 +204,7 @@ export class LearnerStore extends DurableObject<Env> {
       return {total:rows.length,items:rows.slice(offset,offset+limit),nextOffset:offset+limit<rows.length?offset+limit:null,extraction:'literal_question_candidates_not_a_diagnosis',coverage:'only_synced_documents; role-labeled user turns or question lines; not guaranteed exhaustive'};
     }
     if(action==='submissions'){
-      const offset=args.offset??0,limit=args.limit??20,catalog=allProblems(state.problems),rows=state.evidence.filter(e=>e.source===args.source).sort((a,b)=>b.observedAt.localeCompare(a.observedAt));
+      const offset=args.offset??0,limit=args.limit??20,catalog=allProblems(state.problems),rows=state.evidence.filter(e=>e.source===args.source&&!e.inactive).sort((a,b)=>b.observedAt.localeCompare(a.observedAt));
       return {source:args.source,status:state.sourceStatus[args.source]??null,totalStored:rows.length,uniqueProblems:new Set(rows.map(e=>e.itemId)).size,offset,nextOffset:offset+limit<rows.length?offset+limit:null,items:rows.slice(offset,offset+limit).map(e=>{
         const p=catalog.find(p=>p.id===e.itemId),id=e.provenanceId?.split(':')[1];
         return {...e,title:p?.title??null,problemRef:p?.problemRef??null,submissionUrl:args.source==='leetcode'?`https://leetcode.com/submissions/detail/${id}/`:`https://codeforces.com/contest/${p?.problemRef.match(/^cf:(\d+)/)?.[1]}/submission/${id}`};
@@ -177,13 +213,13 @@ export class LearnerStore extends DurableObject<Env> {
     if(action==='code'){
       const problem=allProblems(state.problems).find(p=>p.id===args.itemId);
       if(!problem)throw Error('Unknown learning item');
-      const file=problem.codeFiles?.[Number(args.fileIndex??0)];
-      return file?{found:true,...await readProblemCode(file,this.env)}:{found:false,reason:'No synchronized GitHub code file for this problem.'};
+      const file=problem.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))[Number(args.fileIndex??0)];
+      return file?{found:true,...await readProblemCode(file,sources)}:{found:false,reason:'No synchronized GitHub code file for this problem.'};
     }
     if(action==='search') {
       if(args.refresh===true)await this.invalidateMemorySearchCache();
       const query=String(args.query).trim();if(query.length<3||query.length>250)throw Error('Invalid query');
-      const namespaces=readNamespaces(this.env);
+      const namespaces=readNamespaces(this.env,props);
       const key='search:'+await sha256(JSON.stringify({query,namespaces}));
       const cache=await this.ctx.storage.get<{at:number;value:any}>(key);
       if(args.refresh!==true&&cache&&memoryCacheIsFresh(cache.at))return {...cache.value,cache:'hit',cachedAt:new Date(cache.at).toISOString(),expiresAt:new Date(cache.at+MEMORY_CACHE_TTL_MS).toISOString(),cacheTtlSeconds:3600};
@@ -232,7 +268,7 @@ export class LearnerStore extends DurableObject<Env> {
       if(!Number.isInteger(args.grade)||args.grade<0||args.grade>5||typeof args.clientEventId!=='string'||!/^[A-Za-z0-9:_-]{8,100}$/.test(args.clientEventId))throw Error('Invalid review');
       const key='review:'+await sha256(args.clientEventId),fingerprint=await sha256(JSON.stringify({itemId:args.itemId,grade:args.grade}));
       const old=await this.ctx.storage.get<any>(key);if(old){if(old.fingerprint!==fingerprint)throw Error('Idempotency conflict');if(old.status==='stored')return {...old,duplicate:true};}
-      const record={itemId:args.itemId,grade:args.grade,reviewedAt:new Date().toISOString(),clientEventId:args.clientEventId};
+      const record={itemId:args.itemId,grade:args.grade,reviewedAt:new Date().toISOString(),clientEventId:args.clientEventId,timeZone:profile.preferences.timeZone};
       const tracked=allProblems(state.problems).find(p=>p.id===args.itemId)!;
       const problem=curriculumItem(args.itemId)?undefined:{problemRef:tracked.problemRef,title:tracked.title,topic:tracked.topic,idea:tracked.idea};
       const jobKey='outbox:review:'+await sha256(args.clientEventId);
@@ -266,7 +302,7 @@ export class LearnerStore extends DurableObject<Env> {
     if(action==='write_status'){
       const input=writeStatusSchema.parse(args),jobs=await this.ctx.storage.list<WriteJob>({prefix:'outbox:'});
       const receipts=[];
-      if(input.clientEventId)for(const prefix of ['receipt:','review:','question-receipt:']){const r=await this.ctx.storage.get(prefix+await sha256(input.clientEventId));if(r)receipts.push(r);}
+      if(input.clientEventId)for(const prefix of ['receipt:','review:','question-receipt:','profile-receipt:']){const r=await this.ctx.storage.get(prefix+await sha256(input.clientEventId));if(r)receipts.push(r);}
       return {pendingCount:jobs.size,items:[...jobs.values()].filter(j=>!input.clientEventId||j.clientEventId===input.clientEventId).slice(0,50).map(jobSummary),receipts,automaticRetry:(await this.ctx.storage.get<MonitorState>('monitor:state'))?.enabled===true,coverage:'At most 50 pending summaries; receipts contain no queued content.'};
     }
     if(action==='retry_writes'){
@@ -301,6 +337,17 @@ export class LearnerStore extends DurableObject<Env> {
           }
           try {
             const parsed=JSON.parse(content);
+            if(parsed.format==='coding-intuition-learner-profile-v1'){
+              if(parsed.learnerId!==props.userId||parsed.namespace!==props.namespace||typeof parsed.clientEventId!=='string'||!/^[-A-Za-z0-9:_]{8,100}$/.test(parsed.clientEventId)||typeof parsed.fingerprint!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(parsed.fingerprint))throw Error('Invalid profile ownership or receipt');
+              const profileReceiptKey='profile-receipt:'+await sha256(parsed.clientEventId),priorProfileReceipt=(staged[profileReceiptKey]??await this.ctx.storage.get<any>(profileReceiptKey)) as any;
+              if(priorProfileReceipt&&priorProfileReceipt.fingerprint!==parsed.fingerprint)throw Error('Conflicting profile operation identity');
+              const restoredProfile=profileRecordSchema.parse(parsed.profile);if(restoredProfile.revision<1)throw Error('Invalid saved profile revision');
+              const current=(staged['profile:current']??profile) as LearnerProfile,revisionKey='profile-revision:'+String(restoredProfile.revision).padStart(7,'0'),existing=staged[revisionKey]??await this.ctx.storage.get(revisionKey);
+              if(existing&&JSON.stringify(profileRecordSchema.parse(existing))!==JSON.stringify(restoredProfile))throw Error('Conflicting profile revision');
+              if(current.revision<restoredProfile.revision){this.applyChangedSources(state,props,current,restoredProfile);staged['profile:current']=restoredProfile;}
+              staged[revisionKey]=restoredProfile;staged['profile-sync:'+restoredProfile.revision]={status:'stored',documentId:doc.id};
+              staged['profile-receipt:'+await sha256(parsed.clientEventId)]={status:'stored',clientEventId:parsed.clientEventId,fingerprint:parsed.fingerprint,profileRevision:restoredProfile.revision,documentId:doc.id};restored++;
+            }
             if(parsed.format==='coding-intuition-question-v1'){
               const record=questionRecordSchema.parse(parsed.record),threadKey='thread:'+record.questionId,old=(staged[threadKey]??await this.ctx.storage.get(threadKey)) as QuestionRecord|undefined;
               const revisionKey='thread-revision:'+record.questionId+':'+String(record.revision).padStart(7,'0'),existing=staged[revisionKey]??await this.ctx.storage.get(revisionKey);
@@ -319,10 +366,10 @@ export class LearnerStore extends DurableObject<Env> {
               const key='review:'+await sha256(parsed.clientEventId);
               const previous=staged[key] as any ?? await this.ctx.storage.get<any>(key);
               if(previous?.status!=='stored') {
-                state.reviews.push({itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt,clientEventId:parsed.clientEventId});
+                state.reviews.push({itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt,clientEventId:parsed.clientEventId,...(r.timeZone?{timeZone:timeZoneSchema.parse(r.timeZone)}:{})});
                 const history=state.reviews.filter(x=>x.itemId===r.itemId).sort((a,b)=>a.reviewedAt.localeCompare(b.reviewedAt));
                 let schedule={ease:2.5,interval_days:0,repetitions:0,due_date:learningDay()};
-                for(const row of history) schedule=review(schedule,row.grade,learningDay(Date.parse(row.reviewedAt)));
+                for(const row of history) schedule=review(schedule,row.grade,learningDay(Date.parse(row.reviewedAt),row.timeZone??'Asia/Kolkata'));
                 state.progress[r.itemId]={...schedule,grade:history.at(-1)!.grade};
                 staged[key]={status:'stored',clientEventId:parsed.clientEventId,itemId:r.itemId,grade:r.grade,reviewedAt:r.reviewedAt,fingerprint:await sha256(JSON.stringify({itemId:r.itemId,grade:r.grade})),nextDue:schedule.due_date,documentId:doc.id,provenance:'learner_recall_grade_not_acceptance'};restored++;
               }
@@ -354,15 +401,17 @@ export class LearnerStore extends DurableObject<Env> {
         return {changed,restored,extracted,removedQuestions,sweepComplete,incompleteDocuments:[...new Set(sweep.incomplete as string[])],page,totalPages:normalizedPages,nextPage};
       });
       await this.save(state,staged);
+      for(const [key,job] of await this.ctx.storage.list<WriteJob>({prefix:'outbox:'})){if((await this.ctx.storage.get<any>(job.receiptKey))?.status==='stored')await this.ctx.storage.delete(key);}
       await this.invalidateMemorySearchCache();
       return {...result,coverage:'one_document_page',historyComplete:result.page===1&&result.sweepComplete&&result.incompleteDocuments.length===0};
     }
     if(action==='sync_source') {
       const source=String(args.source),cursor=Number(args.cursor??1);
+      if(!sourceNames(sources).includes(source))return {available:false,configured:false,reason:'source_not_configured',checkedAt:new Date().toISOString()};
       const cached=state.sourceStatus[source] as any;
       if(args.force!==true&&cached?.available===true&&Date.now()-Date.parse(cached.checkedAt)<600000&&cached.pageFrom=== (source==='codeforces'?cursor:undefined))return {...cached,cache:'hit'};
       let result;
-      try{result=await fetchSource(source,this.env,cursor);}
+      try{result=await fetchSource(source,sources,cursor);}
       catch{const failed={...cached,available:false,checkedAt:new Date().toISOString(),lastSuccessAt:cached?.lastSuccessAt??(cached?.available?cached.checkedAt:null),error:'public_source_unavailable',cache:'miss'};state.sourceStatus[source]=failed;await this.save(state);return failed;}
       state.problems=mergeProblems(state.problems??[],result.problems??[]);
       const merged=new Map(state.evidence.map(e=>[e.provenanceId,e]));for(const e of result.evidence)merged.set(e.provenanceId,e);
