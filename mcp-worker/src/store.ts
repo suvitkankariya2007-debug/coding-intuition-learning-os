@@ -1,3 +1,4 @@
+import {validatedCapture,capturePolicySchema} from './session-capture';
 import {evidenceIdentity} from '../../src/lib/learning-events';
 import {initialProfile,mergeProfile,profileRecordSchema,updateProfileSchema,getProfileSchema,profileView,learnerSources,sourceNames,timeZoneSchema,type LearnerProfile} from './learner-profile';
 import { discussionPage,extractQuestions } from './discussions';
@@ -109,6 +110,8 @@ export class LearnerStore extends DurableObject<Env> {
       const r=questionRecordSchema.parse(data.record);
       receipt={...receipt,questionId:r.questionId,revision:r.revision};
       extra['thread-sync:'+r.questionId+':'+r.revision]={status:'stored',documentId};
+    }else if(job.kind==='session'){
+      receipt={...receipt,sessionId:data.sessionId,checkpointId:data.checkpointId};
     }else{
       const p=profileRecordSchema.parse(data.profile);receipt={...receipt,profileRevision:p.revision};extra['profile-sync:'+p.revision]={status:'stored',documentId};
     }
@@ -166,10 +169,26 @@ export class LearnerStore extends DurableObject<Env> {
     const state=await this.snapshot();
     const profile=await this.profile(props),sources=learnerSources(this.env,props,profile);
     if(action==='snapshot')return {...state,learnerProfile:profile,evidence:state.evidence.filter(e=>!e.inactive),problems:state.problems?.map(p=>({...p,codeFiles:p.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))})),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null}};
+    if(action==='capture_policy')return {enabled:await this.ctx.storage.get<boolean>('capture:enabled')??false,scope:'brief_supplied_DSA_summaries_and_learner_supported_observations',trigger:'ChatGPT_tool_call_required_no_tab_close_listener'};
+    if(action==='configure_capture'){const input=capturePolicySchema.parse(args);await this.ctx.storage.put('capture:enabled',input.enabled);return this.run('capture_policy',props,{});}
+    if(action==='capture_session'){
+      const input=validatedCapture(args);
+      if(!input.approved&&!await this.ctx.storage.get<boolean>('capture:enabled'))return {status:'approval_required',writePerformed:false};
+      const identity=await sha256(input.sessionId+':'+input.checkpointId),receiptKey='session-receipt:'+await sha256('session:'+identity.slice(0,60)),jobKey='outbox:session:'+identity;
+      const payload={format:'coding-intuition-session-v1',sessionId:input.sessionId,checkpointId:input.checkpointId,summary:input.summary,observations:input.observations,namespace:props.namespace,learnerId:props.userId};
+      const content=JSON.stringify(payload),fingerprint=await sha256(content),prior=await this.ctx.storage.get<any>(receiptKey);
+      if(prior&&prior.fingerprint!==fingerprint)throw Error('Checkpoint conflict; use a new checkpointId for new context');
+      let job=await this.ctx.storage.get<WriteJob>(jobKey);
+      if(!prior&&!job){job={kind:'session',clientEventId:'session:'+identity.slice(0,60),receiptKey,fingerprint,content,createdAt:new Date().toISOString(),status:'queued',attempts:0,nextAttemptAt:0};await this.ctx.storage.put({[jobKey]:job,[receiptKey]:{status:'pending',fingerprint},['session:'+identity]:payload,'session:recent':[...((await this.ctx.storage.get<string[]>('session:recent'))??[]).filter(id=>id!==identity),identity].slice(-5)});}
+      const summaryReceipt=prior?.status==='stored'?{...prior,duplicate:true}:await this.deliver(jobKey,job!,props);
+      const observations=[];
+      for(const row of input.observations){const clientEventId='capture:'+ (await sha256(input.sessionId+':'+row.turnId)).slice(0,60);try{observations.push(await this.run('record',props,{...row.event,clientEventId}));}catch{observations.push({status:'retry_required',clientEventId});}}
+      return {status:summaryReceipt.status==='stored'&&observations.every((r:any)=>['stored','duplicate_evidence'].includes(r.status))?'stored':'pending',summaryReceipt,observations,questionThreadsUnchanged:true,interpretation:'Summary is context; only supplied learner observations affect learning signals. No mastery or grade inferred.'};
+    }
     if(action==='get_profile'){
       const input=getProfileSchema.parse(args),prefix='profile-revision:';
       const history=input.includeHistory?[...(await this.ctx.storage.list<LearnerProfile>({prefix,...(input.beforeRevision?{end:prefix+String(input.beforeRevision).padStart(7,'0')}:{}),reverse:true,limit:input.limit+1})).values()]:[];
-      return {...profileView(profile,state),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null},configured:profile.revision>0,memorySync:profile.revision?await this.ctx.storage.get('profile-sync:'+profile.revision)??{status:'pending'}:{status:'not_saved'},...(input.includeHistory?{history:history.slice(0,input.limit),nextBeforeRevision:history.length>input.limit?history[input.limit-1].revision:null}:{})};
+      return {...profileView(profile,state),sessionCapture:{enabled:await this.ctx.storage.get<boolean>('capture:enabled')??false,recentSummaries:await Promise.all(((await this.ctx.storage.get<string[]>('session:recent'))??[]).map(async id=>{const row=await this.ctx.storage.get<any>('session:'+id);return row?{sessionId:row.sessionId,checkpointId:row.checkpointId,summary:row.summary,interpretation:'supplied_summary_not_mastery'}:null;})),coverage:'latest_five_locally_captured_checkpoints_only'},sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null},configured:profile.revision>0,memorySync:profile.revision?await this.ctx.storage.get('profile-sync:'+profile.revision)??{status:'pending'}:{status:'not_saved'},...(input.includeHistory?{history:history.slice(0,input.limit),nextBeforeRevision:history.length>input.limit?history[input.limit-1].revision:null}:{})};
     }
     if(action==='update_profile'){
       const input=updateProfileSchema.parse(args),fingerprint=await sha256(JSON.stringify(input)),key='profile-receipt:'+await sha256(input.clientEventId),jobKey='outbox:profile:'+await sha256(input.clientEventId);
@@ -324,7 +343,7 @@ export class LearnerStore extends DurableObject<Env> {
     if(action==='write_status'){
       const input=writeStatusSchema.parse(args),jobs=await this.ctx.storage.list<WriteJob>({prefix:'outbox:'});
       const receipts=[];
-      if(input.clientEventId)for(const prefix of ['receipt:','review:','question-receipt:','profile-receipt:']){const r=await this.ctx.storage.get(prefix+await sha256(input.clientEventId));if(r)receipts.push(r);}
+      if(input.clientEventId)for(const prefix of ['receipt:','review:','question-receipt:','profile-receipt:','session-receipt:']){const r=await this.ctx.storage.get(prefix+await sha256(input.clientEventId));if(r)receipts.push(r);}
       return {pendingCount:jobs.size,items:[...jobs.values()].filter(j=>!input.clientEventId||j.clientEventId===input.clientEventId).slice(0,50).map(jobSummary),receipts,automaticRetry:(await this.ctx.storage.get<MonitorState>('monitor:state'))?.enabled===true,coverage:'At most 50 pending summaries; receipts contain no queued content.'};
     }
     if(action==='retry_writes'){

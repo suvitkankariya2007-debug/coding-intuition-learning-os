@@ -54,7 +54,7 @@ describe('private local tunnel learning runtime',()=>{
   it('fails closed when Supermemory is not linked',async()=>{loggedIn=false;expect((await rpc('get_roadmap')).response.status).toBe(503);loggedIn=true;});
   it('advertises tunnel authentication accurately and retains the canonical roadmap',async()=>{
     const r=await request('/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list'})});
-    const tools=(await r.json() as any).result.tools;expect(tools).toHaveLength(32);expect(tools.every((t:any)=>t.securitySchemes[0].type==='noauth')).toBe(true);
+    const tools=(await r.json() as any).result.tools;expect(tools).toHaveLength(35);expect(tools.every((t:any)=>t.securitySchemes[0].type==='noauth')).toBe(true);
     expect(JSON.parse((await rpc('get_roadmap',{limit:1})).body.result.content[0].text).total).toBe(188);
   });
   it('searches both DSA spaces with provenance and bounded cached requests',async()=>{
@@ -75,7 +75,7 @@ describe('private local tunnel learning runtime',()=>{
   });
   it('initializes a real SDK client and validates all read tools without writing learning records',async()=>{
     const report=await diagnoseLocal({fetcher:(url:any,init:any)=>mf.dispatchFetch(String(url),init)});
-    expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(32);
+    expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(35);
     expect(report.checks.filter((c:any)=>c.status==='PASS')).toHaveLength(22);
     expect(report.learningWritesPerformed).toBe(false);expect(documents).toHaveLength(0);
     expect(JSON.stringify(report)).not.toContain('upstream-fixture');

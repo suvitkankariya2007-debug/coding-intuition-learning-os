@@ -29,3 +29,15 @@ The report provides descriptive counts, not a causal effectiveness result. First
 ## Go acceptance prompt
 
 Use the actual connected tools, not simulated responses. Read my learner profile, relevant memory patterns and unfinished questions. Report upstream profile/summary coverage and any failures. Call get_learning_evaluation and explain its evidence gaps. Do not save anything yet. Then help me make one genuine DSA attempt. Before saving, show the proposed observation with its learner-source excerpt and stable evidence IDs; wait for my approval. After approval, save it, inspect the receipt and history, and compare recommendations using the same session focus. Reprocessing the same evidence under a new event ID must not add another mistake. Do not fabricate a recall grade, unfamiliarity or unaided success.
+
+## Opt-in automatic session checkpoints
+
+New tools: `get_session_capture_policy`, `configure_session_capture`, `capture_learning_session` (35 tools total).
+
+After updating the server and refreshing discovery, say: “Enable automatic brief DSA session checkpoints. Save concise summaries and factual observations supported by my own quoted statements after meaningful attempts, corrections, topic switches and before your final summary. Keep assistant explanations separate, preserve unfinished questions, never invent grades or mastery, and honor any later read-only request.”
+
+ChatGPT calls configure_session_capture with enabled true. This is per-account standing approval, revocable with enabled false. Read-only requests always override it. Each checkpoint uses stable sessionId/checkpointId; each learner observation uses stable turnId and actual excerpt plus normal event fields. No learner observations means summary-only capture and no new learning signals. Credentials are rejected. At most five observations and 700-character summary/excerpts per checkpoint keep capture bounded. Checkpoint retries and evidence IDs avoid repeated counts. Conflicting edits require a new checkpoint ID. Existing question threads are never altered by capture.
+
+Summaries and observations use the durable outbox and separate receipts. Report both statuses: a pending summary or event is not a confirmed upstream write. Reinvoke the same checkpoint to retry conversion; uncertain upstream uploads use existing reconciliation. The latest five local summaries are also returned in get_learner_profile. Captured summaries are saved to Supermemory as coding-intuition-session-v1 documents, searchable as context, not full transcripts or mastery assertions.
+
+The connector does not subscribe to ChatGPT chat events. Automatic here means ChatGPT is instructed to make checkpoint tool calls while it is responding; a silent tab close cannot invoke them. Actual Go tool-call adherence remains an acceptance test, not a server guarantee. No scheduler can retrieve never-supplied chats. Capture does not fine-tune model weights or automatically change explicit preferences.
