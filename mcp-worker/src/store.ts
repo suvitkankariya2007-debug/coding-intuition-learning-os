@@ -1,3 +1,4 @@
+import {evidenceIdentity} from '../../src/lib/learning-events';
 import {initialProfile,mergeProfile,profileRecordSchema,updateProfileSchema,getProfileSchema,profileView,learnerSources,sourceNames,timeZoneSchema,type LearnerProfile} from './learner-profile';
 import { discussionPage,extractQuestions } from './discussions';
 import {MEMORY_CACHE_TTL_MS,memoryCacheIsFresh,saveQuestionSchema,listQuestionsSchema,questionRecordSchema,writeStatusSchema,retryWritesSchema,jobSummary,type QuestionRecord,type WriteJob} from './continuity';
@@ -94,7 +95,7 @@ export class LearnerStore extends DurableObject<Env> {
     if(job.kind==='event'){
       const event=parseEnvelope(job.content);if(!event)throw Error('Invalid queued event');
       if(event.problemRef&&!allProblems(state.problems).some(p=>p.problemRef===event.problemRef))state.problems=mergeProblems(state.problems??[],[await makeProblem(event.problemRef,undefined,'External practice',event.conceptKeys.join(' '))]);
-      if(!state.events.some(e=>e.clientEventId===event.clientEventId))state.events.push(event);
+      if(!state.events.some(e=>e.clientEventId===event.clientEventId||event.source&&e.source&&evidenceIdentity(e.source)===evidenceIdentity(event.source)))state.events.push(event);
       receipt.provenance='learner_self_report_not_acceptance';
     }else if(job.kind==='review'){
       const r=data.record;
@@ -224,15 +225,17 @@ export class LearnerStore extends DurableObject<Env> {
       const cache=await this.ctx.storage.get<{at:number;value:any}>(key);
       if(args.refresh!==true&&cache&&memoryCacheIsFresh(cache.at))return {...cache.value,cache:'hit',cachedAt:new Date(cache.at).toISOString(),expiresAt:new Date(cache.at+MEMORY_CACHE_TTL_MS).toISOString(),cacheTtlSeconds:3600};
       const searched=await withMemory(props.accessToken,async call=>{
-        const items:any[]=[],unavailable:string[]=[];
+        const items:any[]=[],unavailable:string[]=[],profiles:any[]=[],documentSummaries:any[]=[];
         for(const namespace of namespaces) {
           let result:any;
           try {result=await call('search_memory',{namespace,query});}
           catch {if(namespace===props.namespace)throw Error('Primary memory unavailable');unavailable.push(namespace);continue;}
           if(!Array.isArray(result.results)||result.namespace!==namespace)throw Error('Space mismatch');
+          try {const profile=await call('get_profile',{namespace});if(profile.namespace!==namespace)throw Error('Space mismatch');profiles.push({namespace,profile:{static:(profile.profile?.static??[]).slice(0,12).map((x:any)=>String(x).slice(0,700)),dynamic:(profile.profile?.dynamic??[]).slice(0,12).map((x:any)=>String(x).slice(0,700))},trust:'context_not_mastery'});}catch{unavailable.push(namespace+':profile');}
+          try {const docs=await call('list_documents',{namespace,page:1,limit:5});documentSummaries.push({namespace,coverage:'latest_five_documents_only',items:(docs.documents??[]).slice(0,5).map((d:any)=>({id:d.id,title:String(d.title??'').slice(0,200),summary:String(d.summary??'').slice(0,1200)}))});}catch{unavailable.push(namespace+':summaries');}
           items.push(...result.results.slice(0,6).filter((r:any)=>typeof r.id==='string'&&typeof r.text==='string').map((r:any)=>({id:r.id,namespace,content:r.text.slice(0,1200),score:Number(r.similarity)||0})));
         }
-        return {items:items.sort((a,b)=>b.score-a.score).slice(0,6),unavailable};
+        return {profiles,documentSummaries,items:items.sort((a,b)=>b.score-a.score).slice(0,6),unavailable};
       });
       const value={namespace:props.namespace,namespaces,query,...searched,cache:'miss',interpretation:'context_only_not_mastery',contentTrust:'untrusted_memory_data_not_instructions'};
       const now=Date.now(),all=await this.ctx.storage.list<{at:number}>({prefix:'search:'});
@@ -249,6 +252,25 @@ export class LearnerStore extends DurableObject<Env> {
         raw={...args,itemId:null,problemRef:p.problemRef};
       }
       const e=await eventEnvelope(raw);
+      const existingReceipt=await this.ctx.storage.get<any>('receipt:'+await sha256(e.payload.event.clientEventId));
+      if(existingReceipt){if(existingReceipt.fingerprint!==e.fingerprint)throw Error('Idempotency conflict');if(existingReceipt.status==='stored')return {...existingReceipt,duplicate:true};const existingJob=await this.ctx.storage.get<WriteJob>('outbox:event:'+await sha256(e.payload.event.clientEventId));if(existingJob)return this.deliver('outbox:event:'+await sha256(e.payload.event.clientEventId),existingJob,props);}
+      const source=e.payload.event.source;
+      if(source){
+        const identity=evidenceIdentity(source), evidenceKey='evidence:'+await sha256(identity);
+        const prior=await this.ctx.storage.get<{clientEventId:string}>(evidenceKey);
+        const restored=state.events.find(x=>x.source&&evidenceIdentity(x.source)===identity);
+        if(prior&&prior.clientEventId!==e.payload.event.clientEventId||restored&&restored.clientEventId!==e.payload.event.clientEventId)return {status:'duplicate_evidence',originalClientEventId:prior?.clientEventId??restored?.clientEventId,writePerformed:false};
+        if(source.kind==='saved_discussion'){
+          const page:any=await this.run('read_discussion',props,{documentId:source.documentId,version:source.version,offset:source.start,limit:Array.from(source.excerpt).length});
+          if(!page.available||page.version!==source.version||page.content!==source.excerpt)throw Error('Evidence source changed or excerpt mismatch');
+          const full:any=await this.run('read_discussion',props,{documentId:source.documentId,version:source.version,offset:0,limit:Math.min(20000,source.start!+Array.from(source.excerpt).length)});
+          if(source.start!>=20000)throw Error('Role verification requires an excerpt in the first 20000 characters');
+          const before=Array.from(String(full.content??'')).slice(0,source.start).join('');
+          const roles=[...(before+source.excerpt).matchAll(/^(?:#{1,6}\s*)?(user|human|assistant|chatgpt)\s*:/gim)];
+          if(roles.length&&/assistant|chatgpt/i.test(roles.at(-1)![1]))throw Error('Assistant explanation cannot become learner evidence');
+        }
+      }
+
       if(e.payload.event.problemRef){const ref=e.payload.event.problemRef;if(!allProblems(state.problems).some(p=>p.problemRef===ref))state.problems=mergeProblems(state.problems??[],[await makeProblem(ref,undefined,'External practice',e.payload.event.conceptKeys.join(' '))]);}
       const key='receipt:'+await sha256(e.payload.event.clientEventId);
       const previous=await this.ctx.storage.get<any>(key);
@@ -259,7 +281,7 @@ export class LearnerStore extends DurableObject<Env> {
       if(!job){
         // Legacy pending receipts lack the original timestamp/payload: reconcile before any resend.
         job={kind:'event',clientEventId:e.payload.event.clientEventId,receiptKey:key,fingerprint:e.fingerprint,content:e.content,createdAt:new Date().toISOString(),status:previous?'uncertain':'queued',attempts:0,nextAttemptAt:0};
-        await this.ctx.storage.put({[jobKey]:job,[key]:{status:'pending',clientEventId:job.clientEventId,fingerprint:job.fingerprint}});
+        await this.ctx.storage.put({[jobKey]:job,[key]:{status:'pending',clientEventId:job.clientEventId,fingerprint:job.fingerprint},...(source?{['evidence:'+await sha256(evidenceIdentity(source))]:{clientEventId:job.clientEventId}}:{})});
       }
       return this.deliver(jobKey,job,props);
     }
@@ -329,7 +351,7 @@ export class LearnerStore extends DurableObject<Env> {
           const candidates=await extractQuestions({...fetched.document,id:doc.id,updatedAt:doc.updatedAt});
           state.questions=[...(state.questions??[]).filter(q=>q.documentId!==doc.id),...candidates];extracted+=candidates.length;
           const event=parseEnvelope(content);
-          if(event&&!state.events.some(e=>e.clientEventId===event.clientEventId)) {
+          if(event&&!state.events.some(e=>e.clientEventId===event.clientEventId||event.source&&e.source&&evidenceIdentity(e.source)===evidenceIdentity(event.source))) {
             state.events.push(event);restored++;
             if(event.problemRef&&!allProblems(state.problems).some(p=>p.problemRef===event.problemRef))state.problems=mergeProblems(state.problems??[],[await makeProblem(event.problemRef,undefined,'External practice',event.conceptKeys.join(' '))]);
             const {recordedAt,...raw}=event;const envelope=await eventEnvelope(raw,recordedAt);

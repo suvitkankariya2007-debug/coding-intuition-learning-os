@@ -29,6 +29,7 @@ export function fixtureRuntime(directory){
       if(args.namespace!=='leetcode_problems')throw Error('Unexpected namespace');
       if(name==='list_documents'){const limit=args.limit??10;data={documents:state.documents.slice((args.page-1)*limit,args.page*limit).map(({content,...doc})=>doc),pagination:state.unknownPagination?{}:{totalPages:Math.ceil(state.documents.length/limit),totalItems:state.documents.length}};}
       else if(name==='get_document'){if(state.failDocumentId===args.documentId)return new Response('Fixture document unavailable',{status:503});data={namespace:args.namespace,document:state.mismatchedDocument?{...state.documents[0],id:'wrong-document'}:state.documents.find(d=>d.id===args.documentId)};}
+      else if(name==='get_profile')data={namespace:args.namespace,profile:{static:['C++ and progressive hints'],dynamic:['Practicing ancestor bounds']}};
       else if(name==='search_memory')data={namespace:args.namespace,results:[{id:'fixture-preference',text:'Use small hints and dry runs.',similarity:0.9}]};
       else if(name==='add_memory'){if(state.failAddBeforeSave)return new Response('Fixture rejected request without a receipt',{status:503});const id='event-'+state.documents.length;state.documents.push({id,title:'Fixture event',updatedAt:new Date().toISOString(),content:args.content,contentTruncated:false});data={success:true,namespace:args.namespace,id};if(state.dropAddResponse){state.dropAddResponse=false;return new Response('Fixture lost response after commit',{status:503});}}
       else throw Error('Unexpected fixture tool');

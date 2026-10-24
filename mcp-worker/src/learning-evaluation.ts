@@ -1,0 +1,10 @@
+import type {Snapshot} from './learning';
+/** Descriptive evidence audit. Never a causal claim or proof of unfamiliarity. */
+export function evaluateLearning(s:Snapshot){
+ const rows=s.events.slice().sort((a,b)=>a.recordedAt.localeCompare(b.recordedAt));
+ const metrics=(events:typeof rows)=>({attempts:events.length,reportedIndependent:events.filter(e=>e.independentlyExplained===true&&e.hintStage==='none').length});
+ const recall=rows.filter(e=>e.kind==='recall_check'&&e.source?.role==='learner'&&e.hintStage==='none'&&rows.some(prior=>(prior.problemRef??prior.itemId)===(e.problemRef??e.itemId)&&Date.parse(e.recordedAt)-Date.parse(prior.recordedAt)>=86400000));
+ const transfer=rows.filter(e=>e.kind==='transfer_attempt'&&e.source?.role==='learner'&&e.hintStage==='none'&&!rows.some(prior=>prior!==e&&(prior.problemRef??prior.itemId)===(e.problemRef??e.itemId)&&prior.recordedAt<e.recordedAt));
+ const trend=(events:typeof rows)=>{const middle=Math.floor(events.length/2);return {earlier:metrics(events.slice(0,middle)),later:metrics(events.slice(middle)),status:events.length>=6?'descriptive_comparison_only':'insufficient_evidence'};};
+ return {status:recall.length>=6&&transfer.length>=6?'descriptive_evidence_available':'insufficient_evidence',delayedRecall:trend(recall),firstRecordedTransfer:trend(transfer),coverage:{totalEvents:rows.length,sourceLinkedEvents:rows.filter(e=>e.source).length},limitations:['Unaided status is learner-reported, not independently proctored.','First recorded problem does not prove the learner has never seen it.','A 24-hour delay is a measurement threshold, not an optimal revision interval.','No randomized control or causal learning-effectiveness claim.','Assistant explanations and grades without an actual learner attempt are not evaluation evidence.']};
+}
