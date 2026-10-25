@@ -1,3 +1,4 @@
+import {analyzeContext,contextSchema} from './context-ingestion';
 import {validatedCapture,capturePolicySchema} from './session-capture';
 import {evidenceIdentity} from '../../src/lib/learning-events';
 import {initialProfile,mergeProfile,profileRecordSchema,updateProfileSchema,getProfileSchema,profileView,learnerSources,sourceNames,timeZoneSchema,type LearnerProfile} from './learner-profile';
@@ -169,6 +170,16 @@ export class LearnerStore extends DurableObject<Env> {
     const state=await this.snapshot();
     const profile=await this.profile(props),sources=learnerSources(this.env,props,profile);
     if(action==='snapshot')return {...state,learnerProfile:profile,evidence:state.evidence.filter(e=>!e.inactive),problems:state.problems?.map(p=>({...p,codeFiles:p.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))})),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null}};
+    if(action==='analyze_context'||action==='ingest_context'){
+      const input=contextSchema.parse(args),hash=await sha256(JSON.stringify([{...input,approved:undefined},allProblems(state.problems).map(p=>[p.problemRef,p.title,p.idea]),'literal-question-v1'])),key='context-cache:'+hash;
+      const cached=await this.ctx.storage.get<{at:number;value:any}>(key);
+      const hit=!!cached&&memoryCacheIsFresh(cached.at),value=hit?cached!.value:analyzeContext(input,allProblems(state.problems));
+      if(!hit){const entries=await this.ctx.storage.list<{at:number}>({prefix:'context-cache:'});for(const [old,row] of entries)if(!memoryCacheIsFresh(row.at)){await this.ctx.storage.delete(old);entries.delete(old);}if(entries.size<20)await this.ctx.storage.put(key,{at:Date.now(),value});}
+      const result={...value,cache:hit?'hit':'miss',cacheTtlSeconds:3600,interpretation:'Learner questions establish discussion relevance, not diagnosed mistakes or mastery.'};
+      if(action==='analyze_context')return {...result,writePerformed:false};
+      const receipt=await this.run('capture_session',props,{...value.capture,approved:input.approved});
+      return {...result,receipt};
+    }
     if(action==='capture_policy')return {enabled:await this.ctx.storage.get<boolean>('capture:enabled')??false,scope:'brief_supplied_DSA_summaries_and_learner_supported_observations',trigger:'ChatGPT_tool_call_required_no_tab_close_listener'};
     if(action==='configure_capture'){const input=capturePolicySchema.parse(args);await this.ctx.storage.put('capture:enabled',input.enabled);return this.run('capture_policy',props,{});}
     if(action==='capture_session'){

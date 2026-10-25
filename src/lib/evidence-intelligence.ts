@@ -37,6 +37,7 @@ export type Recommendation = {
   itemId: string;
   title: string;
   score: number;
+  components?: {factor:string;points:number;evidenceIds:string[]}[];
   reason: string[];
   evidence: { accepted: number; rejected: number; codeFiles: number; latestAt: string | null; unresolvedRejected?:number };
 };
@@ -86,24 +87,26 @@ export function recommendDSA(
     const solved = item.status === "solved" || item.status === "mastered" || accepted > 0;
     const reason: string[] = [];
     let score = 0;
-    if (isDue) { score += 55 + Math.min(daysOverdue, 20); reason.push(daysOverdue ? `Review overdue by ${daysOverdue} day(s)` : "Review due now"); }
-    if (weakRecall) { score += 30; reason.push("Previous recall was difficult"); }
-    if(item.mistakeClass && weakRecall) { score += 14; reason.push(`Revisit reasoning error: ${item.mistakeClass.replaceAll("-", " ")}`); }
-    if(item.hintStage && item.hintStage !== "none" && !solved) { score += 8; reason.push("Needed hints in the previous review"); }
-    if(item.confidence != null && item.confidence <= 2 && !solved) { score += 8; reason.push("Low confidence in independent reasoning"); }
+    const components:{factor:string;points:number;evidenceIds:string[]}[]=[];
+    const add=(factor:string,points:number)=>{score+=points;components.push({factor,points,evidenceIds:[]});};
+    if (isDue) { add("due_review",55 + Math.min(daysOverdue, 20)); reason.push(daysOverdue ? `Review overdue by ${daysOverdue} day(s)` : "Review due now"); }
+    if (weakRecall) { add("difficult_recall",30); reason.push("Previous recall was difficult"); }
+    if(item.mistakeClass && weakRecall) { add("review_mistake",14); reason.push(`Revisit reasoning error: ${item.mistakeClass.replaceAll("-", " ")}`); }
+    if(item.hintStage && item.hintStage !== "none" && !solved) { add("previous_hints",8); reason.push("Needed hints in the previous review"); }
+    if(item.confidence != null && item.confidence <= 2 && !solved) { add("low_confidence",8); reason.push("Low confidence in independent reasoning"); }
     const failures=conservative?unresolvedRejected:rejected;
-    if (failures) { score += conservative?Math.min(failures,3)*2:Math.min(failures,5)*6; reason.push(conservative?`${failures} recent non-accepted submission(s) after the latest observed acceptance; follow-up signal, not a diagnosis`:`${failures} observed non-accepted submission(s)`); }
-    if(options.mode==="competitive" && failures) { score+=conservative?4:10; reason.push("Competitive practice: revisit unsuccessful attempts"); }
-    if (attempted && !solved) { score += item.practiceEvidence==='platform_observation'?6:18; reason.push(item.practiceEvidence==='platform_observation'?"Platform activity observed; independent understanding is unassessed":"Attempted but no verified acceptance recorded"); }
-    if (!attempted && !solved) { score += options.mode === "contest" || options.mode === "revision" ? 0 : item.practiceEvidence==='code_only'?2:10; reason.push(item.practiceEvidence==='code_only'?"GitHub code available; learner attempt and recall are unassessed":"New curriculum problem"); }
-    if (conservative&&solved&&item.activeDifficulty) {score+=18;reason.push('Approved current reasoning difficulty overrides the old acceptance-based practice discount');}
-    if (solved && !isDue && !weakRecall && !item.activeDifficulty) score -= 25;
+    if (failures) { add("platform_failures",conservative?Math.min(failures,3)*2:Math.min(failures,5)*6); reason.push(conservative?`${failures} recent non-accepted submission(s) after the latest observed acceptance; follow-up signal, not a diagnosis`:`${failures} observed non-accepted submission(s)`); }
+    if(options.mode==="competitive" && failures) { add("competitive_failures",conservative?4:10); reason.push("Competitive practice: revisit unsuccessful attempts"); }
+    if (attempted && !solved) { add("attempted_problem",item.practiceEvidence==='platform_observation'?6:18); reason.push(item.practiceEvidence==='platform_observation'?"Platform activity observed; independent understanding is unassessed":"Attempted but no verified acceptance recorded"); }
+    if (!attempted && !solved) { add("new_problem_or_code_only",options.mode === "contest" || options.mode === "revision" ? 0 : item.practiceEvidence==='code_only'?2:10); reason.push(item.practiceEvidence==='code_only'?"GitHub code available; learner attempt and recall are unassessed":"New curriculum problem"); }
+    if (conservative&&solved&&item.activeDifficulty) {add("active_difficulty",18);reason.push('Approved current reasoning difficulty overrides the old acceptance-based practice discount');}
+    if (solved && !isDue && !weakRecall && !item.activeDifficulty) add("accepted_not_due",-25);
     if (codeFiles) reason.push(`${codeFiles} GitHub solution file(s) available for revision; not acceptance proof`);
     if (accepted) reason.push(`${accepted} accepted submission(s) observed`);
-    if (focus.has(item.topic.toLowerCase())) { score += 22; reason.push("Matches selected focus topic"); }
-    score += Math.max(0, Math.min(item.priority ?? 0, 10));
+    if (focus.has(item.topic.toLowerCase())) { add("selected_focus_topic",22); reason.push("Matches selected focus topic"); }
+    add("curriculum_priority",Math.max(0, Math.min(item.priority ?? 0, 10)));
     // Curriculum order only breaks ties; it never overrides a due or weak problem.
-    return { itemId: item.id, title: item.title, score,
+    return { itemId: item.id, title: item.title, score,components,
       reason, evidence: { accepted, rejected, codeFiles,...(conservative?{unresolvedRejected}:{}),
         latestAt: latest.length ? new Date(Math.max(...latest)).toISOString() : null },
       position: item.position, isNew: !attempted && !solved, due: isDue };

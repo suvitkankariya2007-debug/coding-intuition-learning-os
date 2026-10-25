@@ -13,7 +13,7 @@ export function rankWithReasoning(base:Recommendation[],roadmap:ConceptProblem[]
   const relevant=[...new Set([...inferCurriculumConcepts(p),...explicit])].filter(k=>weaknesses.has(k));
   if(!relevant.length)return rec;
   const weight=Math.min(35,relevant.reduce((sum,k)=>sum+Math.min(12,(weaknesses.get(k)??0)*6),0));
-  return {...rec,score:rec.score+weight,reason:[...rec.reason,
+  return {...rec,score:rec.score+weight,components:[...(rec.components??[]),{factor:'active_weak_concepts',points:weight,evidenceIds:events.filter(e=>e.conceptKeys.some(k=>relevant.includes(k))).map(e=>e.clientEventId)}],reason:[...rec.reason,
    "Practice transfer of learner-reported weak technique(s): "+relevant.join(", ")+" (self-report, not verified mastery)"]};
  }).sort((a,b)=>b.score-a.score||a.itemId.localeCompare(b.itemId));
 }
