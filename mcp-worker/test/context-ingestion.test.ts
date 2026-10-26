@@ -109,6 +109,18 @@ it('does not rank learning events whose upstream writes remain unconfirmed',asyn
  expect((await f.rpc('ingest_learning_context',{...context,approved:true})).receipt.status).toBe('pending');
  expect((await f.rpc('get_learning_signals')).eventCount).toBe(0);
  expect((await f.rpc('get_recommendations')).recommendations).toEqual(baseline.recommendations);
- expect((await f.rpc('get_learning_write_status')).pendingCount).toBeGreaterThan(0);
+ const pendingStatus=await f.rpc('get_learning_write_status');
+ expect(pendingStatus.pendingCount).toBeGreaterThan(0);
+ expect(pendingStatus.items.every((j:any)=>j.lastError==='MEMORY_PROVIDER_UNAVAILABLE')).toBe(true);
  }finally{await f.mf.dispose();}
+});
+
+it('recognizes explicit help requests and stored canonical concept identifiers',async()=>{
+ const {inferCurriculumConcepts}=await import('../../src/lib/concept-graph');
+ expect(inferCurriculumConcepts({title:'manual:count-staircase',topic:'',idea:'hash-lookup prefix-sums'})).toEqual(expect.arrayContaining(['hash-lookup','prefix-sums']));
+ const a=analyzeContext({...context,problemRef:'manual:count-staircase',turns:[{turnId:'help-request-001',role:'learner',text:'Help me understand the frequency condition using a frequency map'}]},[]);
+ expect(a.capture.observations).toHaveLength(1);
+ expect(a.capture.observations[0].event.conceptKeys).toContain('hash-lookup');
+ const data=buildData(emptySnapshot(),{contextQuestions:[{problemRef:'manual:count-staircase',conceptKeys:['hash-lookup'],evidenceId:'current-chat:help-request-001'}]});
+ expect(data.recommendations.some(r=>r.components?.some(c=>c.factor==='provisional_discussion_question'))).toBe(true);
 });

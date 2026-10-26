@@ -14,7 +14,7 @@ export function analyzeContext(raw:unknown,catalog:{problemRef:string;title:stri
   if(input.coverage==='summary_only'||turn.role!=='learner'||observations.some(o=>o.turnId===turn.turnId)||observations.length>=5)continue;
   const ref=turn.problemRef??input.problemRef;if(!ref){gaps.push('No problem reference for '+turn.turnId);continue;}
   let fence=false;const lines=turn.text.split('\n');let question='';
-  for(const line of lines){if(/^\s*(```|~~~)/.test(line)){fence=!fence;continue;}if(!fence&&(/\?/.test(line)||/^\s*(why|how|explain|what|when)\b/i.test(line))){question=line.trim().slice(0,600);break;}}
+  for(const line of lines){if(/^\s*(```|~~~)/.test(line)){fence=!fence;continue;}if(!fence&&(/\?/.test(line)||/^\s*(why|how|explain|what|when|help|show|can|could|does|do|is|are|please)\b/i.test(line))){question=line.trim().slice(0,600);break;}}
   if(!question)continue;
   const p=catalog.find(p=>p.problemRef===ref),conceptKeys=inferCurriculumConcepts({title:question,topic:'',idea:p?.idea??p?.title??''});
   observations.push({turnId:turn.turnId,excerpt:question,event:{problemRef:ref,kind:'problem_attempt',summary:'Explicit learner question: '+question,conceptKeys:conceptKeys.slice(0,6),origin:'chatgpt'}});

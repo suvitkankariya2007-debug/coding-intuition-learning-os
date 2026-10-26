@@ -31,7 +31,7 @@ export class LearnerStore extends DurableObject<Env> {
         if(tenant&&(tenant.userId!==input.props.userId||tenant.namespace!==input.props.namespace))return new Response('Forbidden learner store',{status:403});
         if(!tenant)await this.ctx.storage.put('tenant:identity',{userId:input.props.userId,namespace:input.props.namespace});
         return Response.json(await this.run(input.action,input.props,input.args??{}));}
-      catch{return Response.json({error:'Learning operation could not complete. Retry reads; reconcile pending writes before retrying.'},{status:502});}
+      catch(error){return Response.json({error:'Learning operation could not complete. Retry reads; reconcile pending writes before retrying.',code:error instanceof Error&&/^MEMORY_[A-Z_]+$/.test(error.message)?error.message:'LEARNING_OPERATION_FAILED'},{status:502});}
     });
     this.tail=operation.catch(()=>{});
     return operation;
@@ -161,8 +161,8 @@ export class LearnerStore extends DurableObject<Env> {
       const memory=await withMemory(props.accessToken,async call=>{job.status='uncertain';job.reconciledAbsentAt=undefined;await this.ctx.storage.put(key,job);return call('add_memory',{namespace:props.namespace,content:job.content});});
       if(memory.success!==true||memory.namespace!==props.namespace)throw Error('Memory write unconfirmed');
       return await this.finishWrite(key,job,memory.id??null);
-    }catch{
-      job.lastError='upstream_unavailable_or_write_unconfirmed';job.nextAttemptAt=Date.now()+Math.min(3600000,1000*2**Math.min(job.attempts+1,11));await this.ctx.storage.put(key,job);
+    }catch(error){
+      job.lastError=error instanceof Error&&/^MEMORY_[A-Z_]+$/.test(error.message)?error.message:'upstream_unavailable_or_write_unconfirmed';job.nextAttemptAt=Date.now()+Math.min(3600000,1000*2**Math.min(job.attempts+1,11));await this.ctx.storage.put(key,job);
       return {...jobSummary(job),status:'pending',localDurable:true,retryPolicy:'reconcile_uncertain_before_resend'};
     }
   }
@@ -172,7 +172,7 @@ export class LearnerStore extends DurableObject<Env> {
     const profile=await this.profile(props),sources=learnerSources(this.env,props,profile);
     if(action==='snapshot')return {...state,learnerProfile:profile,evidence:state.evidence.filter(e=>!e.inactive),problems:state.problems?.map(p=>({...p,codeFiles:p.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))})),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null}};
     if(action==='analyze_context'||action==='ingest_context'){
-      const input=contextSchema.parse(args),hash=await sha256(JSON.stringify([{...input,approved:undefined},allProblems(state.problems).map(p=>[p.problemRef,p.title,p.idea]),'literal-question-v1'])),key='context-cache:'+hash;
+      const input=contextSchema.parse(args),hash=await sha256(JSON.stringify([{...input,approved:undefined},allProblems(state.problems).map(p=>[p.problemRef,p.title,p.idea]),'literal-question-v2'])),key='context-cache:'+hash;
       const cached=await this.ctx.storage.get<{at:number;value:any}>(key);
       const hit=!!cached&&memoryCacheIsFresh(cached.at),value=hit?cached!.value:analyzeContext(input,allProblems(state.problems));
       if(!hit){const entries=await this.ctx.storage.list<{at:number}>({prefix:'context-cache:'});for(const [old,row] of entries)if(!memoryCacheIsFresh(row.at)){await this.ctx.storage.delete(old);entries.delete(old);}if(entries.size<20)await this.ctx.storage.put(key,{at:Date.now(),value});}
@@ -478,6 +478,6 @@ export async function learnerCall(env:Env,props:AuthProps,action:string,args:Rec
   assertOwner(env,props);
   const actor=env.LEARNERS.get(env.LEARNERS.idFromName(props.userId+':'+props.namespace));
   const response=await actor.fetch('https://learner.internal/',{method:'POST',body:JSON.stringify({action,props,args})});
-  if(!response.ok)throw Error('Learning operation failed');
+  if(!response.ok){const failure=await response.json().catch(()=>null) as any;throw Error(typeof failure?.code==='string'&&/^MEMORY_[A-Z_]+$/.test(failure.code)?failure.code:'Learning operation failed');}
   return response.json() as Promise<any>;
 }

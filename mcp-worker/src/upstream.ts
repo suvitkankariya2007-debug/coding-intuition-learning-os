@@ -9,6 +9,7 @@ export async function withMemory<T>(accessToken: string, work: (call: (name: str
     requestInit: { headers: { Authorization: `Bearer ${accessToken}` } },
     fetch: async (url, init) => {
       const response=await fetch(url, { ...init, redirect: 'manual', signal: AbortSignal.timeout(12000) });
+      if(!response.ok&&response.status>=400)throw Error(response.status===401?'MEMORY_AUTH_REQUIRED':response.status===403?'MEMORY_ACCESS_DENIED':response.status===429?'MEMORY_RATE_LIMITED':'MEMORY_PROVIDER_UNAVAILABLE');
       if(response.status>=300&&response.status<400)throw Error('Unexpected upstream redirect');
       return response;
     },

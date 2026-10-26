@@ -29,7 +29,7 @@ export const CONCEPT_EDGES:readonly {from:ConceptKey;to:ConceptKey;relation:Conc
 ];
 const RULES:readonly {key:ConceptKey;pattern:RegExp}[]=[
  {key:"bst-ordering",pattern:/\bbst\b|binary\s*search\s*tree|ancestor\s*(bound|constraint)|inherited\s*bound/i},
- {key:"hash-lookup",pattern:/hash\s*(map|set|table)|frequency\s*(map|count)/i},
+ {key:"hash-lookup",pattern:/hash\s*(map|set|table)|frequency\s*(map|count|condition|invariant)|frequencies/i},
  {key:"sorting",pattern:/sort(ing|ed)?|sorted/i},
  {key:"two-pointers",pattern:/two[\s-]?pointer|opposite[\s-]direction pointer/i},
  {key:"sliding-window",pattern:/sliding\s*window|variable\s*window|fixed[\s-]width\s*window|at[\s-]most[\s-]k/i},
@@ -53,7 +53,7 @@ export type ConceptProblem={itemId:string;title:string;topic:string;idea?:string
 export function inferCurriculumConcepts(p:Pick<ConceptProblem,"title"|"topic"|"idea">):ConceptKey[]{
  // The general topic is deliberately excluded: Arrays does not imply hashing.
  const description=p.title+" "+(p.idea??"");
- return RULES.filter(r=>r.pattern.test(description)).map(r=>r.key);
+ return RULES.filter(r=>r.pattern.test(description)||new RegExp("(^|[^a-z-])"+r.key+"([^a-z-]|$)","i").test(description)).map(r=>r.key);
 }
 export type ConceptConnection={
  candidate:{itemId:string;title:string;topic:string};sourceConcept:ConceptKey;targetConcept:ConceptKey;
