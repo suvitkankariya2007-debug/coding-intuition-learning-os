@@ -80,3 +80,35 @@ it('keeps policy and contextual recommendations available during an upstream out
  expect((await f.rpc('get_learning_signals')).eventCount).toBe(0);
  }finally{await f.mf.dispose();}
 });
+
+it('keeps unconfirmed evidence out of ranking and recovers a lost response without duplicate events',async()=>{
+ const f=fixtureRuntime();await f.mf.ready;
+ try{
+ f.state.dropAddResponse=true;
+ const pending=await f.rpc('ingest_learning_context',{...context,approved:true});
+ expect(pending.receipt.status).toBe('pending');
+ // The summary response was lost, but independently confirmed observations may already rank.
+ const before=(await f.rpc('get_learning_signals')).eventCount;
+ expect(before).toBe(1);
+ await new Promise(resolve=>setTimeout(resolve,4500));
+ await f.rpc('retry_learning_writes',{limit:3});
+ const recovered=await f.rpc('ingest_learning_context',{...context,approved:true});
+ expect(recovered.receipt.status).toBe('stored');
+ expect((await f.rpc('get_learning_signals')).eventCount).toBe(before);
+ expect((await f.rpc('get_learning_write_status')).pendingCount).toBe(0);
+ const rec=await f.rpc('get_recommendations',{context});
+ expect(rec.contextRelevance.supplied).toBe(true);
+ expect(rec.contextRelevance.appliedToReturnedItems).toEqual([]);
+ }finally{await f.mf.dispose();}
+});
+
+it('does not rank learning events whose upstream writes remain unconfirmed',async()=>{
+ const f=fixtureRuntime();await f.mf.ready;
+ try{
+ const baseline=await f.rpc('get_recommendations');f.state.failAddBeforeSave=true;
+ expect((await f.rpc('ingest_learning_context',{...context,approved:true})).receipt.status).toBe('pending');
+ expect((await f.rpc('get_learning_signals')).eventCount).toBe(0);
+ expect((await f.rpc('get_recommendations')).recommendations).toEqual(baseline.recommendations);
+ expect((await f.rpc('get_learning_write_status')).pendingCount).toBeGreaterThan(0);
+ }finally{await f.mf.dispose();}
+});
