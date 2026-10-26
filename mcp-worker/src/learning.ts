@@ -14,7 +14,7 @@ export const emptySnapshot = ():Snapshot => ({events:[],reviews:[],evidence:[],p
 /** Stable IDs belong to this canonical MCP view, not the old per-user SQL row IDs. */
 export function assertItem(id: string,extra:TrackedProblem[]=[]) {if(!allProblems(extra).some(p=>p.id===id))throw Error('Unknown learning item');}
 export function learningDay(now=Date.now(),timeZone='Asia/Kolkata'){const parts=new Intl.DateTimeFormat('en',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));const get=(type:string)=>parts.find(p=>p.type===type)!.value;return get('year')+'-'+get('month')+'-'+get('day');}
-export function buildData(s:Snapshot,options:{focusItemId?:string}={}):ToolData {
+export function buildData(s:Snapshot,options:{focusItemId?:string;contextQuestions?:{problemRef:string;conceptKeys:string[];evidenceId:string}[]}={}):ToolData {
   const catalog=allProblems(s.problems),profile=s.learnerProfile,day=learningDay(Date.now(),profile?.preferences.timeZone);
   s={...s,evidence:s.evidence.filter(e=>!e.inactive)};
   const items:LearningItem[]=catalog.map((p,index)=>{
@@ -49,6 +49,13 @@ export function buildData(s:Snapshot,options:{focusItemId?:string}={}):ToolData 
   const doubts=s.events.filter(e=>e.summary.startsWith('Explicit learner question:')&&e.source?.role==='learner').filter(e=>!s.events.some(later=>(later.problemRef??later.itemId)===(e.problemRef??e.itemId)&&later.recordedAt>e.recordedAt&&later.independentlyExplained===true&&later.hintStage==='none'));
   for(const rec of ranked){const p=catalog.find(p=>p.id===rec.itemId)!;const matching=doubts.filter(e=>e.conceptKeys.some(k=>inferCurriculumConcepts(p).includes(k))||e.problemRef===p.problemRef);if(matching.length){rec.score+=12;rec.components.push({factor:'explicit_discussion_question',points:12,evidenceIds:matching.map(e=>e.clientEventId)});rec.reason.push('Relevant to an explicit learner question; contextual relevance, not a diagnosed weakness.');}}
   for(const rec of ranked){const p=catalog.find(p=>p.id===rec.itemId)!;for(const c of rec.components){if(c.evidenceIds.length)continue;if(['due_review','difficult_recall','review_mistake','successful_review_not_due'].includes(c.factor))c.evidenceIds=s.reviews.filter(r=>r.itemId===p.id).map(r=>r.clientEventId??'legacy-review');else if(c.factor==='attempted_problem')c.evidenceIds=s.events.filter(e=>e.itemId===p.id||e.problemRef===p.problemRef).map(e=>e.clientEventId);else if(['platform_failures','accepted_not_due','active_difficulty'].includes(c.factor))c.evidenceIds=[...s.evidence.filter(e=>e.itemId===p.id).map(e=>e.provenanceId??e.source),...s.events.filter(e=>e.itemId===p.id||e.problemRef===p.problemRef).map(e=>e.clientEventId)];}}
+  // Supplied context is provisional relevance only; never add it to the durable ledger.
+  for(const rec of ranked){
+    if(rec.components.some(c=>c.factor==='explicit_discussion_question'))continue;
+    const p=catalog.find(p=>p.id===rec.itemId)!;
+    const matches=(options.contextQuestions??[]).filter(q=>q.problemRef===p.problemRef||q.conceptKeys.some(k=>inferCurriculumConcepts(p).some(known=>known===k)));
+    if(matches.length){rec.score+=12;rec.components.push({factor:'provisional_discussion_question',points:12,evidenceIds:matches.map(q=>q.evidenceId)});rec.reason.push('Relevant to supplied visible learner question; temporary context, not saved difficulty or mastery.');}
+  }
   const position=new Map(items.map(p=>[p.id,p.position]));
   if(options.focusItemId){
     const focus=roadmap.find(p=>p.itemId===options.focusItemId);if(!focus)throw Error('Unknown session focus');

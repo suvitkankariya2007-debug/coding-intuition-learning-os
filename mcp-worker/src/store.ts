@@ -167,6 +167,7 @@ export class LearnerStore extends DurableObject<Env> {
     }
   }
   private async run(action:string,props:AuthProps,args:Record<string,any>):Promise<unknown> {
+    if(action==='capture_policy')return {enabled:await this.ctx.storage.get<boolean>('capture:enabled')??false,scope:'brief_supplied_DSA_summaries_and_learner_supported_observations',trigger:'ChatGPT_tool_call_required_no_tab_close_listener'};
     const state=await this.snapshot();
     const profile=await this.profile(props),sources=learnerSources(this.env,props,profile);
     if(action==='snapshot')return {...state,learnerProfile:profile,evidence:state.evidence.filter(e=>!e.inactive),problems:state.problems?.map(p=>({...p,codeFiles:p.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))})),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null}};
@@ -180,7 +181,6 @@ export class LearnerStore extends DurableObject<Env> {
       const receipt=await this.run('capture_session',props,{...value.capture,approved:input.approved});
       return {...result,receipt};
     }
-    if(action==='capture_policy')return {enabled:await this.ctx.storage.get<boolean>('capture:enabled')??false,scope:'brief_supplied_DSA_summaries_and_learner_supported_observations',trigger:'ChatGPT_tool_call_required_no_tab_close_listener'};
     if(action==='configure_capture'){const input=capturePolicySchema.parse(args);await this.ctx.storage.put('capture:enabled',input.enabled);return this.run('capture_policy',props,{});}
     if(action==='capture_session'){
       const input=validatedCapture(args);

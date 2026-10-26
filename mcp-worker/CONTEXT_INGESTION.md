@@ -39,3 +39,18 @@ Use the same authenticated learner space resolved by Coding Intuition, not an as
 ## Acceptance gates
 
 Test no-summary input, assistant-only input, wrong/missing excerpts, summary-only input, one-hour cache reuse, changed-content misses, disabled/approved capture, duplicate checkpoints, context-driven recommendations with exact component sums, source-linked evidence, genuine insufficient evaluation, and cross-chat question preservation. In Go, actual tool calls and read-back receipts are required. Fixtures alone do not prove Go account behavior or hosted deployment.
+
+## Recommendation context architecture
+
+1. ChatGPT supplies relevant visible turns, including discussion before tool invocation, as `get_recommendations.context`. Coverage and role labels remain explicit; hidden or truncated history is unavailable.
+2. The existing per-learner, bounded one-hour analysis cache extracts literal questions and validates host proposals. Summary-only and assistant-only inputs yield no learner-question boost.
+3. The recommendation engine combines confirmed ledger evidence with temporary question relevance. `provisional_discussion_question` contributes 12 points once per matching candidate, citing `current-chat:<sessionId>:<turnId>`. This is a source pointer into supplied context, not a Supermemory receipt. A candidate already receiving `explicit_discussion_question` gets no second relevance boost.
+4. The response includes contextAnalysis and contextPersisted:false. This read never ingests observations or changes capture policy, open questions or learner state. Proposals of mistakes remain unconfirmed and do not change weakness scoring here.
+5. With existing opt-in or explicit approval, separate ingestion persists quote-linked observations through the durable outbox. Confirmed observations become durable ranking evidence across chats. Pending writes remain pending.
+6. Score components remain auditable and sum to the total; rule weights remain fixed. No automatic training of weights or claim of learning effectiveness is introduced.
+
+### Failure isolation
+
+`capture_policy` reads only the tenant's stored flag before loading the learning snapshot or profile. It does not call Supermemory and does not contain session focus. A failed policy read prevents assuming standing write approval; it must not prevent read-only recommendations. Keep focusItemId identical when comparing baselines. An upstream memory-search failure uses the existing local-ledger fallback. Transport/authentication failure can still block all tools; this change cannot repair a disconnected Go connector.
+
+Existing clients may omit context and retain their previous ranking behavior. The tool remains read-only and needs no new scope. Context follows the existing bounded input schema and request-size limit; chunk long discussions. No background chat reader, new model provider, deployment or cross-tenant sharing is introduced.
