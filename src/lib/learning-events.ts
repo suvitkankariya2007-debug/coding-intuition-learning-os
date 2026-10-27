@@ -15,7 +15,7 @@ export type LearningEventRecord=LearningEventInput & {recordedAt:string};
 /** Adds curated problem-specific concepts at read time without rewriting saved learner records. */
 export function effectiveLearningConcepts(e:Pick<LearningEventRecord,"problemRef"|"itemId"|"summary"|"conceptKeys">,problemRefs:Record<string,string>={}):ConceptKey[]{
  const problemRef=e.problemRef??(e.itemId?problemRefs[e.itemId]:undefined);
- return [...new Set([...e.conceptKeys,...inferCurriculumConcepts({title:e.summary,topic:"",idea:"",problemRef})])];
+ return [...new Set([...e.conceptKeys,...inferCurriculumConcepts({title:"",topic:"",idea:"",problemRef})])];
 }
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const eventId=/^[A-Za-z0-9:_-]{8,100}$/;
