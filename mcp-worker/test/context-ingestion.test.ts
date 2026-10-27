@@ -124,3 +124,21 @@ it('recognizes explicit help requests and stored canonical concept identifiers',
  const data=buildData(emptySnapshot(),{contextQuestions:[{problemRef:'manual:count-staircase',conceptKeys:['hash-lookup'],evidenceId:'current-chat:help-request-001'}]});
  expect(data.recommendations.some(r=>r.components?.some(c=>c.factor==='provisional_discussion_question'))).toBe(true);
 });
+
+it('versions dynamic arithmetic without changing learner records on reads',async()=>{
+ const f=fixtureRuntime();await f.mf.ready;
+ try{
+ const a=await f.rpc('get_recommendations'),b=await f.rpc('get_recommendations');
+ expect(a.scoreState.version).toBe(b.scoreState.version);
+ expect(a.scoreState.allArithmeticValid).toBe(true);
+ const temporary=await f.rpc('get_recommendations',{context});
+ expect(temporary.scoreState.version).not.toBe(a.scoreState.version);
+ expect(temporary.scoreState.arithmetic.some((r:any)=>r.temporaryContextPoints===12&&r.total===r.scoreWithoutTemporaryContext+12)).toBe(true);
+ expect((await f.rpc('get_recommendations')).scoreState.version).toBe(a.scoreState.version);
+ await f.rpc('ingest_learning_context',{...context,approved:true});
+ const saved=await f.rpc('get_recommendations');
+ expect(saved.scoreState.version).not.toBe(a.scoreState.version);
+ expect(saved.scoreState.allArithmeticValid).toBe(true);
+ expect((await f.rpc('get_learning_signals')).eventCount).toBe(1);
+ }finally{await f.mf.dispose();}
+});
