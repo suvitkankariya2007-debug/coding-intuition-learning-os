@@ -27,7 +27,7 @@ export function rankWithReasoning(base:Recommendation[],roadmap:ConceptProblem[]
   const evidenceIds=[...new Set([...relevant.flatMap(k=>activeRowsFor(k).map(e=>e.clientEventId)),...transferred.map(e=>e.clientEventId)])];
   const basis=[...relevant,...(transferred.length?['curated problem transfer']:[])].join(", ");
   return {...rec,score:rec.score+weight,components:[...(rec.components??[]),{factor:'active_weak_concepts',points:weight,evidenceIds}],reason:[...rec.reason,
-   "Practice transfer supported by "+basis+" (learner self-report; not verified mastery)"]};
+   "Practice transfer of self-reported weak technique(s): "+basis+" (self-report; not verified mastery)"]};
  }).sort((a,b)=>b.score-a.score||a.itemId.localeCompare(b.itemId));
 }
 

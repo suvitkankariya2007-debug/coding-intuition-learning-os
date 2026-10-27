@@ -42,6 +42,7 @@ it('keeps staircase relevance specific and chains only matching historical weakn
  const ranked=rankWithReasoning([rec(staircase),rec(fixedBounds),rec(twoSum),rec(lru)],[staircase,fixedBounds,twoSum,lru],[mistake]);
  expect(ranked.find(r=>r.itemId==='staircase-item')?.components?.some(c=>c.factor==='active_weak_concepts')).toBe(true);
  expect(ranked.find(r=>r.itemId==='fixed-bounds-item')?.components?.some(c=>c.factor==='active_weak_concepts')).toBe(true);
+ expect(ranked.find(r=>r.itemId==='fixed-bounds-item')?.reason.join(' ')).toMatch(/weak technique.*self-report/);
  expect(ranked.find(r=>r.itemId==='two-sum-item')?.components?.some(c=>c.factor==='active_weak_concepts')).toBe(false);
  expect(ranked.find(r=>r.itemId==='lru-item')?.components?.some(c=>c.factor==='active_weak_concepts')).toBe(false);
  for(const r of ranked)expect(r.score).toBe(r.components!.reduce((sum,c)=>sum+c.points,0));
