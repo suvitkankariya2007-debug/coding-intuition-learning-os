@@ -10,7 +10,7 @@
     "build": "wrangler deploy --dry-run --outdir dist",
     "verify:local": "node scripts/verify-local.mjs",
     "deploy": "wrangler deploy",
-    "build:tunnel": "wrangler deploy --dry-run --config wrangler.tunnel.jsonc --outdir dist-tunnel",
+    "build:tunnel": "node scripts/build-tunnel.mjs",
     "memory:login": "node local/login.mjs",
     "tunnel:serve": "node local/server.mjs",
     "tunnel:doctor": "node local/doctor.mjs",
@@ -20,7 +20,8 @@
     "demo:adaptive": "node scripts/demo-adaptive.mjs",
     "verify:live": "node local/verify-live.mjs",
     "simulate:background": "node scripts/simulate-background.mjs",
-    "verify:learning": "node local/verify-learning.mjs"
+    "verify:learning": "node local/verify-learning.mjs",
+    "tunnel:check": "node local/verify-build.mjs"
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "1.2.3",

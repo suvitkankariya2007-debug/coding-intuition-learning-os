@@ -1,6 +1,7 @@
 // Only fixed, allowlisted messages may reach the terminal or browser.
 // Provider responses, callback URLs and arbitrary exception text can contain credentials.
 const messages = new Map([
+  ['LOCAL_BUILD_STALE',['LOCAL_BUILD_STALE','The bundle is missing, stale or changed. Run npm run build:tunnel, then restart Terminal 1.']],
   ['Invalid or expired login state. Start again.', ['LOGIN_STATE', 'The login attempt expired or was replaced. Start again from http://127.0.0.1:8788.']],
   ['Supermemory authorization was cancelled or invalid.', ['LOGIN_CALLBACK', 'Supermemory cancelled authorization or returned an invalid callback. Start a fresh sign-in.']],
   ['Supermemory callback issuer is missing or unexpected.', ['LOGIN_ISSUER', 'The callback issuer is missing or unexpected. Provider compatibility needs checking; account checks remain enabled.']],

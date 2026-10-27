@@ -101,3 +101,17 @@ Still required on the laptop: real Supermemory public-client registration and br
 No model inference or embeddings API is used. Optional monitoring performs bounded periodic source and document reads using Durable Object alarms. The tunnel needs an OpenAI runtime API key for tunnel access; this is distinct from making billable model API requests. Provider billing and quotas still apply; this implementation does not guarantee unlimited or free tunnel traffic. Supermemory account limits and ChatGPT Go limits remain independent. Memory searches return at most six excerpts of 1,200 characters each and cache for one hour; source sync is on demand and cached for ten minutes.
 
 Official tunnel guide: https://developers.openai.com/api/docs/guides/secure-mcp-tunnels
+
+## Verify the running recommendation contract
+
+The local launcher now rebuilds a missing or stale tunnel bundle automatically. The build records SHA-256 fingerprints for the Worker source, shared learning library, package configuration and bundle. Direct programmatic startup rejects stale or modified output with LOCAL_BUILD_STALE. Restart an already running server to load any changes; rebuilding files cannot replace the process already serving port 8787.
+
+After updating the repository, stop Terminal 1 and restart the existing tunnel:serve command. Keep the tunnel client pointed to http://127.0.0.1:8787/mcp. In another terminal run:
+
+```bash
+npm run tunnel:check
+```
+
+This read-only check verifies server identity, the context input schema, engineRevision audit-relevance-v2, responseContractVersion recommendations-v1, a populated top-level contextRelevance object and exact recommendation score arithmetic. Missing fields fail with STALE_OR_INVALID_RECOMMENDATION_CONTRACT. It performs no learning writes, sync or retries. The health endpoint also reports the revision and response contract. The full doctor checks all 37 current tools and rejects an old recommendation schema/response.
+
+A local PASS verifies the endpoint on the laptop, not which endpoint ChatGPT Go actually reached. Refresh the existing Go connector and ask it to show the raw top-level engineRevision, responseContractVersion and contextRelevance returned by get_recommendations with no context. If local verification passes while Go still lacks those fields, inspect the tunnel profile/target or connector discovery; a scoring change will not fix a routing mismatch. Do not recreate or delete learner data.

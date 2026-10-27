@@ -1,9 +1,12 @@
+import {assertCurrentBuild} from './build-state.mjs';
+import {spawnSync} from 'node:child_process';
 import { safeDiagnostic } from './diagnostics.mjs';
 import { Miniflare } from 'miniflare';
 import { join } from 'node:path';
 import { CredentialFile, MemoryCredentials } from './memory-auth.mjs';
 
 export async function startLocal({owner,allowWrites=false,file=new CredentialFile(),port=8787}={}){
+  await assertCurrentBuild();
   if(port!==8787)throw Error('Local MCP transport uses port 8787.');
   await file.prepare();const credentials=new MemoryCredentials(owner,{file});
   // Fail before listening unless a real, owner-verified login exists.
@@ -19,6 +22,11 @@ if(import.meta.url===new URL(process.argv[1],'file:').href){
   try{
     const args=process.argv.slice(2),owner=args.find(a=>!a.startsWith('--'));
     if(args.some(a=>a.startsWith('--')&&a!=='--allow-writes'))throw Error('Unknown option');
+    try{await assertCurrentBuild();}catch{
+      console.log('Building the current local MCP before startup.');
+      const built=spawnSync(process.execPath,[new URL('../scripts/build-tunnel.mjs',import.meta.url).pathname],{stdio:'inherit'});
+      if(built.error||built.status!==0)throw Error('LOCAL_BUILD_STALE');
+    }
     const mf=await startLocal({owner,allowWrites:args.includes('--allow-writes')});
     console.log('Private MCP ready at http://127.0.0.1:8787/mcp. Run the existing tunnel-client separately. Writes '+(args.includes('--allow-writes')?'enabled':'disabled')+'. No deployment was made.');
     for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>mf.dispose().then(()=>process.exit(0)));

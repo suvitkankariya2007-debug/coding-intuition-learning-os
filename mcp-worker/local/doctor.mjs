@@ -1,3 +1,4 @@
+import {validateRecommendationContract} from './verify-build.mjs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { pathToFileURL } from 'node:url';
@@ -10,6 +11,7 @@ export const learningTools = [
   'sync_learning_source', 'refresh_learning_memory', 'record_review',
   'get_learning_catalog', 'get_problem_code',
   'list_learning_documents','read_saved_discussion','get_saved_questions','get_source_submissions','configure_background_monitor','get_monitor_status',
+  'get_session_capture_policy','configure_session_capture','capture_learning_session','analyze_learning_context','ingest_learning_context','get_learning_evaluation',
   'get_learner_profile','update_learner_profile','review_learning_discussion','save_learning_question','get_learning_questions','get_learning_write_status','retry_learning_writes',
 ];
 
@@ -27,6 +29,7 @@ export async function inspectLearningClient(client) {
     return report;
   }
   report.checks.push({ check: 'learning_server_identity', status: 'PASS' });
+  if(!listed.tools.find(t=>t.name==='get_recommendations')?.inputSchema?.properties?.context){report.checks.push({check:'recommendation_context_schema',status:'FAIL',nextAction:'Update and restart Terminal 1, then refresh Go tool discovery.'});return report;}
   async function call(name, args = {}, validate = () => true) {
     try {
       const response = await client.callTool({ name, arguments: args }, undefined, { timeout: 20000 });
@@ -63,7 +66,7 @@ export async function inspectLearningClient(client) {
     await call('get_transfer_problem', { itemId });
   }
   await call('get_memory_patterns', { query: 'My DSA learning preferences and progressive hint preferences' }, d => Array.isArray(d?.items));
-  await call('get_recommendations', {}, d => Array.isArray(d?.recommendations) && d.memoryContext?.status !== 'unavailable');
+  await call('get_recommendations', {}, d => validateRecommendationContract(d) && d.memoryContext?.status !== 'unavailable');
   report.status = report.checks.every(c => c.status === 'PASS') ? 'PASS' : 'PARTIAL';
   return report;
 }

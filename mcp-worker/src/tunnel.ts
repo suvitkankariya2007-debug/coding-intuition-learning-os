@@ -1,3 +1,4 @@
+import {ENGINE_REVISION,RECOMMENDATION_CONTRACT} from './engine-contract';
 import { apiHandler } from './mcp-handler';
 import { assertOwner, origin, type Env, type AuthProps } from './config';
 export { LearnerStore } from './store';
@@ -9,7 +10,7 @@ export default {
     const base=origin(env),url=new URL(request.url);
     if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base)||url.origin!==base)return new Response('Loopback only',{status:403});
     if(request.headers.has('Origin'))return new Response('Browser requests are not allowed on the tunnel transport',{status:403});
-    if(url.pathname==='/health'&&request.method==='GET')return Response.json({service:'coding-intuition-local-mcp',transport:'private_tunnel',downstreamOAuth:false,supermemoryOAuth:'separate_local_login',writesEnabled:env.LOCAL_WRITE_ENABLED==='true',liveChatGPTCallVerified:false},{headers:{'Cache-Control':'no-store'}});
+    if(url.pathname==='/health'&&request.method==='GET')return Response.json({engineRevision:ENGINE_REVISION,responseContractVersion:RECOMMENDATION_CONTRACT,service:'coding-intuition-local-mcp',transport:'private_tunnel',downstreamOAuth:false,supermemoryOAuth:'separate_local_login',writesEnabled:env.LOCAL_WRITE_ENABLED==='true',liveChatGPTCallVerified:false},{headers:{'Cache-Control':'no-store'}});
     if(url.pathname!=='/mcp')return new Response('Not found',{status:404});
     if(request.method!=='POST')return new Response('Use POST',{status:405,headers:{Allow:'POST'}});
     let props:AuthProps;
