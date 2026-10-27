@@ -77,3 +77,20 @@ export function deriveLearningSignals(events:LearningEventRecord[],problemRefs:R
  hintDependent,selfReportedIndependent:reportedIndependent,problemRefs:observedRefs.slice(0,20)};
 }
 
+
+/** Reconstruct the same per-problem chronology as activeWeakConcepts, retaining its evidence. */
+export function weaknessEvidenceSequence(events:LearningEventRecord[],problemRefs:Record<string,string>={}){
+ const ids=new Set<string>(),sources=new Set<string>();
+ const active=new Map<string,LearningEventRecord[]>(),timeline:LearningEventRecord[]=[];
+ for(const e of events.slice().sort((a,b)=>a.recordedAt.localeCompare(b.recordedAt))){
+  if(!eventId.test(e.clientEventId)||ids.has(e.clientEventId)||!Number.isFinite(Date.parse(e.recordedAt))||e.source&&e.source.role!=='learner')continue;
+  if(e.source){const key=evidenceIdentity(e.source);if(sources.has(key))continue;sources.add(key);}ids.add(e.clientEventId);timeline.push(e);
+  const struggling=e.kind==='mistake'||e.kind==='recall_check'&&e.confidence!==null&&e.confidence<=2||e.kind==='transfer_attempt'&&e.independentlyExplained===false;
+  const improvement=e.independentlyExplained===true&&['reasoning_insight','recall_check','transfer_attempt'].includes(e.kind)&&(!e.hintStage||e.hintStage==='none');
+  for(const concept of new Set(e.conceptKeys)){
+   const key=(e.problemRef??(e.itemId?problemRefs[e.itemId]:null)??e.itemId??'unknown')+'|'+concept,rows=active.get(key)??[];
+   if(struggling)rows.push(e);else if(improvement)rows.pop();active.set(key,rows);
+  }
+ }
+ return {timeline,activeEvents:[...new Map([...active.values()].flat().map(e=>[e.clientEventId,e])).values()],activeByProblemConcept:active};
+}

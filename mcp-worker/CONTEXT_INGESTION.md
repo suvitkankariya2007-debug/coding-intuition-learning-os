@@ -58,3 +58,9 @@ Existing clients may omit context and retain their previous ranking behavior. Th
 ## Dynamic score arithmetic
 
 Every get_recommendations call recalculates scores and returns scoreState: a deterministic version of the current scoring inputs, calculatedAt, learningDay, per-item total, componentTotal, arithmeticValid, scoreWithoutTemporaryContext and temporaryContextPoints. allArithmeticValid checks the returned set. The version includes confirmed events, reviews, progress, active platform evidence, profile, catalog, learning day and supplied context, rather than the calculation timestamp. Repeated identical reads have the same version. A changed version does not promise a higher score or reordered suggestions. Pending outbox writes are excluded. Context contributions disappear when context/focus is omitted. This is refreshed on tool invocation; there is no push stream into a closed chat and no automatic training of scoring weights.
+
+## Recommendation history sequence
+
+get_recommendations returns recommendationHistory entries keyed by itemId. Each includes matchedConcepts, currentDiscussion source pointers, chronological confirmed history, activeDifficultyEvidenceIds and scoreEvidenceIds. The last twelve relevant events are shown, with historyCount/historyTruncated disclosing bounds. Events from other problems appear only when their explicit concepts match the candidate; a shared broad topic is insufficient.
+
+The active_weak_concepts component cites only difficulties remaining active after replaying each problem/concept sequence. A later independently explained observation can reduce one earlier difficulty on the same problem and concept; it does not erase a difficulty on another problem. The earlier records remain in history. Question-only records are relevance evidence, not weakness diagnoses. These are learner-reported observations and do not prove mastery or unfamiliarity of a recommended problem.
