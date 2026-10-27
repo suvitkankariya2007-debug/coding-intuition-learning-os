@@ -22,7 +22,7 @@ it('caches analysis for an hour, requires approval, ingests evidence once and ch
  await f.rpc('ingest_learning_context',{...context,approved:true});
  expect((await f.rpc('get_learning_signals')).eventCount).toBe(1);
  expect((await f.rpc('get_learning_signals')).activeWeakConcepts).toHaveLength(0);
- const recommendations=(await f.rpc('get_recommendations'));expect(recommendations.scoringVersion).toBe('learning-v3');
+ const recommendations=(await f.rpc('get_recommendations'));expect(recommendations.scoringVersion).toBe('learning-v4');
  expect(recommendations.recommendations.some((r:any)=>r.components.some((c:any)=>c.factor==='explicit_discussion_question'&&c.evidenceIds.length))).toBe(true);
  for(const r of recommendations.recommendations)expect(r.score).toBe(r.components.reduce((n:number,c:any)=>n+c.points,0));
  expect(recommendations.recommendations).not.toEqual(before);
@@ -47,6 +47,9 @@ it('ranks supplied pre-invocation context read-only and caps relevance after dur
  expect(contextual.contextPersisted).toBe(false);
  expect(contextual.contextAnalysis.coverage.learnerTurns).toBe(1);
  expect(contextual.recommendations.some((r:any)=>r.components.some((c:any)=>c.factor==='provisional_discussion_question'&&c.points===12))).toBe(true);
+ expect(contextual.contextRelevance.questionCount).toBe(1);
+ expect(contextual.contextRelevance.appliedToReturnedItems.length).toBeGreaterThan(0);
+ expect(contextual.contextRelevance.appliedToReturnedItems.every((row:any)=>row.matches.length>0&&row.matches.every((m:any)=>['same_problem','curated_transfer','specific_concept'].includes(m.matchType)))).toBe(true);
  expect(contextual.recommendations).not.toEqual(baseline.recommendations);
  expect((await f.rpc('get_learning_signals')).eventCount).toBe(0);
  const calls=f.state.requests.length;
@@ -121,8 +124,13 @@ it('recognizes explicit help requests and stored canonical concept identifiers',
  const a=analyzeContext({...context,problemRef:'manual:count-staircase',turns:[{turnId:'help-request-001',role:'learner',text:'Help me understand the frequency condition using a frequency map'}]},[]);
  expect(a.capture.observations).toHaveLength(1);
  expect(a.capture.observations[0].event.conceptKeys).toContain('hash-lookup');
- const data=buildData(emptySnapshot(),{contextQuestions:[{problemRef:'manual:count-staircase',conceptKeys:['hash-lookup'],evidenceId:'current-chat:help-request-001'}]});
- expect(data.recommendations.some(r=>r.components?.some(c=>c.factor==='provisional_discussion_question'))).toBe(true);
+ expect(a.capture.observations[0].event.conceptKeys).toEqual(expect.arrayContaining(['frequency-invariant','subarray-enumeration','incremental-counting']));
+ const generic=buildData(emptySnapshot(),{contextQuestions:[{problemRef:'manual:count-staircase',conceptKeys:['hash-lookup'],evidenceId:'current-chat:help-request-001'}]});
+ expect(generic.recommendations.every(r=>!r.components?.some(c=>c.factor==='provisional_discussion_question'))).toBe(true);
+ const snapshot=emptySnapshot();snapshot.problems=[{id:'24440000-0000-5000-8000-000000000001',problemRef:'lc:2444',title:'Count Subarrays With Fixed Bounds',topic:'Arrays',idea:'subarray-enumeration sliding-window',origin:'conversation'}];
+ const related=buildData(snapshot,{contextQuestions:[{problemRef:'manual:count-staircase',conceptKeys:a.capture.observations[0].event.conceptKeys,evidenceId:'current-chat:help-request-001'}]});
+ expect(related.recommendations.find(r=>r.itemId==='24440000-0000-5000-8000-000000000001')?.components?.some(c=>c.factor==='provisional_discussion_question')).toBe(true);
+ expect(related.recommendations.find(r=>r.itemId==='18800000-0000-5000-8000-000000000001')?.components?.some(c=>c.factor==='provisional_discussion_question')).toBe(false);
 });
 
 it('versions dynamic arithmetic without changing learner records on reads',async()=>{

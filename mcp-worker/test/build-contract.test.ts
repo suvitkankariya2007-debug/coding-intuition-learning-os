@@ -28,6 +28,8 @@ it('validates actual built MCP fields for baseline, summary and visible question
  expect(validateRecommendationContract({...baseline,contextRelevance:undefined})).toBe(false);
  const summary=await f.rpc('get_recommendations',{context:{...context,coverage:'summary_only'}});expect(summary.contextRelevance).toMatchObject({supplied:true,questionCount:0,appliedToReturnedItems:[]});
  const relevant=await f.rpc('get_recommendations',{context});expect(validateRecommendationContract(relevant)).toBe(true);expect(relevant.contextRelevance.questionCount).toBe(1);expect(relevant.contextRelevance.appliedToReturnedItems.length).toBeGreaterThan(0);
+ expect(relevant.contextRelevance.appliedToReturnedItems.every((r:any)=>r.matches.length>0&&r.matches.every((m:any)=>m.evidenceId&&['same_problem','curated_transfer','specific_concept'].includes(m.matchType)))).toBe(true);
+ expect(validateRecommendationContract({...relevant,contextRelevance:{...relevant.contextRelevance,appliedToReturnedItems:[{itemId:'missing-match',problemRef:'lc:1',points:12,matches:[]}]}})).toBe(false);
  expect((await f.rpc('get_learning_signals')).eventCount).toBe(0);
  const health=await (await f.mf.dispatchFetch('http://127.0.0.1:8787/health')).json();expect(health).toMatchObject({engineRevision:baseline.engineRevision,responseContractVersion:baseline.responseContractVersion});
  const listing=await (await f.mf.dispatchFetch('http://127.0.0.1:8787/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})})).json();

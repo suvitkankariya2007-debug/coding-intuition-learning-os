@@ -4,7 +4,8 @@ import {curriculum,allProblems,type TrackedProblem} from './catalog';
 export {curriculum} from './catalog';
 import { recommendDSA, type Evidence, type LearningItem } from '../../src/lib/evidence-intelligence';
 import { rankWithReasoning } from '../../src/lib/reasoning-ranking';
-import { parseLearningEvent,deriveLearningSignals, type LearningEventRecord } from '../../src/lib/learning-events';
+import { parseLearningEvent,deriveLearningSignals,effectiveLearningConcepts, type LearningEventRecord } from '../../src/lib/learning-events';
+import {matchQuestionToProblem} from '../../src/lib/recommendation-relevance';
 import type { ToolData, ReviewRecord } from '../../src/lib/mcp-core';
 import { sha256 } from './config';
 import {inferCurriculumConcepts} from '../../src/lib/concept-graph';
@@ -26,7 +27,7 @@ export function buildData(s:Snapshot,options:{focusItemId?:string;contextQuestio
     const attempted=observations.length>0||platform;
     return {id:p.id,title:p.title,topic:p.topic,position:index+1,activeDifficulty:deriveLearningSignals(observations,{[p.id]:p.problemRef}).activeWeakConcepts.length>0,practiceEvidence:observations.length||review?'learner_report':platform?'platform_observation':code?'code_only':'none',status:accepted?'solved':attempted||review?'attempted':'not_started',dueDate:review?.due_date??null,recallGrade:review?review.grade<=1?0:review.grade===2?1:review.grade===3?2:3:null};
   });
-  const roadmap=items.map((p,i)=>({itemId:p.id,title:p.title,topic:p.topic,position:p.position,status:p.status!,dueDate:p.dueDate??null,idea:[catalog[i].idea,...s.events.filter(e=>e.itemId===p.id||e.problemRef===catalog[i].problemRef).flatMap(e=>e.conceptKeys)].filter(Boolean).join(' '),problemRef:catalog[i].problemRef,origin:catalog[i].origin}));
+  const roadmap=items.map((p,i)=>({itemId:p.id,title:p.title,topic:p.topic,position:p.position,status:p.status!,dueDate:p.dueDate??null,idea:[catalog[i].idea,...s.events.filter(e=>e.itemId===p.id||e.problemRef===catalog[i].problemRef).flatMap(e=>effectiveLearningConcepts(e,{[p.id]:catalog[i].problemRef}))].filter(Boolean).join(' '),problemRef:catalog[i].problemRef,origin:catalog[i].origin}));
   // Rank the entire roadmap by weakness before choosing five, avoiding the old top-50 cutoff.
   const base=items.flatMap(item=>recommendDSA([item],s.evidence,{limit:1,now:day+'T00:00:00Z'}));
   const ranked=rankWithReasoning(base,roadmap,s.events).map(rec=>{
@@ -47,13 +48,13 @@ export function buildData(s:Snapshot,options:{focusItemId?:string;contextQuestio
     }
   }
   const doubts=s.events.filter(e=>e.source?.role==='learner'&&(e.summary.startsWith('Explicit learner question:')||e.kind==='problem_attempt'&&/\?|^\s*(why|how|help|explain|does|can|could)\b/i.test(e.source.excerpt))).filter(e=>!s.events.some(later=>(later.problemRef??later.itemId)===(e.problemRef??e.itemId)&&later.recordedAt>e.recordedAt&&later.independentlyExplained===true&&later.hintStage==='none'));
-  for(const rec of ranked){const p=catalog.find(p=>p.id===rec.itemId)!;const matching=doubts.filter(e=>e.conceptKeys.some(k=>inferCurriculumConcepts(p).includes(k))||e.problemRef===p.problemRef);if(matching.length){rec.score+=12;rec.components.push({factor:'explicit_discussion_question',points:12,evidenceIds:matching.map(e=>e.clientEventId)});rec.reason.push('Relevant to an explicit learner question; contextual relevance, not a diagnosed weakness.');}}
+  for(const rec of ranked){const p=catalog.find(p=>p.id===rec.itemId)!;const matching=doubts.filter(e=>matchQuestionToProblem(p,{problemRef:e.problemRef??'',conceptKeys:effectiveLearningConcepts(e),evidenceId:e.clientEventId}));if(matching.length){rec.score+=12;rec.components.push({factor:'explicit_discussion_question',points:12,evidenceIds:matching.map(e=>e.clientEventId)});rec.reason.push('Relevant to an explicit learner question; contextual relevance, not a diagnosed weakness.');}}
   for(const rec of ranked){const p=catalog.find(p=>p.id===rec.itemId)!;for(const c of rec.components){if(c.evidenceIds.length)continue;if(['due_review','difficult_recall','review_mistake','successful_review_not_due'].includes(c.factor))c.evidenceIds=s.reviews.filter(r=>r.itemId===p.id).map(r=>r.clientEventId??'legacy-review');else if(c.factor==='attempted_problem')c.evidenceIds=s.events.filter(e=>e.itemId===p.id||e.problemRef===p.problemRef).map(e=>e.clientEventId);else if(['platform_failures','accepted_not_due','active_difficulty'].includes(c.factor))c.evidenceIds=[...s.evidence.filter(e=>e.itemId===p.id).map(e=>e.provenanceId??e.source),...s.events.filter(e=>e.itemId===p.id||e.problemRef===p.problemRef).map(e=>e.clientEventId)];}}
   // Supplied context is provisional relevance only; never add it to the durable ledger.
   for(const rec of ranked){
     if(rec.components.some(c=>c.factor==='explicit_discussion_question'))continue;
     const p=catalog.find(p=>p.id===rec.itemId)!;
-    const matches=(options.contextQuestions??[]).filter(q=>q.problemRef===p.problemRef||q.conceptKeys.some(k=>inferCurriculumConcepts(p).some(known=>known===k)));
+    const matches=(options.contextQuestions??[]).filter(q=>matchQuestionToProblem(p,q));
     if(matches.length){rec.score+=12;rec.components.push({factor:'provisional_discussion_question',points:12,evidenceIds:matches.map(q=>q.evidenceId)});rec.reason.push('Relevant to supplied visible learner question; temporary context, not saved difficulty or mastery.');}
   }
   const position=new Map(items.map(p=>[p.id,p.position]));

@@ -172,7 +172,7 @@ export class LearnerStore extends DurableObject<Env> {
     const profile=await this.profile(props),sources=learnerSources(this.env,props,profile);
     if(action==='snapshot')return {...state,learnerProfile:profile,evidence:state.evidence.filter(e=>!e.inactive),problems:state.problems?.map(p=>({...p,codeFiles:p.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))})),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null}};
     if(action==='analyze_context'||action==='ingest_context'){
-      const input=contextSchema.parse(args),hash=await sha256(JSON.stringify([{...input,approved:undefined},allProblems(state.problems).map(p=>[p.problemRef,p.title,p.idea]),'literal-question-v2'])),key='context-cache:'+hash;
+      const input=contextSchema.parse(args),hash=await sha256(JSON.stringify([{...input,approved:undefined},allProblems(state.problems).map(p=>[p.problemRef,p.title,p.idea]),'literal-question-v3-specific-relevance'])),key='context-cache:'+hash;
       const cached=await this.ctx.storage.get<{at:number;value:any}>(key);
       const hit=!!cached&&memoryCacheIsFresh(cached.at),value=hit?cached!.value:analyzeContext(input,allProblems(state.problems));
       if(!hit){const entries=await this.ctx.storage.list<{at:number}>({prefix:'context-cache:'});for(const [old,row] of entries)if(!memoryCacheIsFresh(row.at)){await this.ctx.storage.delete(old);entries.delete(old);}if(entries.size<20)await this.ctx.storage.put(key,{at:Date.now(),value});}

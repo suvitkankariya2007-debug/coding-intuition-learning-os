@@ -1,6 +1,7 @@
 /** Educational relationships curated by technique, not inferred proof of mastery. */
 export const CONCEPTS={
  "hash-lookup":"Hash lookup","sorting":"Sorting transformations","two-pointers":"Two pointers",
+ "frequency-invariant":"Frequency invariant","subarray-enumeration":"Subarray enumeration","incremental-counting":"Incremental counting",
  "sliding-window":"Sliding-window invariant","prefix-sums":"Prefix sums",
  "binary-search":"Binary search boundary","binary-search-answer":"Binary search on feasibility",
  "base-case":"Recursive base cases","dfs":"Depth-first search","bfs":"Breadth-first search",
@@ -16,6 +17,8 @@ export const CONCEPT_EDGES:readonly {from:ConceptKey;to:ConceptKey;relation:Conc
  {from:"hash-lookup",to:"two-pointers",relation:"alternative",question:"Would sorting enable two pointers? Compare time and extra space."},
  {from:"sorting",to:"two-pointers",relation:"builds-on",question:"What invariant becomes possible after sorting the input?"},
  {from:"sliding-window",to:"prefix-sums",relation:"contrasts-with",question:"Would negative values break the monotonicity needed for a window?"},
+ {from:"subarray-enumeration",to:"incremental-counting",relation:"builds-on",question:"Which state can be updated as the right endpoint moves, instead of recomputing the whole subarray?"},
+ {from:"frequency-invariant",to:"incremental-counting",relation:"builds-on",question:"What frequency state must hold after each new element is added?"},
  {from:"binary-search",to:"binary-search-answer",relation:"generalizes",question:"Prove the feasibility predicate is monotonic before searching the answer."},
  {from:"base-case",to:"dfs",relation:"builds-on",question:"Which smallest state ends the recursion, and what invariant survives every call?"},
  {from:"dfs",to:"backtracking",relation:"generalizes",question:"What state must be undone after exploring each choice?"},
@@ -28,6 +31,9 @@ export const CONCEPT_EDGES:readonly {from:ConceptKey;to:ConceptKey;relation:Conc
  {from:"cycle-detection",to:"two-pointers",relation:"builds-on",question:"Why do different pointer speeds meet if a cycle exists?"}
 ];
 const RULES:readonly {key:ConceptKey;pattern:RegExp}[]=[
+ {key:"frequency-invariant",pattern:/frequency\s*(?:condition|invariant)|required\s+frequenc(?:y|ies)|frequenc(?:y|ies)\s+(?:must|should)\s+(?:be|match|equal)|count\s+frequenc(?:y|ies)/i},
+ {key:"subarray-enumeration",pattern:/subarrays?|contiguous\s+(?:subarray|segment)|nested\s+loops?/i},
+ {key:"incremental-counting",pattern:/incremental(?:ly)?\s+(?:count|counting|update)|running\s+(?:count|frequency)|maintain(?:ing)?\s+(?:a\s+)?(?:running\s+)?(?:count|frequency)|update\s+(?:the\s+)?(?:count|frequency)\s+as/i},
  {key:"bst-ordering",pattern:/\bbst\b|binary\s*search\s*tree|ancestor\s*(bound|constraint)|inherited\s*bound/i},
  {key:"hash-lookup",pattern:/hash\s*(map|set|table)|frequency\s*(map|count|condition|invariant)|frequencies/i},
  {key:"sorting",pattern:/sort(ing|ed)?|sorted/i},
@@ -50,10 +56,19 @@ const RULES:readonly {key:ConceptKey;pattern:RegExp}[]=[
  {key:"bitmask",pattern:/bitmask|bitwise|xor\s*cancellation/i}
 ];
 export type ConceptProblem={itemId:string;title:string;topic:string;idea?:string|null;status:string;position:number;problemRef?:string};
-export function inferCurriculumConcepts(p:Pick<ConceptProblem,"title"|"topic"|"idea">):ConceptKey[]{
+const REF_CONCEPTS:Readonly<Record<string,readonly ConceptKey[]>>={
+ "manual:count-staircase":["frequency-invariant","subarray-enumeration","incremental-counting"],
+ "lc:2444":["subarray-enumeration","sliding-window"]
+};
+/** Hash lookup is a broad tool label; sharing it alone is not enough to claim a cross-problem fit. */
+export const NON_SPECIFIC_TRANSFER_CONCEPTS:ReadonlySet<ConceptKey>=new Set(["hash-lookup","subarray-enumeration","incremental-counting"]);
+export function specificConceptOverlap(left:readonly string[],right:readonly string[]):ConceptKey[]{
+ const rightSet=new Set(right);return [...new Set(left)].filter((key):key is ConceptKey=>CONCEPT_KEYS.includes(key as ConceptKey)&&!NON_SPECIFIC_TRANSFER_CONCEPTS.has(key as ConceptKey)&&rightSet.has(key));
+}
+export function inferCurriculumConcepts(p:Pick<ConceptProblem,"title"|"topic"|"idea"|"problemRef">):ConceptKey[]{
  // The general topic is deliberately excluded: Arrays does not imply hashing.
  const description=p.title+" "+(p.idea??"");
- return RULES.filter(r=>r.pattern.test(description)||new RegExp("(^|[^a-z-])"+r.key+"([^a-z-]|$)","i").test(description)).map(r=>r.key);
+ return [...new Set([...RULES.filter(r=>r.pattern.test(description)||new RegExp("(^|[^a-z-])"+r.key+"([^a-z-]|$)","i").test(description)).map(r=>r.key),...(p.problemRef?REF_CONCEPTS[p.problemRef]??[]:[])])];
 }
 export type ConceptConnection={
  candidate:{itemId:string;title:string;topic:string};sourceConcept:ConceptKey;targetConcept:ConceptKey;

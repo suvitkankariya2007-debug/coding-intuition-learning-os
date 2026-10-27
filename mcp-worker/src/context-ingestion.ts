@@ -16,7 +16,7 @@ export function analyzeContext(raw:unknown,catalog:{problemRef:string;title:stri
   let fence=false;const lines=turn.text.split('\n');let question='';
   for(const line of lines){if(/^\s*(```|~~~)/.test(line)){fence=!fence;continue;}if(!fence&&(/\?/.test(line)||/^\s*(why|how|explain|what|when|help|show|can|could|does|do|is|are|please)\b/i.test(line))){question=line.trim().slice(0,600);break;}}
   if(!question)continue;
-  const p=catalog.find(p=>p.problemRef===ref),conceptKeys=inferCurriculumConcepts({title:question,topic:'',idea:p?.idea??p?.title??''});
+  const p=catalog.find(p=>p.problemRef===ref),conceptKeys=inferCurriculumConcepts({title:question,topic:'',idea:p?.idea??p?.title??'',problemRef:ref});
   observations.push({turnId:turn.turnId,excerpt:question,event:{problemRef:ref,kind:'problem_attempt',summary:'Explicit learner question: '+question,conceptKeys:conceptKeys.slice(0,6),origin:'chatgpt'}});
  }
  const summary=input.coverage==='summary_only'?'Supplied discussion summary: '+input.turns.map(t=>t.text).join(' | ').slice(0,650):observations.length?'Discussion checkpoint: '+observations.map(o=>String(o.event.summary)).join(' | ').slice(0,650):'Discussion checkpoint: no supported learner observations extracted from the supplied turns. No understanding, grade or mastery inferred.';

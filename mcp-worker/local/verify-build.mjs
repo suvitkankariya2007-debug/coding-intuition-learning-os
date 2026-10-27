@@ -2,9 +2,10 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import {pathToFileURL} from 'node:url';
 export function validateRecommendationContract(data){
- if(data?.engineRevision!=='audit-relevance-v2'||data.responseContractVersion!=='recommendations-v1')return false;
+ if(data?.engineRevision!=='audit-relevance-v3'||data.responseContractVersion!=='recommendations-v2')return false;
  const c=data.contextRelevance;
- return !!c&&typeof c.supplied==='boolean'&&Number.isInteger(c.questionCount)&&Array.isArray(c.appliedToReturnedItems)&&Array.isArray(data.recommendations)&&data.recommendations.every(r=>Number.isFinite(r.score)&&Array.isArray(r.components)&&r.components.every(c=>Number.isFinite(c.points)&&Array.isArray(c.evidenceIds))&&r.components.reduce((n,c)=>n+c.points,0)===r.score);
+ const matchesValid=Array.isArray(c?.appliedToReturnedItems)&&c.appliedToReturnedItems.every(row=>typeof row.itemId==='string'&&typeof row.problemRef==='string'&&row.points===12&&Array.isArray(row.matches)&&row.matches.length>0&&row.matches.every(m=>typeof m.evidenceId==='string'&&['same_problem','curated_transfer','specific_concept'].includes(m.matchType)&&Array.isArray(m.matchedConcepts)));
+ return !!c&&typeof c.supplied==='boolean'&&Number.isInteger(c.questionCount)&&matchesValid&&Array.isArray(data.recommendations)&&data.recommendations.every(r=>Number.isFinite(r.score)&&Array.isArray(r.components)&&r.components.every(c=>Number.isFinite(c.points)&&Array.isArray(c.evidenceIds))&&r.components.reduce((n,c)=>n+c.points,0)===r.score);
 }
 export async function inspectBuildClient(client){
  const report={status:'FAIL',learningWritesPerformed:false,liveChatGPTCallVerified:false};

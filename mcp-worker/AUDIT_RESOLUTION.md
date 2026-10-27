@@ -19,3 +19,11 @@ Summary and observation receipts are independent. Only confirmed observations en
 The four original queue items, authenticated document listing/readback, actual latest-build loading in Go, real new-chat continuation and useful problem-specific follow-ups require the user's running connection. Local fixtures cannot confirm these. Cache TTL boundaries and isolation can be tested locally; real elapsed-time expiry and hosted availability require their respective environments. Deployment stays prohibited. Recall grades and educational improvement require genuine learner attempts, not synthetic production records.
 
 CI-AUD-06 reports a coverage limitation rather than a proven defect. Monitor success is scoped to a task/page. LeetCode's partial recent window remains disclosed. No attempt is made to manufacture complete source history or change monitor/account configuration.
+
+## Recommendation relevance refinement
+
+- The prior context test showed that the broad `hash-lookup` label could add the same temporary relevance points to unrelated hash-map problems. Cross-problem context and history matching now excludes broad hash-map, subarray-family and incremental-counting labels when they appear alone.
+- `manual:count-staircase` now has curated read-time concepts for its frequency invariant, endpoint enumeration and incremental updates. Its reviewed transfer to `lc:2444` is explicit and labeled `curated_transfer`; Two Sum and LRU Cache no longer match from `hash-lookup` alone.
+- Recommendation responses show each applied context match type, concepts and current-chat evidence pointer. History uses the same relationship policy and discloses derived concepts without rewriting saved events. The score arithmetic is unchanged; score components still sum to totals.
+- Engine revision is `audit-relevance-v3`, recommendation contract is `recommendations-v2`, and the scoring policy is `learning-v4`. The context-analysis cache key was versioned so old broad-match analysis is not reused.
+- The connected Supermemory tool read event `capture:gKe_TGZ-ALsK0RjsQ4nJS2KOxIJ1JXIe4uGEQTapetc` successfully after selecting its `leetcode_problems` space; the document was absent from the default space. This verifies content through this connection but does not resolve `MEMORY_AUTH_REQUIRED` from the separate local/Go MCP OAuth token.

@@ -1,4 +1,4 @@
-import {CONCEPT_KEYS,type ConceptKey} from "./concept-graph";
+import {CONCEPT_KEYS,inferCurriculumConcepts,type ConceptKey} from "./concept-graph";
 import {MISTAKE_CLASSES,HINT_STAGES} from "./learning-diagnosis";
 /** Explicit, bounded reasoning observations. No raw uploaded problem text or chat logs. */
 export const LEARNING_EVENT_KINDS=["problem_attempt","reasoning_insight","mistake","approach_comparison","transfer_attempt","recall_check"] as const;
@@ -12,6 +12,11 @@ export type LearningEventInput={
  independentlyExplained:boolean|null;origin:"chatgpt"|"app";
 };
 export type LearningEventRecord=LearningEventInput & {recordedAt:string};
+/** Adds curated problem-specific concepts at read time without rewriting saved learner records. */
+export function effectiveLearningConcepts(e:Pick<LearningEventRecord,"problemRef"|"itemId"|"summary"|"conceptKeys">,problemRefs:Record<string,string>={}):ConceptKey[]{
+ const problemRef=e.problemRef??(e.itemId?problemRefs[e.itemId]:undefined);
+ return [...new Set([...e.conceptKeys,...inferCurriculumConcepts({title:e.summary,topic:"",idea:"",problemRef})])];
+}
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const eventId=/^[A-Za-z0-9:_-]{8,100}$/;
 const reference=/^(lc:[0-9]{1,7}|cf:[0-9]{1,9}[A-Za-z0-9]{1,5}|manual:[a-z0-9][a-z0-9-]{2,95})$/;
@@ -61,7 +66,7 @@ export function deriveLearningSignals(events:LearningEventRecord[],problemRefs:R
   seen.add(e.clientEventId);
   if(e.problemRef&&!observedRefs.includes(e.problemRef))observedRefs.push(e.problemRef);
   const struggling=e.kind==="mistake"||e.kind==="recall_check"&&e.confidence!==null&&e.confidence<=2||e.kind==="transfer_attempt"&&e.independentlyExplained===false;
-  for(const k of new Set(e.conceptKeys))if(CONCEPT_KEYS.includes(k)){
+  for(const k of effectiveLearningConcepts(e,problemRefs))if(CONCEPT_KEYS.includes(k)){
    const key=(e.problemRef??(e.itemId?problemRefs[e.itemId]:null)??e.itemId??'unknown')+'|'+k,row=active.get(key)??{concept:k,count:0};
    if(struggling){weak.set(k,(weak.get(k)??0)+1);row.count++;}
    else if(e.independentlyExplained===true&&['reasoning_insight','recall_check','transfer_attempt'].includes(e.kind)&&(!e.hintStage||e.hintStage==='none'))row.count=Math.max(0,row.count-1);
@@ -87,7 +92,7 @@ export function weaknessEvidenceSequence(events:LearningEventRecord[],problemRef
   if(e.source){const key=evidenceIdentity(e.source);if(sources.has(key))continue;sources.add(key);}ids.add(e.clientEventId);timeline.push(e);
   const struggling=e.kind==='mistake'||e.kind==='recall_check'&&e.confidence!==null&&e.confidence<=2||e.kind==='transfer_attempt'&&e.independentlyExplained===false;
   const improvement=e.independentlyExplained===true&&['reasoning_insight','recall_check','transfer_attempt'].includes(e.kind)&&(!e.hintStage||e.hintStage==='none');
-  for(const concept of new Set(e.conceptKeys)){
+  for(const concept of effectiveLearningConcepts(e,problemRefs)){
    const key=(e.problemRef??(e.itemId?problemRefs[e.itemId]:null)??e.itemId??'unknown')+'|'+concept,rows=active.get(key)??[];
    if(struggling)rows.push(e);else if(improvement)rows.pop();active.set(key,rows);
   }
