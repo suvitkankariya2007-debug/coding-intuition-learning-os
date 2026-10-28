@@ -18,7 +18,7 @@ npm ci --no-audit --no-fund
 npm run verify:local
 ~~~
 
-The current development checkout passed 132 automated tests. Tests use simulated upstream services and do not prove real Supermemory authorization, an authenticated ChatGPT call, or a successful live write/read-back. Follow [the local validation checklist](mcp-worker/LOCAL_VALIDATION.md) to keep those checks separate.
+The automated suite uses simulated upstream services and does not prove real Supermemory authorization, an authenticated ChatGPT call, or a successful live write/read-back. Follow [the local validation checklist](mcp-worker/LOCAL_VALIDATION.md) to keep those checks separate.
 
 The Cloudflare Worker has a deployment, but its authenticated ChatGPT OAuth path has not been verified end-to-end. Local tunnel setup is a separate route and does not rely on Cloudflare.
 
