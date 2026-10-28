@@ -15,7 +15,7 @@ export const emptySnapshot = ():Snapshot => ({events:[],reviews:[],evidence:[],p
 /** Stable IDs belong to this canonical MCP view, not the old per-user SQL row IDs. */
 export function assertItem(id: string,extra:TrackedProblem[]=[]) {if(!allProblems(extra).some(p=>p.id===id))throw Error('Unknown learning item');}
 export function learningDay(now=Date.now(),timeZone='Asia/Kolkata'){const parts=new Intl.DateTimeFormat('en',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));const get=(type:string)=>parts.find(p=>p.type===type)!.value;return get('year')+'-'+get('month')+'-'+get('day');}
-export function buildData(s:Snapshot,options:{focusItemId?:string;contextQuestions?:{problemRef:string;conceptKeys:string[];evidenceId:string}[]}={}):ToolData {
+export function buildData(s:Snapshot,options:{focusItemId?:string;catalogId?:string;contextQuestions?:{problemRef:string;conceptKeys:string[];evidenceId:string}[]}={}):ToolData {
   const catalog=allProblems(s.problems),profile=s.learnerProfile,day=learningDay(Date.now(),profile?.preferences.timeZone);
   s={...s,evidence:s.evidence.filter(e=>!e.inactive)};
   const items:LearningItem[]=catalog.map((p,index)=>{
@@ -27,7 +27,7 @@ export function buildData(s:Snapshot,options:{focusItemId?:string;contextQuestio
     const attempted=observations.length>0||platform;
     return {id:p.id,title:p.title,topic:p.topic,position:index+1,activeDifficulty:deriveLearningSignals(observations,{[p.id]:p.problemRef}).activeWeakConcepts.length>0,practiceEvidence:observations.length||review?'learner_report':platform?'platform_observation':code?'code_only':'none',status:accepted?'solved':attempted||review?'attempted':'not_started',dueDate:review?.due_date??null,recallGrade:review?review.grade<=1?0:review.grade===2?1:review.grade===3?2:3:null};
   });
-  const roadmap=items.map((p,i)=>({itemId:p.id,title:p.title,topic:p.topic,position:p.position,status:p.status!,dueDate:p.dueDate??null,idea:[catalog[i].idea,...s.events.filter(e=>e.itemId===p.id||e.problemRef===catalog[i].problemRef).flatMap(e=>effectiveLearningConcepts(e,{[p.id]:catalog[i].problemRef}))].filter(Boolean).join(' '),problemRef:catalog[i].problemRef,origin:catalog[i].origin}));
+  const roadmap=items.map((p,i)=>({itemId:p.id,title:p.title,topic:p.topic,position:p.position,status:p.status!,dueDate:p.dueDate??null,idea:[catalog[i].idea,...s.events.filter(e=>e.itemId===p.id||e.problemRef===catalog[i].problemRef).flatMap(e=>effectiveLearningConcepts(e,{[p.id]:catalog[i].problemRef}))].filter(Boolean).join(' '),problemRef:catalog[i].problemRef,origin:catalog[i].origin,catalogId:catalog[i].catalogId,conceptKeys:catalog[i].conceptKeys??[]}));
   // Rank the entire roadmap by weakness before choosing five, avoiding the old top-50 cutoff.
   const base=items.flatMap(item=>recommendDSA([item],s.evidence,{limit:1,now:day+'T00:00:00Z'}));
   const ranked=rankWithReasoning(base,roadmap,s.events).map(rec=>{
@@ -63,8 +63,9 @@ export function buildData(s:Snapshot,options:{focusItemId?:string;contextQuestio
     const concepts=inferCurriculumConcepts(focus);
     for(const rec of ranked){const p=roadmap.find(p=>p.itemId===rec.itemId)!;const boost=p.itemId===focus.itemId?30:inferCurriculumConcepts(p).some(k=>concepts.includes(k))?12:p.topic===focus.topic&&!['External practice','unknown'].includes(p.topic)?6:0;if(boost){rec.score+=boost;rec.components.push({factor:'temporary_session_focus',points:boost,evidenceIds:[]});rec.reason.push('Current session focus; contextual relevance, not saved weakness evidence');}}
   }
-  ranked.sort((a,b)=>b.score-a.score||position.get(a.itemId)!-position.get(b.itemId)!);
-  return {roadmap,recommendations:ranked.slice(0,profile?.preferences.sessionMinutes===null||profile?.preferences.sessionMinutes===undefined?5:Math.max(1,Math.min(5,Math.floor(profile.preferences.sessionMinutes/15)))),learningEvents:s.events,reviews:s.reviews.slice().reverse(),evidence:s.evidence.map(e=>({...e,accepted:e.accepted===true})),
+  const scoped=options.catalogId?ranked.filter(rec=>catalog.find(p=>p.id===rec.itemId)?.catalogId===options.catalogId):ranked;
+  scoped.sort((a,b)=>b.score-a.score||position.get(a.itemId)!-position.get(b.itemId)!);
+  return {roadmap,recommendations:scoped.slice(0,profile?.preferences.sessionMinutes===null||profile?.preferences.sessionMinutes===undefined?5:Math.max(1,Math.min(5,Math.floor(profile.preferences.sessionMinutes/15)))),learningEvents:s.events,reviews:s.reviews.slice().reverse(),evidence:s.evidence.map(e=>({...e,accepted:e.accepted===true})),
     due:roadmap.filter(p=>p.dueDate && p.dueDate<=day).map(p=>({itemId:p.itemId,title:p.title,dueDate:p.dueDate!}))};
 }
 export async function eventEnvelope(raw: unknown, recordedAt = new Date().toISOString()) {

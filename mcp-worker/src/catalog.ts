@@ -1,9 +1,43 @@
 import canonical from '../../data/canonical-roadmap-188.json';
 import { parseLearningEvent } from '../../src/lib/learning-events';
+import { CONCEPT_KEYS, type ConceptKey } from '../../src/lib/concept-graph';
+import { z } from 'zod';
 
 export const curriculum = canonical.map(row=>({...row,id:`18800000-0000-5000-8000-${String(row.position).padStart(12,'0')}`}));
 export type CodeFile={repo:string;path:string;commit:string;blobSha:string;size?:number};
-export type TrackedProblem={id:string;problemRef:string;title:string;topic:string;idea:string|null;origin:'curriculum'|'github'|'leetcode'|'codeforces'|'conversation';codeFiles?:CodeFile[]};
+export type TrackedProblem={id:string;problemRef:string;title:string;topic:string;idea:string|null;origin:'curriculum'|'github'|'leetcode'|'codeforces'|'conversation'|'custom_catalog';codeFiles?:CodeFile[];catalogId?:string;catalogName?:string;externalId?:string;conceptKeys?:ConceptKey[];url?:string};
+const conceptKeySchema=z.enum(CONCEPT_KEYS as [string,...string[]]);
+function normalizedExternalId(value:string){return value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+export const importProblemCatalogSchema=z.object({
+  catalogId:z.string().trim().regex(/^[a-z0-9][a-z0-9-]{1,27}$/),
+  catalogName:z.string().trim().min(1).max(100),
+  items:z.array(z.object({
+    externalId:z.string().trim().min(1).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/),
+    title:z.string().trim().min(1).max(200),
+    topic:z.string().trim().min(1).max(80),
+    conceptKeys:z.array(conceptKeySchema).max(6).default([]),
+    idea:z.string().trim().max(500).optional(),
+    url:z.string().url().max(500).refine(value=>/^https?:\/\//i.test(value),'Only HTTP(S) links are supported').optional()
+  }).strict()).min(1).max(50)
+}).strict().superRefine((catalog,ctx)=>{
+  const refs=new Set<string>();
+  for(const [index,item] of catalog.items.entries()){
+    const slug=normalizedExternalId(item.externalId);
+    if(!slug){ctx.addIssue({code:'custom',path:['items',index,'externalId'],message:'External ID must contain letters or numbers.'});continue;}
+    if(refs.has(slug))ctx.addIssue({code:'custom',path:['items',index,'externalId'],message:'External IDs must be unique after normalization.'});
+    refs.add(slug);
+  }
+});
+export type ImportedCatalog=z.infer<typeof importProblemCatalogSchema>;
+export function customProblemRef(catalogId:string,externalId:string){
+  const normalized=normalizedExternalId(externalId);
+  // Keep the reference within the learning-event limit while distinguishing IDs
+  // that share the same readable prefix. The full normalized ID feeds the suffix.
+  let hash=0xcbf29ce484222325n;
+  for(const character of normalized)hash=BigInt.asUintN(64,(hash^BigInt(character.codePointAt(0)!))*0x100000001b3n);
+  const readable=normalized.slice(0,48);
+  return `manual:cat-${catalogId}-${readable}-${hash.toString(36)}`;
+}
 export function canonicalProblems():TrackedProblem[]{return curriculum.map(p=>({id:p.id,problemRef:`lc:${p.leetcode_id}`,title:p.title,topic:p.topic,idea:p.idea,origin:'curriculum'}));}
 export async function makeProblem(problemRef:string,title?:string,topic='External practice',idea:string|null=null,origin:TrackedProblem['origin']='conversation'):Promise<TrackedProblem>{
   parseLearningEvent({clientEventId:'catalog-validation',problemRef,kind:'problem_attempt',summary:'Validate the external problem reference.',origin:'chatgpt'});

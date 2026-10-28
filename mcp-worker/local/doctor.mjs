@@ -11,7 +11,7 @@ export const learningTools = [
   'sync_learning_source', 'refresh_learning_memory', 'record_review',
   'get_learning_catalog', 'get_problem_code',
   'list_learning_documents','read_saved_discussion','get_saved_questions','get_source_submissions','configure_background_monitor','get_monitor_status',
-  'get_session_capture_policy','configure_session_capture','capture_learning_session','analyze_learning_context','ingest_learning_context','get_learning_evaluation',
+  'get_session_capture_policy','configure_session_capture','capture_learning_session','analyze_learning_context','ingest_learning_context','get_learning_evaluation','import_problem_catalog',
   'get_learner_profile','update_learner_profile','review_learning_discussion','save_learning_question','get_learning_questions','get_learning_write_status','retry_learning_writes',
 ];
 
@@ -30,6 +30,9 @@ export async function inspectLearningClient(client) {
   }
   report.checks.push({ check: 'learning_server_identity', status: 'PASS' });
   if(!listed.tools.find(t=>t.name==='get_recommendations')?.inputSchema?.properties?.context){report.checks.push({check:'recommendation_context_schema',status:'FAIL',nextAction:'Update and restart Terminal 1, then refresh Go tool discovery.'});return report;}
+  const catalogSchema=listed.tools.find(t=>t.name==='import_problem_catalog')?.inputSchema?.properties;
+  if(catalogSchema?.items?.maxItems!==50||!catalogSchema.items.items?.properties?.externalId||!catalogSchema.items.items?.properties?.conceptKeys){report.checks.push({check:'custom_catalog_import_schema',status:'FAIL',nextAction:'Update and restart Terminal 1, then refresh Go tool discovery for import_problem_catalog.'});return report;}
+  report.checks.push({check:'custom_catalog_import_schema',status:'PASS'});
   async function call(name, args = {}, validate = () => true) {
     try {
       const response = await client.callTool({ name, arguments: args }, undefined, { timeout: 20000 });

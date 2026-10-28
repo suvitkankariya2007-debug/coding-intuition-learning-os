@@ -12,7 +12,7 @@ import { withMemory } from './upstream';
 import { emptySnapshot, eventEnvelope, parseEnvelope, type Snapshot, assertItem, learningDay } from './learning';
 import { review } from '../../src/lib/srs';
 import { fetchSource,readProblemCode } from './platforms';
-import {allProblems,makeProblem,mergeProblems,curriculum} from './catalog';
+import {allProblems,makeProblem,mergeProblems,curriculum,importProblemCatalogSchema,customProblemRef} from './catalog';
 const curriculumItem=(id:string)=>curriculum.some(p=>p.id===id);
 
 /** Per-owner durable cache and small structured ledger; raw memory remains in Supermemory. */
@@ -20,6 +20,9 @@ export class LearnerStore extends DurableObject<Env> {
   private tail:Promise<unknown>=Promise.resolve();
   private async invalidateMemorySearchCache(){
     await this.ctx.storage.delete([...((await this.ctx.storage.list({prefix:'search:'})).keys())]);
+  }
+  private async invalidateCatalogContextCache(){
+    await this.ctx.storage.delete([...((await this.ctx.storage.list({prefix:'context-cache:'})).keys())]);
   }
   async fetch(request: Request):Promise<Response> {
     const input=await request.json() as {action:string;props:AuthProps;args:Record<string,any>};
@@ -171,6 +174,23 @@ export class LearnerStore extends DurableObject<Env> {
     const state=await this.snapshot();
     const profile=await this.profile(props),sources=learnerSources(this.env,props,profile);
     if(action==='snapshot')return {...state,learnerProfile:profile,evidence:state.evidence.filter(e=>!e.inactive),problems:state.problems?.map(p=>({...p,codeFiles:p.codeFiles?.filter(f=>f.repo===sources.GITHUB_SOLUTIONS_REPO&&(!sources.GITHUB_SOLUTIONS_PATH||f.path.startsWith(sources.GITHUB_SOLUTIONS_PATH+'/')))})),sourceConfiguration:{leetcodeUsername:sources.LEETCODE_USERNAME||null,codeforcesHandle:sources.CODEFORCES_HANDLE||null,githubRepo:sources.GITHUB_SOLUTIONS_REPO??null,githubPath:sources.GITHUB_SOLUTIONS_PATH??null}};
+    if(action==='import_catalog'){
+      const input=importProblemCatalogSchema.parse(args),before=allProblems(state.problems);
+      state.problems=(state.problems??[]).map(p=>p.origin==='custom_catalog'&&p.catalogId===input.catalogId?{...p,catalogName:input.catalogName}:p);
+      const existing=new Map(allProblems(state.problems).map(p=>[p.problemRef,p]));
+      const incoming=[];
+      for(const item of input.items){
+        const problemRef=customProblemRef(input.catalogId,item.externalId),previous=existing.get(problemRef);
+        if(previous&&previous.origin!=='custom_catalog')throw Error('Custom catalog reference conflicts with an existing problem. Choose a different catalogId.');
+        const problem=await makeProblem(problemRef,item.title,item.topic,item.idea??'', 'custom_catalog');
+        incoming.push({...problem,origin:'custom_catalog' as const,catalogId:input.catalogId,catalogName:input.catalogName,externalId:item.externalId,conceptKeys:item.conceptKeys as import('../../src/lib/concept-graph').ConceptKey[],url:item.url,...(previous?.codeFiles?{codeFiles:previous.codeFiles}:{})});
+      }
+      state.problems=mergeProblems(state.problems??[],incoming);
+      await this.save(state);
+      await this.invalidateCatalogContextCache();
+      const refs=new Set(before.map(p=>p.problemRef));
+      return {status:'imported',writePerformed:true,upstreamMemoryWritePerformed:false,persistence:'private_per_learner_durable_store',catalogId:input.catalogId,catalogName:input.catalogName,receivedCount:incoming.length,importedCount:incoming.filter(p=>!refs.has(p.problemRef)).length,updatedCount:incoming.filter(p=>refs.has(p.problemRef)).length,trackedProblemCount:allProblems(state.problems).length,canonicalCount:188,items:incoming.map(p=>({itemId:p.id,problemRef:p.problemRef,externalId:p.externalId,title:p.title,topic:p.topic,conceptKeys:p.conceptKeys??[],url:p.url??null})),policy:'Upsert by stable catalogId and externalId. Items omitted from later uploads are retained so learning history, reviews, and references are not deleted. Catalog metadata is kept in this MCP learner store and is not copied to Supermemory.'};
+    }
     if(action==='analyze_context'||action==='ingest_context'){
       const input=contextSchema.parse(args),hash=await sha256(JSON.stringify([{...input,approved:undefined},allProblems(state.problems).map(p=>[p.problemRef,p.title,p.idea]),'literal-question-v3-specific-relevance'])),key='context-cache:'+hash;
       const cached=await this.ctx.storage.get<{at:number;value:any}>(key);

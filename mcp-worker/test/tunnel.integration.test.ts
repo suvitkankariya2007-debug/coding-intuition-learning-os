@@ -54,7 +54,7 @@ describe('private local tunnel learning runtime',()=>{
   it('fails closed when Supermemory is not linked',async()=>{loggedIn=false;expect((await rpc('get_roadmap')).response.status).toBe(503);loggedIn=true;});
   it('advertises tunnel authentication accurately and retains the canonical roadmap',async()=>{
     const r=await request('/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list'})});
-    const tools=(await r.json() as any).result.tools;expect(tools).toHaveLength(37);expect(tools.every((t:any)=>t.securitySchemes[0].type==='noauth')).toBe(true);
+    const tools=(await r.json() as any).result.tools;expect(tools).toHaveLength(38);expect(tools.every((t:any)=>t.securitySchemes[0].type==='noauth')).toBe(true);expect(tools.find((t:any)=>t.name==='import_problem_catalog').annotations.readOnlyHint).toBe(false);
     expect(JSON.parse((await rpc('get_roadmap',{limit:1})).body.result.content[0].text).total).toBe(188);
   });
   it('searches both DSA spaces with provenance and bounded cached requests',async()=>{
@@ -75,8 +75,8 @@ describe('private local tunnel learning runtime',()=>{
   });
   it('initializes a real SDK client and validates all read tools without writing learning records',async()=>{
     const report=await diagnoseLocal({fetcher:(url:any,init:any)=>mf.dispatchFetch(String(url),init)});
-    expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(37);
-    expect(report.checks.filter((c:any)=>c.status==='PASS')).toHaveLength(22);
+    expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(38);
+    expect(report.checks.filter((c:any)=>c.status==='PASS')).toHaveLength(23);
     expect(report.learningWritesPerformed).toBe(false);expect(documents).toHaveLength(0);
     expect(JSON.stringify(report)).not.toContain('upstream-fixture');
     expect(JSON.stringify(report)).not.toContain('Recent reasoning context.');
@@ -90,29 +90,66 @@ describe('private local tunnel learning runtime',()=>{
   });
   it('requires local write opt-in, then persists one event across process restart',async()=>{
     const event={clientEventId:'tunnel-event-0001',problemRef:'lc:98',kind:'mistake',summary:'I checked immediate children instead of inherited ancestor bounds.',conceptKeys:['dfs'],origin:'chatgpt'};
-    for(const name of ['save_learning_question','retry_learning_writes','update_learner_profile'])expect((await rpc(name,{})).body.result.isError).toBe(true);
+    for(const name of ['save_learning_question','retry_learning_writes','update_learner_profile','import_problem_catalog'])expect((await rpc(name,{})).body.result.isError).toBe(true);
     expect((await rpc('configure_background_monitor',{enabled:true})).body.result.isError).toBe(true);
     expect((await rpc('record_reasoning_event',event)).body.result.isError).toBe(true);expect(documents).toHaveLength(0);
     await mf.dispose();writesEnabled=true;mf=runtime();await mf.ready;
-    expect((await rpc('record_reasoning_event',event)).body.result.isError).toBe(false);expect(documents).toHaveLength(1);
-    await mf.dispose();mf=runtime();await mf.ready;
-    expect(JSON.parse((await rpc('get_learning_signals')).body.result.content[0].text).eventCount).toBe(1);
-    await rpc('record_reasoning_event',event);expect(documents).toHaveLength(1);
-  });
-  it('imports new GitHub, LC and CF problems and reads actual pinned code without claiming acceptance',async()=>{
-    for(const source of ['github','leetcode','codeforces'])expect((await rpc('sync_learning_source',{source,force:true})).body.result.isError).toBe(false);
+    const catalogInput={catalogId:'interview-set',catalogName:'Interview Set',items:[
+      {externalId:'capacity-1',title:'Capacity threshold exercise',topic:'Search on answer',conceptKeys:['binary-search-answer'],idea:'Find the minimum feasible capacity.'},
+      {externalId:'capacity-2',title:'Schedule feasibility exercise',topic:'Scheduling',conceptKeys:['binary-search-answer'],idea:'Search a monotonic feasibility condition.'}
+    ]};
+    const imported=(await rpc('import_problem_catalog',catalogInput)).body.result.content[0].text;
+    expect(JSON.parse(imported).importedCount).toBe(2);
     const read=async(name:string,args:any={})=>JSON.parse((await rpc(name,args)).body.result.content[0].text);
     const catalog=await read('get_learning_catalog',{offset:188,limit:50});
-    expect(catalog.total).toBe(191);expect(catalog.externalCount).toBe(3);
+    expect(catalog.catalogs).toContainEqual({catalogId:'interview-set',catalogName:'Interview Set',problemCount:2});
+    const importedItems=catalog.items.filter((p:any)=>p.catalogId==='interview-set');
+    expect(importedItems).toHaveLength(2);
+    const [source,target]=importedItems;
+    expect(source.conceptKeys).toContain('binary-search-answer');
+    const scoped=await read('get_recommendations',{catalogId:'interview-set'});
+    expect(scoped.catalogScope.catalogId).toBe('interview-set');
+    expect(scoped.recommendations.map((p:any)=>p.itemId).sort()).toEqual(importedItems.map((p:any)=>p.itemId).sort());
+    expect((await rpc('get_recommendations',{catalogId:'missing-set'})).body.result.isError).toBe(true);
+    const connections=await read('get_concept_connections',{itemId:source.itemId});
+    expect(connections.connections.some((c:any)=>c.candidate.itemId===target.itemId&&c.sourceConcept==='binary-search-answer'),JSON.stringify(connections.connections)).toBe(true);
+    const customEvent={clientEventId:'custom-catalog-event-0001',itemId:source.itemId,kind:'mistake',summary:'I could not prove the feasibility condition is monotonic.',conceptKeys:['binary-search-answer'],origin:'chatgpt'};
+    expect((await rpc('record_reasoning_event',customEvent)).body.result.isError).toBe(false);
+    expect((await read('get_problem_history',{itemId:source.itemId})).learningEvents[0].problemRef).toBe(source.problemRef);
+    expect((await read('get_recommendations',{catalogId:'interview-set'})).recommendations.some((p:any)=>p.itemId===target.itemId&&p.components.some((c:any)=>c.factor==='active_weak_concepts'))).toBe(true);
+    const updated=await read('import_problem_catalog',{...catalogInput,catalogName:'Interview Set Revised',items:[{...catalogInput.items[0],title:'Capacity threshold exercise revised'}]});
+    expect(updated.importedCount).toBe(0);expect(updated.updatedCount).toBe(1);expect(updated.items[0].itemId).toBe(source.itemId);
+    const afterUpdate=await read('get_learning_catalog',{offset:188,limit:50});
+    expect(afterUpdate.items.find((p:any)=>p.itemId===source.itemId).title).toBe('Capacity threshold exercise revised');
+    expect(afterUpdate.items.some((p:any)=>p.itemId===target.itemId)).toBe(true);
+    expect(afterUpdate.items.filter((p:any)=>p.catalogId==='interview-set').every((p:any)=>p.catalogName==='Interview Set Revised')).toBe(true);
+    expect((await rpc('record_review',{itemId:source.itemId,grade:2,clientEventId:'custom-catalog-review-0001'})).body.result.isError).toBe(false);
+    expect((await read('get_problem_history',{itemId:source.itemId})).reviews).toHaveLength(1);
+    const beforeLegacyWrite=documents.length;
+    expect((await rpc('record_reasoning_event',event)).body.result.isError).toBe(false);expect(documents).toHaveLength(beforeLegacyWrite+1);
+    await mf.dispose();mf=runtime();await mf.ready;
+    expect(JSON.parse((await rpc('get_learning_signals')).body.result.content[0].text).eventCount).toBe(2);
+    const recoveredCatalog=JSON.parse((await rpc('get_learning_catalog',{offset:188,limit:50})).body.result.content[0].text);
+    expect(recoveredCatalog.items.some((p:any)=>p.itemId===source.itemId&&p.title==='Capacity threshold exercise revised')).toBe(true);
+    expect(JSON.parse((await rpc('get_problem_history',{itemId:source.itemId})).body.result.content[0].text).reviews).toHaveLength(1);
+    await rpc('record_reasoning_event',event);expect(documents).toHaveLength(beforeLegacyWrite+1);
+  });
+  it('imports new GitHub, LC and CF problems and reads actual pinned code without claiming acceptance',async()=>{
+    const read=async(name:string,args:any={})=>JSON.parse((await rpc(name,args)).body.result.content[0].text);
+    expect((await read('get_learning_signals')).eventCount).toBe(2);
+    for(const source of ['github','leetcode','codeforces'])expect((await rpc('sync_learning_source',{source,force:true})).body.result.isError).toBe(false);
+    expect((await read('get_learning_signals')).eventCount).toBe(2);
+    const catalog=await read('get_learning_catalog',{offset:188,limit:50});
+    expect(catalog.total).toBe(193);expect(catalog.externalCount).toBe(5);
     expect((await read('get_roadmap',{limit:1})).total).toBe(188);
     const github=catalog.items.find((p:any)=>p.origin==='github'),lc=catalog.items.find((p:any)=>p.problemRef==='lc:999999'),cf=catalog.items.find((p:any)=>p.problemRef==='cf:9999A');
     expect(github.status).toBe('not_started');expect(lc.status).toBe('solved');expect(cf.status).toBe('attempted');
     const code=await read('get_problem_code',{itemId:github.itemId});
     expect(code.content).toContain('boundary');expect(code.commit).toBe(commit);expect(code.commit).not.toBe(treeSha);expect(code.acceptanceVerified).toBe(false);
-    const recommendations=await read('get_recommendations');expect(recommendations.trackedProblemCount).toBe(191);
-    expect(recommendations.personalization.status).toBe('learner_records_available');expect(recommendations.recommendations.some((r:any)=>r.itemId===cf.itemId)).toBe(false);
+    const recommendations=await read('get_recommendations');expect(recommendations.trackedProblemCount).toBe(193);
+    expect(recommendations.personalization.status,JSON.stringify({status:recommendations.personalization.status,eventCount:recommendations.personalization.eventCount,reviewCount:recommendations.personalization.reviewCount})).toBe('learner_records_available');expect(recommendations.recommendations.some((r:any)=>r.itemId===cf.itemId)).toBe(false);
     for(const source of ['github','leetcode','codeforces'])await rpc('sync_learning_source',{source,force:true});
-    expect((await read('get_learning_catalog')).total).toBe(191);
+    expect((await read('get_learning_catalog')).total).toBe(193);
   });
   it('refreshes newly added external memories before cache expiry when requested',async()=>{
     const args={query:'fresh external learning note'};
@@ -122,7 +159,8 @@ describe('private local tunnel learning runtime',()=>{
   });
   it('records doubts and recall for new problems and restores them into a fresh hosted-style ledger',async()=>{
     const read=async(name:string,args:any={})=>JSON.parse((await rpc(name,args)).body.result.content[0].text);
-    const external=(await read('get_learning_catalog',{offset:188,limit:1})).items[0];
+    const external=(await read('get_learning_catalog',{offset:188,limit:50})).items.find((p:any)=>p.problemRef==='lc:999999');
+    expect(external).toBeTruthy();
     const event={clientEventId:'external-question-0001',itemId:external.itemId,kind:'mistake',summary:'I need help deriving the binary search boundary invariant.',conceptKeys:['binary-search'],origin:'chatgpt'};
     const before=documents.length;
     expect((await rpc('record_reasoning_event',event)).body.result.isError).toBe(false);
@@ -138,6 +176,19 @@ describe('private local tunnel learning runtime',()=>{
       const history=await read('get_problem_history',{itemId:external.itemId});expect(history.reviews).toHaveLength(1);expect(history.learningEvents).toHaveLength(1);
       expect((await read('get_learning_signals')).weakConcepts.some((c:any)=>c.concept==='binary-search')).toBe(true);
     }finally{await mf.dispose();await rm(directory,{recursive:true,force:true});directory=oldDirectory;mf=runtime();await mf.ready;}
+  });
+  it('imports a full 50-row catalog batch within the bounded MCP request and keeps it private',async()=>{
+    const before=documents.length;
+    const rows=Array.from({length:50},(_,i)=>({externalId:`batch-${String(i+1).padStart(3,'0')}`,title:`Practice problem ${i+1} `+'T'.repeat(180),topic:'Imported exercises '+String(i%5),conceptKeys:['binary-search-answer'],idea:'I'.repeat(500),url:'https://example.com/problems/'+String(i+1)+'?reference='+('u'.repeat(400))}));
+    const payloadSize=JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'import_problem_catalog',arguments:{catalogId:'batch-catalog',catalogName:'Large but bounded learner catalog',items:rows}}}).length;
+    expect(payloadSize).toBeGreaterThan(32768);expect(payloadSize).toBeLessThan(131072);
+    const result=(await rpc('import_problem_catalog',{catalogId:'batch-catalog',catalogName:'Large but bounded learner catalog',items:rows}));
+    expect(result.body.result.isError).toBe(false);
+    const receipt=JSON.parse(result.body.result.content[0].text);
+    expect(receipt.importedCount).toBe(50);expect(receipt.writePerformed).toBe(true);expect(receipt.upstreamMemoryWritePerformed).toBe(false);
+    expect(documents).toHaveLength(before);
+    const catalog=JSON.parse((await rpc('get_learning_catalog',{offset:0,limit:1})).body.result.content[0].text);
+    expect(catalog.catalogs.find((c:any)=>c.catalogId==='batch-catalog').problemCount).toBe(50);
   });
 
 });

@@ -133,6 +133,31 @@ it('recognizes explicit help requests and stored canonical concept identifiers',
  expect(related.recommendations.find(r=>r.itemId==='18800000-0000-5000-8000-000000000001')?.components?.some(c=>c.factor==='provisional_discussion_question')).toBe(false);
 });
 
+it('uses explicit imported-catalog concepts when extracting a learner question',()=>{
+ const ref='manual:cat-interview-set-shipping-capacity-abc123';
+ const analyzed=analyzeContext({...context,problemRef:ref,turns:[{turnId:'custom-catalog-question',role:'learner',text:'Why does the capacity feasibility condition stay monotonic?'}]},[
+  {problemRef:ref,title:'Capacity threshold exercise',idea:'',conceptKeys:['binary-search-answer']}
+ ]);
+ expect(analyzed.capture.observations[0].event.conceptKeys).toContain('binary-search-answer');
+});
+
+it('does not spread the reported staircase discussion boost to generic hash-map problems',()=>{
+ const reportContext={sessionId:'release-staircase-20261028',checkpointId:'release-checkpoint-20261028',coverage:'available_current_chat' as const,problemRef:'manual:count-staircase',turns:[
+  {turnId:'release-q1',role:'learner' as const,text:'Do the nested loops skip the subarray [8,8,2]?'},
+  {turnId:'release-tle',role:'learner' as const,text:'I got TLE; help me understand and build the optimization.'},
+  {turnId:'release-q3',role:'learner' as const,text:'For two distinct values, what exact frequency condition must hold?'}
+ ]};
+ const analysis=analyzeContext(reportContext,[]);
+ const questions=analysis.capture.observations.filter(o=>o.event.summary.startsWith('Explicit learner question:')).map(o=>({problemRef:String(o.event.problemRef),conceptKeys:(o.event.conceptKeys??[]) as string[],evidenceId:'current-chat:'+reportContext.sessionId+':'+o.turnId}));
+ expect(questions).toHaveLength(2);
+ const snapshot=emptySnapshot();snapshot.problems=[{id:'staircase-item',problemRef:'manual:count-staircase',title:'Count Staircase',topic:'Arrays',idea:'frequency-invariant subarray-enumeration incremental-counting',origin:'conversation'}];
+ const data=buildData(snapshot,{contextQuestions:questions});
+ const boostedRefs=data.recommendations.filter(r=>r.components?.some(c=>c.factor==='provisional_discussion_question')).map(r=>data.roadmap!.find(p=>p.itemId===r.itemId)!.problemRef);
+ expect(boostedRefs.length).toBeGreaterThan(0);
+ expect(boostedRefs.every(ref=>['manual:count-staircase','lc:2444'].includes(ref))).toBe(true);
+ for(const rec of data.recommendations)expect(rec.score).toBe(rec.components!.reduce((sum,c)=>sum+c.points,0));
+});
+
 it('versions dynamic arithmetic without changing learner records on reads',async()=>{
  const f=fixtureRuntime();await f.mf.ready;
  try{

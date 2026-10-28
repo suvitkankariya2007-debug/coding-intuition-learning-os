@@ -2,7 +2,7 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import {pathToFileURL} from 'node:url';
 export function validateRecommendationContract(data){
- if(data?.engineRevision!=='audit-relevance-v3'||data.responseContractVersion!=='recommendations-v2')return false;
+ if(data?.engineRevision!=='audit-relevance-v4'||data.responseContractVersion!=='recommendations-v3')return false;
  const c=data.contextRelevance;
  const matchesValid=Array.isArray(c?.appliedToReturnedItems)&&c.appliedToReturnedItems.every(row=>typeof row.itemId==='string'&&typeof row.problemRef==='string'&&row.points===12&&Array.isArray(row.matches)&&row.matches.length>0&&row.matches.every(m=>typeof m.evidenceId==='string'&&['same_problem','curated_transfer','specific_concept'].includes(m.matchType)&&Array.isArray(m.matchedConcepts)));
  return !!c&&typeof c.supplied==='boolean'&&Number.isInteger(c.questionCount)&&matchesValid&&Array.isArray(data.recommendations)&&data.recommendations.every(r=>Number.isFinite(r.score)&&Array.isArray(r.components)&&r.components.every(c=>Number.isFinite(c.points)&&Array.isArray(c.evidenceIds))&&r.components.reduce((n,c)=>n+c.points,0)===r.score);
@@ -11,7 +11,9 @@ export async function inspectBuildClient(client){
  const report={status:'FAIL',learningWritesPerformed:false,liveChatGPTCallVerified:false};
  if(client.getServerVersion()?.name!=='coding-intuition-learning')return {...report,code:'WRONG_MCP_SERVER'};
  const listing=await client.listTools();const tool=listing?.tools?.find(t=>t.name==='get_recommendations');
- if(!tool?.inputSchema?.properties?.context)return {...report,code:'STALE_RECOMMENDATION_SCHEMA'};
+ if(!tool?.inputSchema?.properties?.context||!tool?.inputSchema?.properties?.catalogId)return {...report,code:'STALE_RECOMMENDATION_SCHEMA'};
+ const catalogTool=listing?.tools?.find(t=>t.name==='import_problem_catalog');
+ if(catalogTool?.inputSchema?.properties?.items?.maxItems!==50||!catalogTool?.inputSchema?.properties?.items?.items?.properties?.conceptKeys)return {...report,code:'STALE_CUSTOM_CATALOG_SCHEMA',nextAction:'Restart Terminal 1 and refresh the existing Go connection so the learner catalog import tool is available.'};
  const result=await client.callTool({name:'get_recommendations',arguments:{}},undefined,{timeout:30000});
  if(result.isError)return {...report,code:'RECOMMENDATION_CALL_FAILED'};
  const data=result.structuredContent??JSON.parse(result.content.find(c=>c.type==='text')?.text??'null');

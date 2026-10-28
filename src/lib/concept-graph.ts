@@ -55,7 +55,7 @@ const RULES:readonly {key:ConceptKey;pattern:RegExp}[]=[
  {key:"intervals",pattern:/interval\s*(merge|sort|overlap)|overlapping\s*interval/i},
  {key:"bitmask",pattern:/bitmask|bitwise|xor\s*cancellation/i}
 ];
-export type ConceptProblem={itemId:string;title:string;topic:string;idea?:string|null;status:string;position:number;problemRef?:string};
+export type ConceptProblem={itemId:string;title:string;topic:string;idea?:string|null;conceptKeys?:readonly string[];catalogId?:string;status:string;position:number;problemRef?:string};
 const REF_CONCEPTS:Readonly<Record<string,readonly ConceptKey[]>>={
  "manual:count-staircase":["frequency-invariant","subarray-enumeration","incremental-counting"],
  "lc:2444":["subarray-enumeration","sliding-window"]
@@ -65,10 +65,10 @@ export const NON_SPECIFIC_TRANSFER_CONCEPTS:ReadonlySet<ConceptKey>=new Set(["ha
 export function specificConceptOverlap(left:readonly string[],right:readonly string[]):ConceptKey[]{
  const rightSet=new Set(right);return [...new Set(left)].filter((key):key is ConceptKey=>CONCEPT_KEYS.includes(key as ConceptKey)&&!NON_SPECIFIC_TRANSFER_CONCEPTS.has(key as ConceptKey)&&rightSet.has(key));
 }
-export function inferCurriculumConcepts(p:Pick<ConceptProblem,"title"|"topic"|"idea"|"problemRef">):ConceptKey[]{
+export function inferCurriculumConcepts(p:Pick<ConceptProblem,"title"|"topic"|"idea"|"problemRef"|"conceptKeys">):ConceptKey[]{
  // The general topic is deliberately excluded: Arrays does not imply hashing.
  const description=p.title+" "+(p.idea??"");
- return [...new Set([...RULES.filter(r=>r.pattern.test(description)||new RegExp("(^|[^a-z-])"+r.key+"([^a-z-]|$)","i").test(description)).map(r=>r.key),...(p.problemRef?REF_CONCEPTS[p.problemRef]??[]:[])])];
+ return [...new Set([...(p.conceptKeys??[]).filter((key):key is ConceptKey=>CONCEPT_KEYS.includes(key as ConceptKey)),...RULES.filter(r=>r.pattern.test(description)||new RegExp("(^|[^a-z-])"+r.key+"([^a-z-]|$)","i").test(description)).map(r=>r.key),...(p.problemRef?REF_CONCEPTS[p.problemRef]??[]:[])])];
 }
 export type ConceptConnection={
  candidate:{itemId:string;title:string;topic:string};sourceConcept:ConceptKey;targetConcept:ConceptKey;

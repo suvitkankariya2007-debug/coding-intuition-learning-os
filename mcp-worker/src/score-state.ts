@@ -3,7 +3,7 @@ import {learningDay,type Snapshot} from './learning';
 import {ENGINE_REVISION} from './engine-contract';
 import type {Recommendation} from '../../src/lib/evidence-intelligence';
 /** A deterministic read-only snapshot. Pending outbox writes never enter Snapshot.events. */
-export function scoreState(snapshot:Snapshot,recommendations:Recommendation[],context:{focusItemId?:string;questions?:unknown[]}={}){
+export function scoreState(snapshot:Snapshot,recommendations:Recommendation[],context:{focusItemId?:string;catalogId?:string;questions?:unknown[]}={}){
  const day=learningDay(Date.now(),snapshot.learnerProfile?.preferences.timeZone);
  const arithmetic=recommendations.map(r=>{
   const components=r.components??[],componentTotal=components.reduce((n,c)=>n+c.points,0);

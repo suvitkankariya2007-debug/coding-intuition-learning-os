@@ -21,7 +21,7 @@ async function begin(scopes='learning:read learning:write offline_access'){
  expect(consent.status).toBe(200);expect(handle).toBeTruthy();
  return {handle:handle!,cookie:cookies(consent)};
 }
-async function authorize(scopes?:string){
+async function authorize(scopes?:string,callbackOrigin?:string){
  const start=await begin(scopes);
  const form=new URLSearchParams({handle:start.handle,decision:'approve'});
  for(const s of (scopes??'learning:read learning:write offline_access').split(' '))form.append('scope',s);
@@ -29,7 +29,7 @@ async function authorize(scopes?:string){
  expect(consent.status).toBe(302);
  const next=new URL(consent.headers.get('Location')!);
  const callback='/callback?'+new URLSearchParams({state:next.searchParams.get('state')!,code:'upstream-code',iss:'https://api.supermemory.ai/api/auth'});
- const done=await req(callback,{headers:{Cookie:cookies(consent)}});
+ const done=await req(callback,{headers:{Cookie:cookies(consent),...(callbackOrigin?{Origin:callbackOrigin}:{})}});
  if(done.status!==302)console.error('Fixture callback:',await done.clone().text());
  return {done,callback,cookie:cookies(consent)};
 }
@@ -75,20 +75,20 @@ afterAll(async()=>{await mf?.dispose();});
 describe('OAuth and authenticated MCP in the Workers runtime',()=>{
  it('publishes discovery and rejects anonymous learning access',async()=>{const m=await req('/.well-known/oauth-protected-resource/mcp');expect(m.status).toBe(200);expect((await m.json() as any).resource).toBe(base+'/mcp');const r=await req('/mcp',{method:'POST'});expect(r.status).toBe(401);expect(r.headers.get('WWW-Authenticate')).toContain('resource_metadata');});
  it('rejects an arbitrary redirect and missing PKCE',async()=>{const r=await req('/authorize?'+new URLSearchParams({client_id:clientId,response_type:'code',redirect_uri:'https://evil.example/callback'}));expect(r.status).toBe(400);expect(r.headers.get('Location')).toBeNull();});
- it('lets upstream OAuth callback origins reach state validation',async()=>{const r=await req('/callback?'+new URLSearchParams({state:'invalid-state',code:'fixture-code',iss:'https://api.supermemory.ai/api/auth'}),{headers:{Origin:'https://api.supermemory.ai'}});expect(r.status).not.toBe(403);expect(await r.text()).not.toContain('Forbidden origin');});
  it('binds consent to the browser cookie',async()=>{const b=await begin();const r=await req('/authorize',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({handle:b.handle,decision:'approve',scope:'learning:read'}).toString()});expect(r.status).toBe(400);});
  it('rejects the wrong Supermemory account',async()=>{owner='another-owner';const a=await authorize();expect(a.done.status).toBe(403);owner='owner-fixture';});
  it('rejects a stolen code without the PKCE verifier',async()=>{const a=await authorize();expect(a.done.status).toBe(302);const u=new URL(a.done.headers.get('Location')!);const bad=await exchange(u.searchParams.get('code')!,'x'.repeat(64));expect(bad.status).toBe(400);});
  it('completes consent, upstream OAuth and downstream code exchange',async()=>{const a=await authorize();expect(a.done.status).toBe(302);const u=new URL(a.done.headers.get('Location')!);expect(u.searchParams.get('state')).toBe('downstream-state');expect(u.searchParams.get('iss')).toBe(base);const r=await exchange(u.searchParams.get('code')!);expect(r.status).toBe(200);const t=await r.json() as any;token=t.access_token;refreshToken=t.refresh_token;expect(token).toBeTruthy();expect(token).not.toBe('upstream-access');});
- it('rejects cross-origin requests and oversized bodies',async()=>{expect((await req('/mcp',{method:'POST',headers:{Origin:'https://evil.example',Authorization:`Bearer ${token}`}})).status).toBe(403);expect((await req('/mcp',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:'x'.repeat(33000)})).status).toBe(413);});
- it('lists tools with explicit write annotations',async()=>{const r=await req('/mcp',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})});expect(r.status).toBe(200);const body=await r.json() as any;expect(body.result.tools).toHaveLength(37);expect(body.result.tools.find((x:any)=>x.name==='record_review').annotations.readOnlyHint).toBe(false);});
+ it('lets OAuth callback requests reach state validation even with the upstream origin',async()=>{const r=await req('/callback?'+new URLSearchParams({state:'invalid-state',code:'fixture-code',iss:'https://api.supermemory.ai/api/auth'}),{headers:{Origin:'https://api.supermemory.ai'}});expect(r.status).not.toBe(403);expect(await r.text()).not.toContain('Forbidden origin');});
+ it('allows ChatGPT client origins while rejecting untrusted origins and oversized bodies',async()=>{const good=await req('/mcp',{method:'POST',headers:{Origin:'https://chatgpt.com',Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})});if(good.status!==200)console.log('CHATGPT_ORIGIN_RESPONSE',good.status,await good.clone().text());expect(good.status).toBe(200);expect((await req('/mcp',{method:'POST',headers:{Origin:'https://evil.example',Authorization:`Bearer ${token}`}})).status).toBe(403);expect((await req('/mcp',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:'x'.repeat(131073)})).status).toBe(413);});
+ it('lists tools with explicit write annotations',async()=>{const r=await req('/mcp',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})});expect(r.status).toBe(200);const body=await r.json() as any;expect(body.result.tools).toHaveLength(38);expect(body.result.tools.find((x:any)=>x.name==='record_review').annotations.readOnlyHint).toBe(false);expect(body.result.tools.find((x:any)=>x.name==='import_problem_catalog').annotations.readOnlyHint).toBe(false);});
  it('returns the real canonical roadmap and targeted cached memory',async()=>{const roadmap=await rpc('get_roadmap',{limit:5});expect(JSON.parse(roadmap.body.result.content[0].text).total).toBe(188);const n=searches;await rpc('get_memory_patterns',{query:'hint preference'});const second=await rpc('get_memory_patterns',{query:'hint preference'});expect(JSON.parse(second.body.result.content[0].text).cache).toBe('hit');expect(searches-n).toBe(1);});
  it('passes the same initialized SDK read contract through hosted OAuth as the local tunnel',async()=>{
    const client=new Client({name:'hosted-contract-test',version:'1'});
    try{
      await client.connect(new StreamableHTTPClientTransport(new URL(base+'/mcp'),{requestInit:{headers:{Authorization:`Bearer ${token}`}},fetch:((url:any,init:any)=>mf.dispatchFetch(String(url),init)) as any}));
      const before=writes,report=await inspectLearningClient(client);
-     expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(37);expect(writes).toBe(before);
+     expect(report.status).toBe('PASS');expect(report.tools).toHaveLength(38);expect(writes).toBe(before);
    }finally{await client.close();}
  });
  it('records one observation across concurrent retries',async()=>{const args={clientEventId:'observed-0001',problemRef:'lc:98',kind:'mistake',summary:'I compared immediate children instead of carrying inherited bounds.',conceptKeys:['dfs'],origin:'chatgpt'};const before=writes;const [a,b]=await Promise.all([rpc('record_reasoning_event',args),rpc('record_reasoning_event',args)]);expect(a.body.result.isError).toBe(false);expect(b.body.result.isError).toBe(false);expect(writes-before).toBe(1);const signal=await rpc('get_learning_signals');expect(JSON.parse(signal.body.result.content[0].text).eventCount).toBe(1);});
