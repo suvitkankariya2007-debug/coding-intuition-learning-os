@@ -29,3 +29,8 @@ The web app was originally developed with [Lovable](https://lovable.dev).
 **Live app:** https://coding-intuition-learning-os.lovable.app
 
 The web application and local MCP server have separate setup and verification paths.
+
+
+## Local MCP runtime
+
+The `mcp-worker/` directory contains the local Coding Intuition MCP server, tunnel setup, tests, and setup guide. It supports learner-owned problem catalogs in addition to the seeded roadmap. See [the MCP README](mcp-worker/README.md) and [custom catalog guide](mcp-worker/CUSTOM_CATALOGS.md) for setup and catalog import instructions. The local MCP is a separate runtime from the hosted web app.

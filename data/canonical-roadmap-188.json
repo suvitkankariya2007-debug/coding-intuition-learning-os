@@ -1,0 +1,1882 @@
+[
+  {
+    "position": 1,
+    "title": "Two Sum",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 1",
+    "idea": "Hash map lookup",
+    "priority_marker": "star",
+    "leetcode_id": 1,
+    "concept_only": false
+  },
+  {
+    "position": 2,
+    "title": "Best Time to Buy and Sell Stock",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 121",
+    "idea": "Single-pass min-tracking",
+    "priority_marker": "star",
+    "leetcode_id": 121,
+    "concept_only": false
+  },
+  {
+    "position": 3,
+    "title": "Maximum Subarray (Kadane's)",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 53",
+    "idea": "Kadane's algorithm",
+    "priority_marker": "star",
+    "leetcode_id": 53,
+    "concept_only": false
+  },
+  {
+    "position": 4,
+    "title": "Sort Colors",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 75",
+    "idea": "Dutch national flag",
+    "priority_marker": "star",
+    "leetcode_id": 75,
+    "concept_only": false
+  },
+  {
+    "position": 5,
+    "title": "Next Permutation",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 31",
+    "idea": "In-place array manipulation",
+    "priority_marker": "star",
+    "leetcode_id": 31,
+    "concept_only": false
+  },
+  {
+    "position": 6,
+    "title": "Merge Intervals",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 56",
+    "idea": "Interval sort + merge",
+    "priority_marker": "star",
+    "leetcode_id": 56,
+    "concept_only": false
+  },
+  {
+    "position": 7,
+    "title": "Set Matrix Zeroes",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 73",
+    "idea": "In-place matrix marking",
+    "priority_marker": "star",
+    "leetcode_id": 73,
+    "concept_only": false
+  },
+  {
+    "position": 8,
+    "title": "Majority Element",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 169",
+    "idea": "Boyer-Moore voting",
+    "priority_marker": "star",
+    "leetcode_id": 169,
+    "concept_only": false
+  },
+  {
+    "position": 9,
+    "title": "Majority Element II",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 229",
+    "idea": "Extended Boyer-Moore",
+    "priority_marker": "none",
+    "leetcode_id": 229,
+    "concept_only": false
+  },
+  {
+    "position": 10,
+    "title": "3Sum",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 15",
+    "idea": "Two-pointer on sorted array",
+    "priority_marker": "star",
+    "leetcode_id": 15,
+    "concept_only": false
+  },
+  {
+    "position": 11,
+    "title": "Longest Consecutive Sequence",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 128",
+    "idea": "Hash set, sequence start detection",
+    "priority_marker": "star",
+    "leetcode_id": 128,
+    "concept_only": false
+  },
+  {
+    "position": 12,
+    "title": "Subarray Sum Equals K",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 560",
+    "idea": "Prefix sum + hashmap",
+    "priority_marker": "star",
+    "leetcode_id": 560,
+    "concept_only": false
+  },
+  {
+    "position": 13,
+    "title": "Search a 2D Matrix",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 74",
+    "idea": "Binary search on flattened matrix",
+    "priority_marker": "star",
+    "leetcode_id": 74,
+    "concept_only": false
+  },
+  {
+    "position": 14,
+    "title": "Rotate Image",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 48",
+    "idea": "In-place matrix rotation",
+    "priority_marker": "none",
+    "leetcode_id": 48,
+    "concept_only": false
+  },
+  {
+    "position": 15,
+    "title": "Find the Duplicate Number",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 287",
+    "idea": "Floyd's cycle detection on array",
+    "priority_marker": "none",
+    "leetcode_id": 287,
+    "concept_only": false
+  },
+  {
+    "position": 16,
+    "title": "Merge Sorted Array",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 88",
+    "idea": "Two-pointer merge from the back",
+    "priority_marker": "star",
+    "leetcode_id": 88,
+    "concept_only": false
+  },
+  {
+    "position": 17,
+    "title": "Product of Array Except Self",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 238",
+    "idea": "Prefix and suffix products, including zero handling",
+    "priority_marker": "none",
+    "leetcode_id": 238,
+    "concept_only": false
+  },
+  {
+    "position": 18,
+    "title": "Group Anagrams",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 49",
+    "idea": "Canonical hash keys for equivalence classes",
+    "priority_marker": "none",
+    "leetcode_id": 49,
+    "concept_only": false
+  },
+  {
+    "position": 19,
+    "title": "First Missing Positive",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 41",
+    "idea": "In-place index placement under O(1) extra space",
+    "priority_marker": "none",
+    "leetcode_id": 41,
+    "concept_only": false
+  },
+  {
+    "position": 20,
+    "title": "Spiral Matrix",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 54",
+    "idea": "Four moving boundaries and corner-case control",
+    "priority_marker": "none",
+    "leetcode_id": 54,
+    "concept_only": false
+  },
+  {
+    "position": 21,
+    "title": "Sort an Array",
+    "topic": "Arrays and Hashing",
+    "reference": "LC 912",
+    "idea": "Implement merge sort and quicksort; compare stability and worst cases",
+    "priority_marker": "none",
+    "leetcode_id": 912,
+    "concept_only": false
+  },
+  {
+    "position": 22,
+    "title": "Binary Search",
+    "topic": "Binary Search",
+    "reference": "LC 704",
+    "idea": "Standard binary search",
+    "priority_marker": "star",
+    "leetcode_id": 704,
+    "concept_only": false
+  },
+  {
+    "position": 23,
+    "title": "Search in Rotated Sorted Array",
+    "topic": "Binary Search",
+    "reference": "LC 33",
+    "idea": "Modified binary search",
+    "priority_marker": "star",
+    "leetcode_id": 33,
+    "concept_only": false
+  },
+  {
+    "position": 24,
+    "title": "Find Minimum in Rotated Sorted Array",
+    "topic": "Binary Search",
+    "reference": "LC 153",
+    "idea": "Modified binary search",
+    "priority_marker": "star",
+    "leetcode_id": 153,
+    "concept_only": false
+  },
+  {
+    "position": 25,
+    "title": "Lower Bound / Upper Bound",
+    "topic": "Binary Search",
+    "reference": "concept, LC 35 anchor",
+    "idea": "Lower bound and upper bound on half-open index ranges",
+    "priority_marker": "star",
+    "leetcode_id": 35,
+    "concept_only": false
+  },
+  {
+    "position": 26,
+    "title": "Find Single Element in Sorted Array",
+    "topic": "Binary Search",
+    "reference": "LC 540",
+    "idea": "Binary search on parity",
+    "priority_marker": "star",
+    "leetcode_id": 540,
+    "concept_only": false
+  },
+  {
+    "position": 27,
+    "title": "Koko Eating Bananas",
+    "topic": "Binary Search",
+    "reference": "LC 875",
+    "idea": "Binary search on answer",
+    "priority_marker": "star",
+    "leetcode_id": 875,
+    "concept_only": false
+  },
+  {
+    "position": 28,
+    "title": "Split Array Largest Sum",
+    "topic": "Binary Search",
+    "reference": "LC 410",
+    "idea": "Binary search on the minimum feasible capacity",
+    "priority_marker": "yellow",
+    "leetcode_id": 410,
+    "concept_only": false
+  },
+  {
+    "position": 29,
+    "title": "Median of Two Sorted Arrays",
+    "topic": "Binary Search",
+    "reference": "LC 4",
+    "idea": "Binary search on partition",
+    "priority_marker": "yellow",
+    "leetcode_id": 4,
+    "concept_only": false
+  },
+  {
+    "position": 30,
+    "title": "Find First and Last Position of Element in Sorted Array",
+    "topic": "Binary Search",
+    "reference": "LC 34",
+    "idea": "Two boundary searches, including an absent target",
+    "priority_marker": "none",
+    "leetcode_id": 34,
+    "concept_only": false
+  },
+  {
+    "position": 31,
+    "title": "Find Peak Element",
+    "topic": "Binary Search",
+    "reference": "LC 162",
+    "idea": "Binary search on a local slope rather than sorted values",
+    "priority_marker": "none",
+    "leetcode_id": 162,
+    "concept_only": false
+  },
+  {
+    "position": 32,
+    "title": "Time Based Key-Value Store",
+    "topic": "Binary Search",
+    "reference": "LC 981",
+    "idea": "Rightmost timestamp not exceeding a query",
+    "priority_marker": "none",
+    "leetcode_id": 981,
+    "concept_only": false
+  },
+  {
+    "position": 33,
+    "title": "Reverse Words in a String",
+    "topic": "Strings",
+    "reference": "LC 151",
+    "idea": "In-place string manipulation",
+    "priority_marker": "star",
+    "leetcode_id": 151,
+    "concept_only": false
+  },
+  {
+    "position": 34,
+    "title": "Longest Palindromic Substring",
+    "topic": "Strings",
+    "reference": "LC 5",
+    "idea": "Expand around center / DP",
+    "priority_marker": "star",
+    "leetcode_id": 5,
+    "concept_only": false
+  },
+  {
+    "position": 35,
+    "title": "Roman to Integer",
+    "topic": "Strings",
+    "reference": "LC 13",
+    "idea": "Subtractive scan over Roman symbols",
+    "priority_marker": "star",
+    "leetcode_id": 13,
+    "concept_only": false
+  },
+  {
+    "position": 36,
+    "title": "Integer to Roman",
+    "topic": "Strings",
+    "reference": "LC 12",
+    "idea": "Greedy descending symbols with subtractive pairs",
+    "priority_marker": "star",
+    "leetcode_id": 12,
+    "concept_only": false
+  },
+  {
+    "position": 37,
+    "title": "String to Integer atoi",
+    "topic": "Strings",
+    "reference": "LC 8",
+    "idea": "Sign, whitespace, digits and overflow state",
+    "priority_marker": "star",
+    "leetcode_id": 8,
+    "concept_only": false
+  },
+  {
+    "position": 38,
+    "title": "Find the Index of the First Occurrence in a String",
+    "topic": "Strings",
+    "reference": "LC 28",
+    "idea": "Naive matching, then KMP/rolling-hash alternatives",
+    "priority_marker": "star",
+    "leetcode_id": 28,
+    "concept_only": false
+  },
+  {
+    "position": 39,
+    "title": "Longest Common Prefix",
+    "topic": "Strings",
+    "reference": "LC 14",
+    "idea": "Horizontal/vertical scanning",
+    "priority_marker": "star",
+    "leetcode_id": 14,
+    "concept_only": false
+  },
+  {
+    "position": 40,
+    "title": "Rabin-Karp",
+    "topic": "Strings",
+    "reference": "concept, LC 28 anchor",
+    "idea": "Rolling polynomial hash; verify matches on collision",
+    "priority_marker": "yellow",
+    "leetcode_id": 28,
+    "concept_only": false
+  },
+  {
+    "position": 41,
+    "title": "KMP / LPS",
+    "topic": "Strings",
+    "reference": "concept, LC 28 / LC 214 anchor",
+    "idea": "Prefix-function fallback after a mismatch",
+    "priority_marker": "star",
+    "leetcode_id": 28,
+    "concept_only": false
+  },
+  {
+    "position": 42,
+    "title": "Valid Anagram",
+    "topic": "Strings",
+    "reference": "LC 242",
+    "idea": "Frequency counting",
+    "priority_marker": "star",
+    "leetcode_id": 242,
+    "concept_only": false
+  },
+  {
+    "position": 43,
+    "title": "Minimum Insertions to Make String Palindrome",
+    "topic": "Strings",
+    "reference": "LC 1312",
+    "idea": "LCS-based DP",
+    "priority_marker": "star",
+    "leetcode_id": 1312,
+    "concept_only": false
+  },
+  {
+    "position": 44,
+    "title": "String Compression",
+    "topic": "Strings",
+    "reference": "LC 443",
+    "idea": "Read and write pointers with multi-digit counts",
+    "priority_marker": "none",
+    "leetcode_id": 443,
+    "concept_only": false
+  },
+  {
+    "position": 45,
+    "title": "Reverse Linked List",
+    "topic": "Linked List",
+    "reference": "LC 206",
+    "idea": "Iterative pointer reversal",
+    "priority_marker": "star",
+    "leetcode_id": 206,
+    "concept_only": false
+  },
+  {
+    "position": 46,
+    "title": "Middle of Linked List",
+    "topic": "Linked List",
+    "reference": "LC 876",
+    "idea": "Slow/fast pointer",
+    "priority_marker": "star",
+    "leetcode_id": 876,
+    "concept_only": false
+  },
+  {
+    "position": 47,
+    "title": "Merge Two Sorted Linked Lists",
+    "topic": "Linked List",
+    "reference": "LC 21",
+    "idea": "Two-pointer merge",
+    "priority_marker": "star",
+    "leetcode_id": 21,
+    "concept_only": false
+  },
+  {
+    "position": 48,
+    "title": "Remove Nth Node From End",
+    "topic": "Linked List",
+    "reference": "LC 19",
+    "idea": "Two-pointer with gap",
+    "priority_marker": "star",
+    "leetcode_id": 19,
+    "concept_only": false
+  },
+  {
+    "position": 49,
+    "title": "Delete Node When Only Node Is Given",
+    "topic": "Linked List",
+    "reference": "LC 237",
+    "idea": "Value-copy trick",
+    "priority_marker": "none",
+    "leetcode_id": 237,
+    "concept_only": false
+  },
+  {
+    "position": 50,
+    "title": "Add Two Numbers",
+    "topic": "Linked List",
+    "reference": "LC 2",
+    "idea": "Digit-by-digitData Structures and Algorithms Specialization simulation",
+    "priority_marker": "star",
+    "leetcode_id": 2,
+    "concept_only": false
+  },
+  {
+    "position": 51,
+    "title": "Detect Cycle",
+    "topic": "Linked List",
+    "reference": "LC 141",
+    "idea": "Floyd's cycle detection",
+    "priority_marker": "star",
+    "leetcode_id": 141,
+    "concept_only": false
+  },
+  {
+    "position": 52,
+    "title": "Find Starting Point of Cycle",
+    "topic": "Linked List",
+    "reference": "LC 142",
+    "idea": "Floyd's cycle detection, phase 2",
+    "priority_marker": "star",
+    "leetcode_id": 142,
+    "concept_only": false
+  },
+  {
+    "position": 53,
+    "title": "Intersection of Two Linked Lists",
+    "topic": "Linked List",
+    "reference": "LC 160",
+    "idea": "Two-pointer length equalization",
+    "priority_marker": "star",
+    "leetcode_id": 160,
+    "concept_only": false
+  },
+  {
+    "position": 54,
+    "title": "Palindrome Linked List",
+    "topic": "Linked List",
+    "reference": "LC 234",
+    "idea": "Slow/fast + reversal",
+    "priority_marker": "star",
+    "leetcode_id": 234,
+    "concept_only": false
+  },
+  {
+    "position": 55,
+    "title": "Reverse Nodes in K-Group",
+    "topic": "Linked List",
+    "reference": "LC 25",
+    "idea": "Iterative group reversal",
+    "priority_marker": "star",
+    "leetcode_id": 25,
+    "concept_only": false
+  },
+  {
+    "position": 56,
+    "title": "Clone Linked List with Random Pointer",
+    "topic": "Linked List",
+    "reference": "LC 138",
+    "idea": "Hashmap or interleaving",
+    "priority_marker": "star",
+    "leetcode_id": 138,
+    "concept_only": false
+  },
+  {
+    "position": 57,
+    "title": "Subsets",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 78",
+    "idea": "Backtracking, include/exclude",
+    "priority_marker": "star",
+    "leetcode_id": 78,
+    "concept_only": false
+  },
+  {
+    "position": 58,
+    "title": "Subsets II",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 90",
+    "idea": "Backtracking with dedup",
+    "priority_marker": "star",
+    "leetcode_id": 90,
+    "concept_only": false
+  },
+  {
+    "position": 59,
+    "title": "Combination Sum",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 39",
+    "idea": "Backtracking, reuse allowed",
+    "priority_marker": "star",
+    "leetcode_id": 39,
+    "concept_only": false
+  },
+  {
+    "position": 60,
+    "title": "Combination Sum II",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 40",
+    "idea": "Backtracking, dedup",
+    "priority_marker": "star",
+    "leetcode_id": 40,
+    "concept_only": false
+  },
+  {
+    "position": 61,
+    "title": "Permutations",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 46",
+    "idea": "Backtracking, swap/visited",
+    "priority_marker": "star",
+    "leetcode_id": 46,
+    "concept_only": false
+  },
+  {
+    "position": 62,
+    "title": "Palindrome Partitioning",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 131",
+    "idea": "Backtracking + palindrome check",
+    "priority_marker": "star",
+    "leetcode_id": 131,
+    "concept_only": false
+  },
+  {
+    "position": 63,
+    "title": "N-Queens",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 51",
+    "idea": "Constraint backtracking",
+    "priority_marker": "star",
+    "leetcode_id": 51,
+    "concept_only": false
+  },
+  {
+    "position": 64,
+    "title": "Sudoku Solver",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 37",
+    "idea": "Constraint backtracking",
+    "priority_marker": "star",
+    "leetcode_id": 37,
+    "concept_only": false
+  },
+  {
+    "position": 65,
+    "title": "Generate Parentheses",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 22",
+    "idea": "Prune partial states with an open/close invariant",
+    "priority_marker": "none",
+    "leetcode_id": 22,
+    "concept_only": false
+  },
+  {
+    "position": 66,
+    "title": "Letter Combinations of a Phone Number",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 17",
+    "idea": "Cartesian-product branching with variable choices",
+    "priority_marker": "none",
+    "leetcode_id": 17,
+    "concept_only": false
+  },
+  {
+    "position": 67,
+    "title": "Word Search",
+    "topic": "Recursion and Backtracking",
+    "reference": "LC 79",
+    "idea": "Grid DFS with visited-state restoration",
+    "priority_marker": "none",
+    "leetcode_id": 79,
+    "concept_only": false
+  },
+  {
+    "position": 68,
+    "title": "Check / Set / Clear / Toggle ith Bit",
+    "topic": "Bit Manipulation",
+    "reference": "concept",
+    "idea": "Bitmasking fundamentals",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 69,
+    "title": "Count Set Bits",
+    "topic": "Bit Manipulation",
+    "reference": "LC 191",
+    "idea": "Bit counting",
+    "priority_marker": "star",
+    "leetcode_id": 191,
+    "concept_only": false
+  },
+  {
+    "position": 70,
+    "title": "Single Number",
+    "topic": "Bit Manipulation",
+    "reference": "LC 136",
+    "idea": "XOR cancellation",
+    "priority_marker": "star",
+    "leetcode_id": 136,
+    "concept_only": false
+  },
+  {
+    "position": 71,
+    "title": "Single Number II",
+    "topic": "Bit Manipulation",
+    "reference": "LC 137",
+    "idea": "Bitwise counting mod 3",
+    "priority_marker": "yellow",
+    "leetcode_id": 137,
+    "concept_only": false
+  },
+  {
+    "position": 72,
+    "title": "Power of Two / Related Bit Tricks",
+    "topic": "Bit Manipulation",
+    "reference": "LC 231",
+    "idea": "Bit trick (n & (n-1))",
+    "priority_marker": "star",
+    "leetcode_id": 231,
+    "concept_only": false
+  },
+  {
+    "position": 73,
+    "title": "Implement Stack",
+    "topic": "Stack and Queue",
+    "reference": "concept",
+    "idea": "Data structure implementation",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 74,
+    "title": "Implement Queue",
+    "topic": "Stack and Queue",
+    "reference": "concept (LC 232 anchor)",
+    "idea": "Data structure implementation",
+    "priority_marker": "star",
+    "leetcode_id": 232,
+    "concept_only": false
+  },
+  {
+    "position": 75,
+    "title": "Valid Parentheses",
+    "topic": "Stack and Queue",
+    "reference": "LC 20",
+    "idea": "Stack matching",
+    "priority_marker": "star",
+    "leetcode_id": 20,
+    "concept_only": false
+  },
+  {
+    "position": 76,
+    "title": "Next Greater Element",
+    "topic": "Stack and Queue",
+    "reference": "LC 496",
+    "idea": "Monotonic stack",
+    "priority_marker": "star",
+    "leetcode_id": 496,
+    "concept_only": false
+  },
+  {
+    "position": 77,
+    "title": "Min Stack",
+    "topic": "Stack and Queue",
+    "reference": "LC 155",
+    "idea": "Auxiliary min-tracking stack",
+    "priority_marker": "star",
+    "leetcode_id": 155,
+    "concept_only": false
+  },
+  {
+    "position": 78,
+    "title": "Largest Rectangle in Histogram",
+    "topic": "Stack and Queue",
+    "reference": "LC 84",
+    "idea": "Monotonic stack",
+    "priority_marker": "star",
+    "leetcode_id": 84,
+    "concept_only": false
+  },
+  {
+    "position": 79,
+    "title": "Sliding Window Maximum",
+    "topic": "Stack and Queue",
+    "reference": "LC 239",
+    "idea": "Monotonic deque",
+    "priority_marker": "star",
+    "leetcode_id": 239,
+    "concept_only": false
+  },
+  {
+    "position": 80,
+    "title": "Stock Span",
+    "topic": "Stack and Queue",
+    "reference": "LC 901",
+    "idea": "Monotonic stack",
+    "priority_marker": "yellow",
+    "leetcode_id": 901,
+    "concept_only": false
+  },
+  {
+    "position": 81,
+    "title": "Asteroid Collision",
+    "topic": "Stack and Queue",
+    "reference": "LC 735",
+    "idea": "Stack simulation",
+    "priority_marker": "yellow",
+    "leetcode_id": 735,
+    "concept_only": false
+  },
+  {
+    "position": 82,
+    "title": "LRU Cache",
+    "topic": "Stack and Queue",
+    "reference": "LC 146",
+    "idea": "Hashmap + doubly linked list",
+    "priority_marker": "star",
+    "leetcode_id": 146,
+    "concept_only": false
+  },
+  {
+    "position": 83,
+    "title": "Daily Temperatures",
+    "topic": "Stack and Queue",
+    "reference": "LC 739",
+    "idea": "Monotonic stack of unresolved indices and distance",
+    "priority_marker": "none",
+    "leetcode_id": 739,
+    "concept_only": false
+  },
+  {
+    "position": 84,
+    "title": "Evaluate Reverse Polish Notation",
+    "topic": "Stack and Queue",
+    "reference": "LC 150",
+    "idea": "Operand order and expression evaluation with a stack",
+    "priority_marker": "none",
+    "leetcode_id": 150,
+    "concept_only": false
+  },
+  {
+    "position": 85,
+    "title": "Car Fleet",
+    "topic": "Stack and Queue",
+    "reference": "LC 853",
+    "idea": "Sort by position and merge arrival times",
+    "priority_marker": "none",
+    "leetcode_id": 853,
+    "concept_only": false
+  },
+  {
+    "position": 86,
+    "title": "Longest Substring Without Repeating Characters",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 3",
+    "idea": "Variable window",
+    "priority_marker": "star",
+    "leetcode_id": 3,
+    "concept_only": false
+  },
+  {
+    "position": 87,
+    "title": "Longest Repeating Character Replacement",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 424",
+    "idea": "Variable window + frequency map",
+    "priority_marker": "star",
+    "leetcode_id": 424,
+    "concept_only": false
+  },
+  {
+    "position": 88,
+    "title": "Minimum Window Substring",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 76",
+    "idea": "Variable window, shrink/expand",
+    "priority_marker": "star",
+    "leetcode_id": 76,
+    "concept_only": false
+  },
+  {
+    "position": 89,
+    "title": "Max Consecutive Ones III",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 1004",
+    "idea": "At-most-K window",
+    "priority_marker": "star",
+    "leetcode_id": 1004,
+    "concept_only": false
+  },
+  {
+    "position": 90,
+    "title": "Binary Subarrays With Sum",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 930",
+    "idea": "At-most(K) − at-most(K−1)",
+    "priority_marker": "yellow",
+    "leetcode_id": 930,
+    "concept_only": false
+  },
+  {
+    "position": 91,
+    "title": "Subarrays With K Different Integers",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 992",
+    "idea": "At-most(K) − at-most(K−1)",
+    "priority_marker": "yellow",
+    "leetcode_id": 992,
+    "concept_only": false
+  },
+  {
+    "position": 92,
+    "title": "Container With Most Water",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 11",
+    "idea": "Opposite-direction two pointer",
+    "priority_marker": "star",
+    "leetcode_id": 11,
+    "concept_only": false
+  },
+  {
+    "position": 93,
+    "title": "Trapping Rain Water",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 42",
+    "idea": "Two pointer / prefix max",
+    "priority_marker": "star",
+    "leetcode_id": 42,
+    "concept_only": false
+  },
+  {
+    "position": 94,
+    "title": "Minimum Size Subarray Sum",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 209",
+    "idea": "Shortest valid window; relies on positive inputs",
+    "priority_marker": "none",
+    "leetcode_id": 209,
+    "concept_only": false
+  },
+  {
+    "position": 95,
+    "title": "Permutation in String",
+    "topic": "Sliding Window and Two Pointers",
+    "reference": "LC 567",
+    "idea": "Fixed-width frequency matching, distinct from variable windows",
+    "priority_marker": "none",
+    "leetcode_id": 567,
+    "concept_only": false
+  },
+  {
+    "position": 96,
+    "title": "Implement Min Heap / Max Heap",
+    "topic": "Heaps",
+    "reference": "concept",
+    "idea": "Data structure implementation",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 97,
+    "title": "Kth Largest Element",
+    "topic": "Heaps",
+    "reference": "LC 215",
+    "idea": "Heap / quickselect",
+    "priority_marker": "star",
+    "leetcode_id": 215,
+    "concept_only": false
+  },
+  {
+    "position": 98,
+    "title": "Top K Frequent Elements",
+    "topic": "Heaps",
+    "reference": "LC 347",
+    "idea": "Heap + frequency map",
+    "priority_marker": "star",
+    "leetcode_id": 347,
+    "concept_only": false
+  },
+  {
+    "position": 99,
+    "title": "Merge K Sorted Lists / Arrays",
+    "topic": "Heaps",
+    "reference": "LC 23",
+    "idea": "Min-heap merge",
+    "priority_marker": "star",
+    "leetcode_id": 23,
+    "concept_only": false
+  },
+  {
+    "position": 100,
+    "title": "Find Median From Data Stream",
+    "topic": "Heaps",
+    "reference": "LC 295",
+    "idea": "Two-heap design",
+    "priority_marker": "star",
+    "leetcode_id": 295,
+    "concept_only": false
+  },
+  {
+    "position": 101,
+    "title": "Jump Game I",
+    "topic": "Greedy and Intervals",
+    "reference": "LC 55",
+    "idea": "Greedy reachability",
+    "priority_marker": "star",
+    "leetcode_id": 55,
+    "concept_only": false
+  },
+  {
+    "position": 102,
+    "title": "Jump Game II",
+    "topic": "Greedy and Intervals",
+    "reference": "LC 45",
+    "idea": "Greedy range extension",
+    "priority_marker": "star",
+    "leetcode_id": 45,
+    "concept_only": false
+  },
+  {
+    "position": 103,
+    "title": "Insert Interval",
+    "topic": "Greedy and Intervals",
+    "reference": "LC 57",
+    "idea": "Interval merge on insert",
+    "priority_marker": "star",
+    "leetcode_id": 57,
+    "concept_only": false
+  },
+  {
+    "position": 104,
+    "title": "Non-overlapping Intervals",
+    "topic": "Greedy and Intervals",
+    "reference": "LC 435",
+    "idea": "Greedy by end time",
+    "priority_marker": "star",
+    "leetcode_id": 435,
+    "concept_only": false
+  },
+  {
+    "position": 105,
+    "title": "Fractional Knapsack",
+    "topic": "Greedy and Intervals",
+    "reference": "concept",
+    "idea": "Greedy ratio sort",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 106,
+    "title": "Job Sequencing",
+    "topic": "Greedy and Intervals",
+    "reference": "concept, no exact LC equivalent",
+    "idea": "Deadline sorting with profit and slot feasibility",
+    "priority_marker": "yellow",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 107,
+    "title": "Gas Station",
+    "topic": "Greedy and Intervals",
+    "reference": "LC 134",
+    "idea": "Global feasibility plus restart proof for a circular tour",
+    "priority_marker": "none",
+    "leetcode_id": 134,
+    "concept_only": false
+  },
+  {
+    "position": 108,
+    "title": "Partition Labels",
+    "topic": "Greedy and Intervals",
+    "reference": "LC 763",
+    "idea": "Last-occurrence boundary and greedy segment closure",
+    "priority_marker": "none",
+    "leetcode_id": 763,
+    "concept_only": false
+  },
+  {
+    "position": 109,
+    "title": "Divide Intervals Into Minimum Number of Groups",
+    "topic": "Greedy and Intervals",
+    "reference": "LC 2406",
+    "idea": "Sweep-line overlap count; closed interval endpoints matter",
+    "priority_marker": "none",
+    "leetcode_id": 2406,
+    "concept_only": false
+  },
+  {
+    "position": 110,
+    "title": "Inorder Traversal",
+    "topic": "Binary Trees",
+    "reference": "LC 94",
+    "idea": "DFS traversal",
+    "priority_marker": "star",
+    "leetcode_id": 94,
+    "concept_only": false
+  },
+  {
+    "position": 111,
+    "title": "Preorder Traversal",
+    "topic": "Binary Trees",
+    "reference": "LC 144",
+    "idea": "DFS traversal",
+    "priority_marker": "star",
+    "leetcode_id": 144,
+    "concept_only": false
+  },
+  {
+    "position": 112,
+    "title": "Postorder Traversal",
+    "topic": "Binary Trees",
+    "reference": "LC 145",
+    "idea": "DFS traversal",
+    "priority_marker": "star",
+    "leetcode_id": 145,
+    "concept_only": false
+  },
+  {
+    "position": 113,
+    "title": "Level Order Traversal",
+    "topic": "Binary Trees",
+    "reference": "LC 102",
+    "idea": "BFS traversal",
+    "priority_marker": "star",
+    "leetcode_id": 102,
+    "concept_only": false
+  },
+  {
+    "position": 114,
+    "title": "Maximum Depth",
+    "topic": "Binary Trees",
+    "reference": "LC 104",
+    "idea": "DFS recursion",
+    "priority_marker": "star",
+    "leetcode_id": 104,
+    "concept_only": false
+  },
+  {
+    "position": 115,
+    "title": "Diameter of Binary Tree",
+    "topic": "Binary Trees",
+    "reference": "LC 543",
+    "idea": "DFS with height tracking",
+    "priority_marker": "star",
+    "leetcode_id": 543,
+    "concept_only": false
+  },
+  {
+    "position": 116,
+    "title": "Balanced Binary Tree",
+    "topic": "Binary Trees",
+    "reference": "LC 110",
+    "idea": "DFS with height tracking",
+    "priority_marker": "star",
+    "leetcode_id": 110,
+    "concept_only": false
+  },
+  {
+    "position": 117,
+    "title": "Lowest Common Ancestor",
+    "topic": "Binary Trees",
+    "reference": "LC 236",
+    "idea": "DFS recursion",
+    "priority_marker": "star",
+    "leetcode_id": 236,
+    "concept_only": false
+  },
+  {
+    "position": 118,
+    "title": "Maximum Path Sum",
+    "topic": "Binary Trees",
+    "reference": "LC 124",
+    "idea": "DFS with global max",
+    "priority_marker": "star",
+    "leetcode_id": 124,
+    "concept_only": false
+  },
+  {
+    "position": 119,
+    "title": "Same Tree",
+    "topic": "Binary Trees",
+    "reference": "LC 100",
+    "idea": "DFS comparison",
+    "priority_marker": "star",
+    "leetcode_id": 100,
+    "concept_only": false
+  },
+  {
+    "position": 120,
+    "title": "Boundary Traversal",
+    "topic": "Binary Trees",
+    "reference": "concept",
+    "idea": "Combined left/leaf/right traversal",
+    "priority_marker": "yellow",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 121,
+    "title": "Top View",
+    "topic": "Binary Trees",
+    "reference": "concept",
+    "idea": "BFS with horizontal distance",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 122,
+    "title": "Vertical Order Traversal",
+    "topic": "Binary Trees",
+    "reference": "LC 987",
+    "idea": "BFS/DFS with coordinates",
+    "priority_marker": "yellow",
+    "leetcode_id": 987,
+    "concept_only": false
+  },
+  {
+    "position": 123,
+    "title": "Construct Binary Tree from Preorder + Inorder",
+    "topic": "Binary Trees",
+    "reference": "LC 105",
+    "idea": "Recursive array partitioning",
+    "priority_marker": "star",
+    "leetcode_id": 105,
+    "concept_only": false
+  },
+  {
+    "position": 124,
+    "title": "Binary Tree Right Side View",
+    "topic": "Binary Trees",
+    "reference": "LC 199",
+    "idea": "Level-wise visible node selection",
+    "priority_marker": "none",
+    "leetcode_id": 199,
+    "concept_only": false
+  },
+  {
+    "position": 125,
+    "title": "Serialize and Deserialize Binary Tree",
+    "topic": "Binary Trees",
+    "reference": "LC 297",
+    "idea": "Reversible traversal with null markers",
+    "priority_marker": "none",
+    "leetcode_id": 297,
+    "concept_only": false
+  },
+  {
+    "position": 126,
+    "title": "Path Sum III",
+    "topic": "Binary Trees",
+    "reference": "LC 437",
+    "idea": "Tree DFS combined with prefix-sum frequencies",
+    "priority_marker": "none",
+    "leetcode_id": 437,
+    "concept_only": false
+  },
+  {
+    "position": 127,
+    "title": "Search in BST",
+    "topic": "Binary Search Trees",
+    "reference": "LC 700",
+    "idea": "BST property traversal",
+    "priority_marker": "star",
+    "leetcode_id": 700,
+    "concept_only": false
+  },
+  {
+    "position": 128,
+    "title": "Insert into a Binary Search Tree",
+    "topic": "Binary Search Trees",
+    "reference": "LC 701",
+    "idea": "Maintain the BST ordering invariant",
+    "priority_marker": "star",
+    "leetcode_id": 701,
+    "concept_only": false
+  },
+  {
+    "position": 129,
+    "title": "Delete Node in a BST",
+    "topic": "Binary Search Trees",
+    "reference": "LC 450",
+    "idea": "Reconnect successor and child cases",
+    "priority_marker": "star",
+    "leetcode_id": 450,
+    "concept_only": false
+  },
+  {
+    "position": 130,
+    "title": "Validate BST",
+    "topic": "Binary Search Trees",
+    "reference": "LC 98",
+    "idea": "Range-bound DFS",
+    "priority_marker": "star",
+    "leetcode_id": 98,
+    "concept_only": false
+  },
+  {
+    "position": 131,
+    "title": "Kth Smallest Element",
+    "topic": "Binary Search Trees",
+    "reference": "LC 230",
+    "idea": "Inorder traversal",
+    "priority_marker": "star",
+    "leetcode_id": 230,
+    "concept_only": false
+  },
+  {
+    "position": 132,
+    "title": "LCA in BST",
+    "topic": "Binary Search Trees",
+    "reference": "LC 235",
+    "idea": "BST property traversal",
+    "priority_marker": "star",
+    "leetcode_id": 235,
+    "concept_only": false
+  },
+  {
+    "position": 133,
+    "title": "BST Iterator",
+    "topic": "Binary Search Trees",
+    "reference": "LC 173",
+    "idea": "Controlled inorder traversal",
+    "priority_marker": "yellow",
+    "leetcode_id": 173,
+    "concept_only": false
+  },
+  {
+    "position": 134,
+    "title": "BFS of Graph",
+    "topic": "Graphs",
+    "reference": "concept",
+    "idea": "BFS traversal",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 135,
+    "title": "DFS of Graph",
+    "topic": "Graphs",
+    "reference": "concept",
+    "idea": "DFS traversal",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 136,
+    "title": "Number of Provinces",
+    "topic": "Graphs",
+    "reference": "LC 547",
+    "idea": "DFS/BFS/DSU on adjacency matrix",
+    "priority_marker": "star",
+    "leetcode_id": 547,
+    "concept_only": false
+  },
+  {
+    "position": 137,
+    "title": "Flood Fill",
+    "topic": "Graphs",
+    "reference": "LC 733",
+    "idea": "DFS/BFS grid traversal",
+    "priority_marker": "star",
+    "leetcode_id": 733,
+    "concept_only": false
+  },
+  {
+    "position": 138,
+    "title": "Rotten Oranges",
+    "topic": "Graphs",
+    "reference": "LC 994",
+    "idea": "Multi-source BFS",
+    "priority_marker": "star",
+    "leetcode_id": 994,
+    "concept_only": false
+  },
+  {
+    "position": 139,
+    "title": "Number of Islands",
+    "topic": "Graphs",
+    "reference": "LC 200",
+    "idea": "DFS/BFS grid traversal",
+    "priority_marker": "star",
+    "leetcode_id": 200,
+    "concept_only": false
+  },
+  {
+    "position": 140,
+    "title": "Detect Cycle in Undirected Graph - BFS",
+    "topic": "Graphs",
+    "reference": "concept (LC 261 premium anchor)",
+    "idea": "BFS with parent tracking; solve with both BFS and DFS",
+    "priority_marker": "star",
+    "leetcode_id": 261,
+    "concept_only": false
+  },
+  {
+    "position": 141,
+    "title": "Detect Cycle in Directed Graph - DFS",
+    "topic": "Graphs",
+    "reference": "concept",
+    "idea": "DFS with recursion-stack tracking",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 142,
+    "title": "Topological Sort - DFS",
+    "topic": "Graphs",
+    "reference": "concept",
+    "idea": "DFS + stack",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 143,
+    "title": "Topological Sort - BFS (Kahn)",
+    "topic": "Graphs",
+    "reference": "concept",
+    "idea": "Kahn's algorithm",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 144,
+    "title": "Course Schedule I",
+    "topic": "Graphs",
+    "reference": "LC 207",
+    "idea": "Cycle detection (topo sort)",
+    "priority_marker": "star",
+    "leetcode_id": 207,
+    "concept_only": false
+  },
+  {
+    "position": 145,
+    "title": "Course Schedule II",
+    "topic": "Graphs",
+    "reference": "LC 210",
+    "idea": "Topological sort output",
+    "priority_marker": "star",
+    "leetcode_id": 210,
+    "concept_only": false
+  },
+  {
+    "position": 146,
+    "title": "Bipartite Graph - BFS",
+    "topic": "Graphs",
+    "reference": "LC 785",
+    "idea": "Two-coloring, BFS; solve with both BFS and DFS",
+    "priority_marker": "star",
+    "leetcode_id": 785,
+    "concept_only": false
+  },
+  {
+    "position": 147,
+    "title": "Network Delay Time",
+    "topic": "Graphs",
+    "reference": "LC 743",
+    "idea": "Dijkstra on non-negative weighted edges; code the heap relaxations",
+    "priority_marker": "star",
+    "leetcode_id": 743,
+    "concept_only": false
+  },
+  {
+    "position": 148,
+    "title": "Min Cost to Connect All Points (Prim)",
+    "topic": "Graphs",
+    "reference": "LC 1584",
+    "idea": "Grow an MST from visited to unvisited vertices",
+    "priority_marker": "star",
+    "leetcode_id": 1584,
+    "concept_only": false
+  },
+  {
+    "position": 149,
+    "title": "Min Cost to Connect All Points (Kruskal)",
+    "topic": "Graphs",
+    "reference": "LC 1584",
+    "idea": "Sort edges and use DSU to reject cycles; same input, distinct MST algorithm",
+    "priority_marker": "star",
+    "leetcode_id": 1584,
+    "concept_only": false
+  },
+  {
+    "position": 150,
+    "title": "Disjoint Set Union",
+    "topic": "Graphs",
+    "reference": "concept",
+    "idea": "Union-Find with rank + path compression",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 151,
+    "title": "01 Matrix",
+    "topic": "Graphs",
+    "reference": "LC 542",
+    "idea": "Multi-source BFS seeded from all zeros",
+    "priority_marker": "none",
+    "leetcode_id": 542,
+    "concept_only": false
+  },
+  {
+    "position": 152,
+    "title": "Word Ladder",
+    "topic": "Graphs",
+    "reference": "LC 127",
+    "idea": "Implicit unweighted graph and shortest transformation BFS",
+    "priority_marker": "none",
+    "leetcode_id": 127,
+    "concept_only": false
+  },
+  {
+    "position": 153,
+    "title": "Redundant Connection",
+    "topic": "Graphs",
+    "reference": "LC 684",
+    "idea": "DSU cycle detection on streamed edges",
+    "priority_marker": "none",
+    "leetcode_id": 684,
+    "concept_only": false
+  },
+  {
+    "position": 154,
+    "title": "Cheapest Flights Within K Stops",
+    "topic": "Graphs",
+    "reference": "LC 787",
+    "idea": "Shortest path with an extra edge-count state; avoid plain Dijkstra pruning",
+    "priority_marker": "none",
+    "leetcode_id": 787,
+    "concept_only": false
+  },
+  {
+    "position": 155,
+    "title": "Critical Connections in a Network",
+    "topic": "Graphs",
+    "reference": "LC 1192",
+    "idea": "Tarjan low-link values for bridges",
+    "priority_marker": "none",
+    "leetcode_id": 1192,
+    "concept_only": false
+  },
+  {
+    "position": 156,
+    "title": "Climbing Stairs",
+    "topic": "Dynamic Programming",
+    "reference": "LC 70",
+    "idea": "1D DP",
+    "priority_marker": "star",
+    "leetcode_id": 70,
+    "concept_only": false
+  },
+  {
+    "position": 157,
+    "title": "House Robber",
+    "topic": "Dynamic Programming",
+    "reference": "LC 198",
+    "idea": "1D DP",
+    "priority_marker": "star",
+    "leetcode_id": 198,
+    "concept_only": false
+  },
+  {
+    "position": 158,
+    "title": "House Robber II",
+    "topic": "Dynamic Programming",
+    "reference": "LC 213",
+    "idea": "1D DP, circular",
+    "priority_marker": "star",
+    "leetcode_id": 213,
+    "concept_only": false
+  },
+  {
+    "position": 159,
+    "title": "Unique Paths",
+    "topic": "Dynamic Programming",
+    "reference": "LC 62",
+    "idea": "Grid DP",
+    "priority_marker": "star",
+    "leetcode_id": 62,
+    "concept_only": false
+  },
+  {
+    "position": 160,
+    "title": "Minimum Path Sum",
+    "topic": "Dynamic Programming",
+    "reference": "LC 64",
+    "idea": "Grid DP",
+    "priority_marker": "star",
+    "leetcode_id": 64,
+    "concept_only": false
+  },
+  {
+    "position": 161,
+    "title": "Subset Sum",
+    "topic": "Dynamic Programming",
+    "reference": "concept, LC 416 anchor",
+    "idea": "Boolean subset-sum state; separate from equal-partition wrapper",
+    "priority_marker": "star",
+    "leetcode_id": 416,
+    "concept_only": false
+  },
+  {
+    "position": 162,
+    "title": "Partition Equal Subset Sum",
+    "topic": "Dynamic Programming",
+    "reference": "LC 416",
+    "idea": "Subset-sum DP",
+    "priority_marker": "star",
+    "leetcode_id": 416,
+    "concept_only": false
+  },
+  {
+    "position": 163,
+    "title": "0/1 Knapsack",
+    "topic": "Dynamic Programming",
+    "reference": "concept",
+    "idea": "Pick-or-skip capacity DP with one-use items",
+    "priority_marker": "star",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 164,
+    "title": "Coin Change",
+    "topic": "Dynamic Programming",
+    "reference": "LC 322",
+    "idea": "Unbounded knapsack (min)",
+    "priority_marker": "star",
+    "leetcode_id": 322,
+    "concept_only": false
+  },
+  {
+    "position": 165,
+    "title": "Coin Change II",
+    "topic": "Dynamic Programming",
+    "reference": "LC 518",
+    "idea": "Unbounded knapsack (count)",
+    "priority_marker": "star",
+    "leetcode_id": 518,
+    "concept_only": false
+  },
+  {
+    "position": 166,
+    "title": "Unbounded Knapsack",
+    "topic": "Dynamic Programming",
+    "reference": "concept, LC 518 anchor",
+    "idea": "Repeat-item transition; contrast with 0/1 knapsack",
+    "priority_marker": "yellow",
+    "leetcode_id": 518,
+    "concept_only": false
+  },
+  {
+    "position": 167,
+    "title": "Longest Common Subsequence",
+    "topic": "Dynamic Programming",
+    "reference": "LC 1143",
+    "idea": "2D string DP",
+    "priority_marker": "star",
+    "leetcode_id": 1143,
+    "concept_only": false
+  },
+  {
+    "position": 168,
+    "title": "Longest Increasing Subsequence",
+    "topic": "Dynamic Programming",
+    "reference": "LC 300",
+    "idea": "1D/patience DP",
+    "priority_marker": "star",
+    "leetcode_id": 300,
+    "concept_only": false
+  },
+  {
+    "position": 169,
+    "title": "Edit Distance",
+    "topic": "Dynamic Programming",
+    "reference": "LC 72",
+    "idea": "2D string DP",
+    "priority_marker": "star",
+    "leetcode_id": 72,
+    "concept_only": false
+  },
+  {
+    "position": 170,
+    "title": "Word Break",
+    "topic": "Dynamic Programming",
+    "reference": "LC 139",
+    "idea": "1D DP + dictionary",
+    "priority_marker": "star",
+    "leetcode_id": 139,
+    "concept_only": false
+  },
+  {
+    "position": 171,
+    "title": "Longest Palindromic Subsequence",
+    "topic": "Dynamic Programming",
+    "reference": "LC 516",
+    "idea": "2D interval DP",
+    "priority_marker": "yellow",
+    "leetcode_id": 516,
+    "concept_only": false
+  },
+  {
+    "position": 172,
+    "title": "Wildcard Matching",
+    "topic": "Dynamic Programming",
+    "reference": "LC 44",
+    "idea": "2D pattern-matching DP",
+    "priority_marker": "yellow",
+    "leetcode_id": 44,
+    "concept_only": false
+  },
+  {
+    "position": 173,
+    "title": "Best Time to Buy and Sell Stock II",
+    "topic": "Dynamic Programming",
+    "reference": "LC 122",
+    "idea": "Greedy/DP, unlimited transactions",
+    "priority_marker": "star",
+    "leetcode_id": 122,
+    "concept_only": false
+  },
+  {
+    "position": 174,
+    "title": "Best Time to Buy and Sell Stock III",
+    "topic": "Dynamic Programming",
+    "reference": "LC 123",
+    "idea": "State-machine DP, ≤2 transactions",
+    "priority_marker": "yellow",
+    "leetcode_id": 123,
+    "concept_only": false
+  },
+  {
+    "position": 175,
+    "title": "Best Time to Buy and Sell Stock IV",
+    "topic": "Dynamic Programming",
+    "reference": "LC 188",
+    "idea": "State-machine DP, ≤K transactions",
+    "priority_marker": "yellow",
+    "leetcode_id": 188,
+    "concept_only": false
+  },
+  {
+    "position": 176,
+    "title": "Matrix Chain Multiplication",
+    "topic": "Dynamic Programming",
+    "reference": "concept",
+    "idea": "Interval DP",
+    "priority_marker": "yellow",
+    "leetcode_id": null,
+    "concept_only": true
+  },
+  {
+    "position": 177,
+    "title": "Palindrome Partitioning II",
+    "topic": "Dynamic Programming",
+    "reference": "LC 132",
+    "idea": "Interval DP + cut minimization",
+    "priority_marker": "yellow",
+    "leetcode_id": 132,
+    "concept_only": false
+  },
+  {
+    "position": 178,
+    "title": "Target Sum",
+    "topic": "Dynamic Programming",
+    "reference": "LC 494",
+    "idea": "Subset-sum DP variant",
+    "priority_marker": "yellow",
+    "leetcode_id": 494,
+    "concept_only": false
+  },
+  {
+    "position": 179,
+    "title": "Decode Ways",
+    "topic": "Dynamic Programming",
+    "reference": "LC 91",
+    "idea": "Prefix DP with zero and two-digit validity",
+    "priority_marker": "none",
+    "leetcode_id": 91,
+    "concept_only": false
+  },
+  {
+    "position": 180,
+    "title": "Maximum Product Subarray",
+    "topic": "Dynamic Programming",
+    "reference": "LC 152",
+    "idea": "Track both minimum and maximum because signs flip",
+    "priority_marker": "none",
+    "leetcode_id": 152,
+    "concept_only": false
+  },
+  {
+    "position": 181,
+    "title": "Distinct Subsequences",
+    "topic": "Dynamic Programming",
+    "reference": "LC 115",
+    "idea": "Counting alignments of two strings, not merely their best length",
+    "priority_marker": "none",
+    "leetcode_id": 115,
+    "concept_only": false
+  },
+  {
+    "position": 182,
+    "title": "Burst Balloons",
+    "topic": "Dynamic Programming",
+    "reference": "LC 312",
+    "idea": "Interval DP by choosing the last operation",
+    "priority_marker": "none",
+    "leetcode_id": 312,
+    "concept_only": false
+  },
+  {
+    "position": 183,
+    "title": "Implement Trie",
+    "topic": "Tries",
+    "reference": "LC 208",
+    "idea": "Trie construction",
+    "priority_marker": "star",
+    "leetcode_id": 208,
+    "concept_only": false
+  },
+  {
+    "position": 184,
+    "title": "Longest String With All Prefixes",
+    "topic": "Tries",
+    "reference": "LC 720",
+    "idea": "Trie + DFS",
+    "priority_marker": "yellow",
+    "leetcode_id": 720,
+    "concept_only": false
+  },
+  {
+    "position": 185,
+    "title": "Number of Distinct Substrings",
+    "topic": "Tries",
+    "reference": "LC 1698 (premium)",
+    "idea": "Trie / suffix structure",
+    "priority_marker": "yellow",
+    "leetcode_id": 1698,
+    "concept_only": false
+  },
+  {
+    "position": 186,
+    "title": "Maximum XOR of Two Numbers",
+    "topic": "Tries",
+    "reference": "LC 421",
+    "idea": "Bitwise trie",
+    "priority_marker": "star",
+    "leetcode_id": 421,
+    "concept_only": false
+  },
+  {
+    "position": 187,
+    "title": "Maximum XOR With an Element",
+    "topic": "Tries",
+    "reference": "LC 1707",
+    "idea": "Bitwise trie + offline queries",
+    "priority_marker": "yellow",
+    "leetcode_id": 1707,
+    "concept_only": false
+  },
+  {
+    "position": 188,
+    "title": "Word Search II",
+    "topic": "Tries",
+    "reference": "LC 212",
+    "idea": "Trie-guided grid search with shared-prefix pruning",
+    "priority_marker": "none",
+    "leetcode_id": 212,
+    "concept_only": false
+  }
+]

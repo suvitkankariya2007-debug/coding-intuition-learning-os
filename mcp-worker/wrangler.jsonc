@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "coding-intuition-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-30",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "vars": {
+    "PUBLIC_ORIGIN": "http://localhost:8787",
+    "MEMORY_NAMESPACE": "leetcode_problems",
+    "MEMORY_READ_NAMESPACES": "leetcode_problems,leetcode",
+    "LEETCODE_USERNAME": "suvitk",
+    "CODEFORCES_HANDLE": "suvitkankariya2007",
+    "GITHUB_SOLUTIONS_REPO": "suvitkankariya2007-debug/LeetCode-Challenge"
+  },
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "replace-with-your-namespace-id" }],
+  "durable_objects": { "bindings": [{ "name": "LEARNERS", "class_name": "LearnerStore" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LearnerStore"] }]
+}
