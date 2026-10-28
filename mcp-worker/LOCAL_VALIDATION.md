@@ -1,150 +1,93 @@
-# Validate the real learning MCP, not the old mock
+# Validate the local Coding Intuition MCP
 
-The October 20 Go report lists `Mock_MCP_E2E` tools and HTTP `UNAVAILABLE`.
-That is evidence about the old mock connection, not this server. A successful
-separate Supermemory connector call also does not test this application.
+This checklist separates automated tests, a live local Supermemory check, and an actual call from ChatGPT. Passing one does not imply the others passed.
 
-See [the expanding learning workflow](ADAPTIVE_WORKFLOW.md) for newer problems, code discussion, profile refresh and configured memory spaces.
+The MCP source currently exposes 37 learning tools. Check the live inventory rather than relying on an old plugin listing or a tool count copied from an earlier build.
 
-The learning server identifies itself as `coding-intuition-learning` and exposes
-31 tools. In particular, expect `get_roadmap`, `get_memory_patterns`,
-`get_recommendations`, `record_reasoning_event`, and `record_review`.
-Do not proceed with learning writes while only mock tools are visible.
+## 1. Automated source checks
 
-## Local sequence (no deployment)
+From mcp-worker:
 
-1. Pull the existing feature branch and run `npm run verify:local` in
-   `mcp-worker`. This rebuilds both bundles and tests against a simulated provider.
-2. Keep the successful Supermemory login. The argument to `memory:login` and
-   `tunnel:serve` is your Supermemory **user ID**, not any API key. Only rerun
-   `npm run memory:login -- YOUR_SUPERMEMORY_USER_ID` if authorization is missing.
-3. Start `npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID` and leave it running.
-   Start read-only; `--allow-writes` is a later explicit opt-in.
-4. In a second terminal run `npm run tunnel:doctor`. It performs an initialized
-   SDK handshake, checks the actual 31-tool inventory, and calls the 21 read
-   tools, including bounded Supermemory retrieval. It prints status, not private
-   memory text or credentials. Empty memory results do not prove your existing
-   memories were retrieved: inspect the results in ChatGPT separately.
-5. Stop any old mock `tunnel-client` process using the same tunnel ID. Multiple
-   clients for the same tunnel can consume requests; changing a profile alone
-   does not stop an already running mock client. Do not stop unrelated tunnels.
-6. In the extracted official client directory, use the existing tunnel ID and a
-   replacement restricted runtime key entered locally (never paste it here):
+~~~sh
+npm ci --no-audit --no-fund
+npm run verify:local
+~~~
 
-```sh
-read -r -p 'Existing tunnel ID: ' CONTROL_PLANE_TUNNEL_ID
-export CONTROL_PLANE_TUNNEL_ID
-read -r -s -p 'Runtime API key: ' CONTROL_PLANE_API_KEY
-printf '\n'
-export CONTROL_PLANE_API_KEY
-./tunnel-client init --sample sample_mcp_remote_no_auth --profile coding-intuition-local --tunnel-id "$CONTROL_PLANE_TUNNEL_ID" --mcp-server-url http://127.0.0.1:8787/mcp
-./tunnel-client doctor --profile coding-intuition-local --explain
-./tunnel-client run --profile coding-intuition-local
-```
+This runs TypeScript validation, dry-run builds for the Worker and tunnel entrypoints, and the test suite with a simulated upstream. It does not authorize with a real Supermemory account, contact ChatGPT, write learning records, or deploy.
 
-7. Refresh the tools on the existing ChatGPT connection using this same tunnel.
-   If its UI cannot refresh discovery, replace only that custom connection;
-   do not create another tunnel or server process. Use no downstream OAuth only
-   for this private local mode. The hosted entrypoint requires OAuth.
-8. Use a new chat with the refreshed custom learning MCP selected. Run the
-   read-only prompt below. Do not substitute a direct Supermemory connector.
+Record the exact test totals printed by your checkout. They can change when tests are added; avoid hard-coding an old total into reports.
 
-## Read-only Go validation prompt
+## 2. Live local read check
 
-```text
-Validate my custom Coding Intuition learning MCP in this ChatGPT Go chat.
-Do not use the separate Supermemory connector, deployment tools, or conversational
-recall as proof. Do not write synthetic learning records.
+Sign into the Supermemory account that owns or can access leetcode_problems:
 
-First check available tools. Expect get_roadmap, get_memory_patterns,
-get_recommendations, get_due_reviews, get_learning_signals,
-get_progress_report, get_progressive_hint, record_reasoning_event, and
-record_review. If only Mock_MCP_E2E tools are available, STOP and report
-WRONG_OR_STALE_CONNECTION. Do not attempt mock record creation.
+~~~sh
+npm run memory:login -- YOUR_SUPERMEMORY_USER_ID
+~~~
 
-Call get_roadmap with limit 1; verify its total is 188 and obtain a real itemId.
-Call get_progress_report, get_due_reviews, get_learning_signals, and
-get_source_status. Report empty or partial state honestly.
-Call get_memory_patterns with a query about my DSA teaching preferences.
-Show the returned preference evidence and namespaces; if none, say none.
-Call get_recommendations and check whether memoryContext is available.
-Using the roadmap itemId, call get_problem_history, get_progressive_hint
-(level 1), get_concept_connections, and get_transfer_problem.
-Call diagnose_weaknesses. Base one brief teaching example on actual retrieved
-preferences; distinguish evidence from your own teaching choices.
+Complete the browser flow on the same laptop. In Terminal 1, start the local server read-only:
 
-Return a compact table: tool | actual call result | PASS/FAIL/UNVERIFIED.
-Redact credentials. Distinguish an empty valid result from a failed operation.
-List available write tools but do not invoke them in this read-only test.
-Do not fail the app for lacking generic update/delete tools: its learning ledger
-records history, and later observations can record real improvement. Do not
-claim mastery, accepted submissions, automatic cross-chat capture, write success,
-background operation, unlimited Go usage, or deployment readiness from this test.
-```
+~~~sh
+npm run build:tunnel
+npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID
+~~~
 
-## Real approved write and persistence gates
+In a second terminal, run the local SDK doctor:
 
-After read checks pass, restart the local server with `--allow-writes`.
-Use one **real** observation the learner agrees to save, not invented test
-performance. `record_reasoning_event` needs `clientEventId`, `kind`, `summary`,
-and `origin: chatgpt`; optional `itemId` must come from the real roadmap.
-Read `get_learning_signals` and `get_recommendations` afterward. Repeat the same
-write with the same exact ID and payload only to confirm idempotency. An
-ambiguous/pending write must be reconciled with `refresh_learning_memory` first;
-never change the event ID to force another write. Semantic search may index
-asynchronously; the structured ledger and returned receipt are separate evidence.
-A later real improvement is a new observation, not an overwrite of past history.
+~~~sh
+node local/doctor.mjs
+~~~
 
-For reviews, use `record_review` only with a real roadmap itemId and the learner's
-explicit grade from 0 to 5. Verify its returned next due date; a newly scheduled
-future review should not be expected in today's due list.
+It checks the server identity, full expected tool inventory and bounded read calls against the authenticated local server. It does not verify the tunnel or the ChatGPT account.
 
-Restart the server without deleting its state and verify the observation in a
-new chat. Local SDK tests prove neither Go account access nor automatic tool
-selection in ordinary conversations. Obtain each result before claiming it.
+## 3. Verify the Secure MCP Tunnel and ChatGPT connection
 
-## Hosted switch (still paused)
+In Terminal 2, use the installed official tunnel-client with the intended tunnel profile pointing to:
 
-Both entrypoints use the same MCP handler and 31 tools. The integration suite
-runs the same initialized SDK read contract against local and OAuth-protected
-hosted Workers, using a simulated upstream. It also tests write idempotency,
-cache invalidation, OAuth boundaries, and persistence. No public deployment or
-real hosted OAuth has been tested by that suite.
+~~~text
+http://127.0.0.1:8787/mcp
+~~~
 
-The hosted Worker uses a different persistent store from the laptop. Local data
-files are not uploaded automatically. Recover approved structured learning
-receipts from Supermemory with `refresh_learning_memory` until nextPage is null,
-then compare counts and pending receipts before switching. Free-form preference
-memories remain searchable and are not converted into mastery.
+Run its doctor, then run the profile. Keep Terminal 1, Terminal 2, internet access and the laptop awake. In ChatGPT, choose that same tunnel connection, refresh tool discovery, and start a new chat.
 
-After later deployment authorization, verify public discovery, complete hosted
-OAuth, refresh the existing ChatGPT connection to the hosted HTTPS endpoint,
-repeat the same tool tests, reconcile learning state, and finally stop the local
-processes and verify a fresh-chat read. Do not reuse no-auth local settings for
-the public server. No laptop-off or deployment-readiness claim is made now.
+Read-only validation prompt:
 
+~~~text
+Use the Coding Intuition tools selected in this chat. Do not use the separate
+Supermemory connector. Do not create or modify learning records.
 
-## Startup troubleshooting after an update
+List the available tool names and verify that get_roadmap, get_recommendations,
+get_problem_history, get_due_reviews, and get_memory_patterns are available.
+Call get_roadmap with limit 1 and report its returned total and item ID. Call
+get_recommendations with no context and report the actual engineRevision,
+responseContractVersion, scoringVersion, and score arithmetic checks. Call
+get_memory_patterns for a DSA learning preference and report the actual result,
+including an empty result if none was found.
 
-Stop the old MCP and local login processes with Ctrl+C. In the existing checkout,
-fetch and switch to feature/evidence-intelligence-layer, then pull with --ff-only.
-Run npm run verify:local from mcp-worker once; this includes both dry-run builds
-and creates dist-tunnel/tunnel.js. It does not deploy. No dependency reinstall is
-needed when package-lock.json is unchanged and node_modules is already installed.
+Mark each check PASS, FAIL, or UNVERIFIED based only on the returned tool
+responses. If the tools are missing or only Mock_MCP_E2E is listed, stop and
+report WRONG_OR_STALE_CONNECTION. Do not claim a successful ChatGPT connection
+based on local tests or the separate Supermemory connector.
+~~~
 
-Run npm run memory:login -- YOUR_SUPERMEMORY_USER_ID. Open the fresh start page
-http://127.0.0.1:8788, not an old /callback address. On failure the updated local
-page and terminal show an allowlisted diagnostic code. Share that code only;
-never share the callback URL, credential file, or provider response body. A
-LOGIN_ISSUER failure needs provider compatibility investigation; retrying with
-another account or removing issuer checks is not a fix. LOGIN_ACCOUNT means
-that the browser signed in to a different account; LOGIN_SPACE means the account
-does not expose the required space. OAuth HTTP codes identify registration vs
-token exchange failures without exposing their contents.
+A successful tool response from the selected ChatGPT connection is the proof that this client reached the local MCP. A doctor PASS by itself is not.
 
-After the success page, start npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID
---allow-writes. In a separate terminal run npm run tunnel:doctor. Only after PASS,
-restart the installed tunnel-client with the existing coding-intuition-local
-profile and existing tunnel ID. Run its doctor before run. Refresh the existing
-ChatGPT connection and open a fresh Go chat; expect 25 learning tools. Keep the
-MCP server and tunnel client running. Do not save synthetic reasoning or reviews.
+## 4. Optional genuine write test
+
+Keep writes disabled for ordinary read-only testing. For a real write-cycle test only, stop Terminal 1 and restart it with:
+
+~~~sh
+npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID --allow-writes
+~~~
+
+Use a genuine learner attempt. Ask before recording one brief factual observation. For a review, use only the learner's actual recall grade from 0 to 5. Keep each returned event ID and receipt. Reuse the same ID and payload for an idempotency retry; reconcile a pending write before any retry. Then verify through history/read-back after restarting the server. Never create synthetic attempts or grades in the real account.
+
+## Evidence boundaries
+
+- Local tests use fixtures; they establish software behavior, not real-account authorization or educational outcomes.
+- Local SDK calls establish the local endpoint and configured Supermemory authorization, not which endpoint ChatGPT selected.
+- A ChatGPT read establishes client routing and tool availability, not successful writes, complete source history, or mastery.
+- LeetCode, Codeforces and GitHub source coverage is bounded. Report its returned coverage instead of implying complete history.
+- A Cloudflare deployment is a separate hosted route. Public discovery/health checks do not prove hosted OAuth or a successful authenticated ChatGPT call.
+
+For client setup and terminal commands, see [LOCAL_TUNNEL.md](LOCAL_TUNNEL.md). For project overview and feature details, see [README.md](README.md).
