@@ -1,96 +1,50 @@
 # Coding Intuition MCP
 
-Adaptive runtime with the 188-problem curriculum as a seed plus newer GitHub, LeetCode, Codeforces and conversation problems. It reuses the repository's pure recommendation, concept-graph, progressive-hint and SRS modules. The web app and existing curriculum/progress tables are untouched.
+Coding Intuition is a local MCP server for DSA learning. It gives ChatGPT tools for a roadmap, problem history, evidence-based practice recommendations, review scheduling, and explicitly approved learning observations. It uses Supermemory for semantic learning context and a local durable ledger for structured records.
 
-The intended finished setup is a **hosted OAuth-protected MCP Worker** with persistent per-learner storage. After it is deployed and connected, your laptop does not need to stay on. The private Secure MCP Tunnel is an optional local test path only; see [local tunnel test instructions](LOCAL_TUNNEL.md). Nothing is deployed yet. The supplied Go-account mock-server report supports testing through that account, but does not prove the live Supermemory authorization or the final learning flow.
+## Local quick start
 
-## Architecture
+Requirements: Node.js 24, npm, a Supermemory account that owns the `leetcode_problems` space, and (only if connecting ChatGPT to your laptop) an OpenAI Secure MCP Tunnel client/account that supports MCP tunnels.
 
-ChatGPT Go → hosted OAuth-protected MCP → Supermemory OAuth → `leetcode_problems` → bounded semantic retrieval + incremental document reconciliation → concept/weakness ranking → practice and reviews.
-
-Cloudflare Workers hosts the endpoint. Cloudflare's maintained OAuth provider handles PKCE, browser-bound consent, token audience, refresh, revocation, DCR and CIMD. Upstream Supermemory tokens are encrypted inside OAuth grant properties; the downstream ChatGPT token is never forwarded upstream. The default private mode permits only the configured Supermemory owner in `leetcode_problems`, with the explicit read allowlist. An opt-in hosted multi-user mode assigns each other authenticated account a separate server-derived private namespace and verifies it during OAuth; new learners never inherit the owner memory spaces or coding handles. A per-owner SQLite Durable Object keeps the durable learning ledger and bounded one-hour semantic-search cache; writes invalidate cached memory results so later retrieval sees new learning promptly.
-
-Workers KV stores authentication records. One SQLite-backed Durable Object per owner stores short-lived query caches, provider version markers, structured observation/review receipts and a minimal learning ledger. Raw chats, screenshots, source code and the full Supermemory corpus are not copied into a second database. Credentials are not stored in that ledger. Snapshot chunks and write receipts commit atomically.
-
-## Tools
-
-See [the expanding adaptive workflow](ADAPTIVE_WORKFLOW.md). `get_learning_catalog` includes newer problems outside the canonical seed; `get_problem_code` fetches bounded pinned GitHub code for discussion. Profile sync now contributes external LC/CF problems and previously unmatched GitHub files to recommendations. Approved question observations and external recall reviews persist across recovery. `refresh: true` bypasses memory caches, and source sync accepts `force: true` after new activity. Additional memory read spaces require explicit configuration.
-
-There are 31 tools. The 13 original learning tools cover the roadmap, recommendations, due reviews, progress, problem history, weaknesses, transfer, progressive hints, memory patterns, concept connections, learning signals, reasoning observations and source status. Three more provide `record_review`, `refresh_learning_memory`, and `sync_learning_source`; two add the expanded catalog and code retrieval. Six tools provide saved-document listing/reading, question candidates, source-submission history and monitor configuration/status. `review_learning_discussion` builds evidence-linked practice plans. Two profile tools, `get_learner_profile` and `update_learner_profile`, expose versioned preferences, independently evolving evidence and a per-learner coaching policy; see [LEARNER_PROFILES.md](LEARNER_PROFILES.md). Four continuity tools save/list persistent questions and inspect/retry durable memory writes; see [CROSS_CHAT_CONTINUITY.md](CROSS_CHAT_CONTINUITY.md).
-
-Read-only permission is `learning:read`; recording needs `learning:write`. Each memory write needs an approved short structured observation, uses a stable idempotency key, and is explicitly distinguished from verified acceptance. A failed/ambiguous upstream write remains pending; do not resubmit under a new ID. Reconcile the memory documents first.
-
-## Cost controls
-
-- No LLM API calls, embeddings service, PostgreSQL service, Lovable agent call or Vercel deployment.
-- Supermemory uses its normal MCP OAuth connection. Its existing account's limits still apply.
-- Targeted memory search caches at most 50 queries for one hour. Unexpired entries are retained when capacity is full; additional queries bypass caching. Confirmed writes, explicit refresh and reconciliation invalidate results early to prevent stale coaching. Source sync caches for ten minutes.
-- Sync reads one page of three documents; unchanged document versions do not download again. Follow `nextPage` until null. Source and memory completeness are reported explicitly.
-- Optional periodic source/document reads use durable alarms, one bounded task per wake-up with backoff. No paid deployment step is part of verification; CI runs code/build/tests only.
-- The hosting account must be on its intended free plan; do not enable a paid plan or upgrade to satisfy deployment.
-
-These hosting statements describe the hosted Worker. The private tunnel route requires the existing tunnel-client's restricted OpenAI runtime key for tunnel access, not model inference. It does not require Cloudflare. Tunnel traffic, Supermemory and Go remain subject to their own limits and billing; no unlimited-use claim is made.
-
-## Verify locally
-
-For the live laptop setup, `npm run tunnel:doctor` verifies the actual learning
-server identity with 18 read calls, without recording learning events or enabling monitoring. See
-[local validation](LOCAL_VALIDATION.md). An old `Mock_MCP_E2E` tool inventory in
-ChatGPT indicates the wrong or stale connection, not the learning tool contract.
-
-From this directory:
+From the repository root:
 
 ```sh
+git clone --branch feature/evidence-intelligence-layer https://github.com/suvitkankariya2007-debug/coding-intuition-learning-os.git
+cd coding-intuition-learning-os/mcp-worker
 npm ci --no-audit --no-fund
 npm run verify:local
 ```
 
-This command checks TypeScript and native local-script syntax, creates dry-run bundles for both entrypoints, then runs the local runtime tests. It does not deploy, create hosting resources, register an OAuth client, or use live Supermemory credits. Dependency installation needs registry access; verification uses installed dependencies and a simulated upstream. Run this command after source edits so integration tests use fresh bundles.
+The verification command runs TypeScript checks, builds dry-run bundles, and executes the automated suite against a simulated Supermemory provider. It does not sign in to Supermemory, start a persistent server, deploy to Cloudflare, or prove a ChatGPT account connection.
 
-The integration suite runs the actual Worker bundle in workerd/Miniflare with a simulated upstream Supermemory. It tests consent cookies, wrong accounts, PKCE, code replay, scope enforcement, refresh, namespace isolation, bounded requests, query caching, concurrent retries, recommendations, review schedules and reconciliation. It does **not** establish a live user authorization or a successful ChatGPT Go call.
+### Connect your own Supermemory account
 
-## Deploy after hosting authorization
-
-The checked-in `wrangler.jsonc` is a local-development template, not a working public deployment. It deliberately lacks owner/client credentials and a real KV namespace ID. Do not paste its localhost address into ChatGPT.
-
-1. Authenticate the intended Cloudflare account. Keep its current plan; stop if a paid upgrade is required.
-2. Create a Workers KV namespace for `OAUTH_KV` and reserve the Worker hostname. The SQLite Durable Object binding is provisioned by the `v1` migration.
-3. Obtain the authorized Supermemory owner's ID using that account's `who_am_i` tool. Do not assume the Go and Work accounts have the same Supermemory owner.
-4. Prepare the exact deployment configuration once:
+Use the Supermemory user ID from that account's `who_am_i` result (never an API key):
 
 ```sh
-node scripts/prepare-deployment.mjs https://YOUR-WORKER.workers.dev OWNER_SUPERMEMORY_ID KV_NAMESPACE_ID
-npm run deploy -- --config wrangler.local.jsonc
-node scripts/verify-public.mjs https://YOUR-WORKER.workers.dev
+npm run memory:login -- YOUR_SUPERMEMORY_USER_ID
 ```
 
-The preparation script registers a public PKCE client with Supermemory and reuses that registration on retries. It creates a private, ignored local deployment configuration. No API key is requested or entered in a browser form.
+Open the loopback sign-in page shown by the command and complete Supermemory authorization. The login verifies the owner and required private space. Credentials are kept outside the repository in a private local state directory.
 
-5. In ChatGPT's custom MCP form use name `Coding Intuition`, the verified `https://YOUR-WORKER.workers.dev/mcp` URL, and OAuth. Allow discovery/DCR or CIMD; do not enter a Supabase bearer token or OpenAI API key. Complete consent and Supermemory login.
-6. Verify `get_roadmap`, `get_memory_patterns`, `get_recommendations`, and one explicitly approved test observation. Confirm the write is in the intended space, survives a fresh connection and is idempotent on retry. Only then mark the integration live.
+Start the MCP read-only by default:
 
-## Source coverage and data boundaries
+```sh
+npm run tunnel:serve -- YOUR_SUPERMEMORY_USER_ID
+```
 
-- LeetCode `suvitk`: public accepted total and the latest 20 accepted submissions. Problem frontend IDs are verified using GraphQL. Recent activity is **not** complete solved history. Duplicate concept anchors are not auto-marked solved.
-- Codeforces `suvitkankariya2007`: paginated public submissions contributing external problems and evidence to recommendations, up to 1,000 per call; continue `nextCursor` when provided. CF problems retain distinct identifiers and are not guessed to match LeetCode problems.
-- GitHub `suvitkankariya2007-debug/LeetCode-Challenge`: public current tree, exact normalized filename matching for canonical problems, plus independently tracked new code files and commit-pinned code retrieval. Exporter folder numbers are not LeetCode problem IDs. A code file is revision evidence, not an accepted verdict.
-- Memory documents restore validated structured event/review envelopes and index literal question candidates with provenance. Complete available discussions can be read in versioned pages. Free-form memories inform coaching through search; they never automatically create grades or mastery. The structured ledger retains observations independently of semantic memory extraction. Existing SQL progress is not automatically copied; the old web app retains it.
+To connect ChatGPT web, run your own Secure MCP Tunnel client pointed at `http://127.0.0.1:8787/mcp`, then select that tunnel in ChatGPT. Do not expose port 8787 publicly. Keep both the MCP process and tunnel client running, and keep the laptop awake while using this local setup. See [LOCAL_TUNNEL.md](LOCAL_TUNNEL.md) for tunnel installation and account-specific setup.
 
-## Connection review
+Writes are off by default. If you deliberately want to test approved learning writes, stop the read-only server and restart with `--allow-writes`; still approve each learning observation in the conversation. Never use synthetic reviews or write data you do not intend to keep.
 
-Keep Supermemory OAuth. Public LeetCode/Codeforces/GitHub reads need no additional account login. GitHub write access is needed only during code maintenance. Lovable, Vercel, Supabase, Railway, Google Drive, Notion, Gmail, LinkedIn and a paid model API are not runtime dependencies of this MCP. This is a dependency review, not permission to uninstall or delete those apps or their data.
+## What is and isn't verified
 
-## Release status
+The current local source suite has passed 132 automated tests in the development workspace. These tests use simulated upstream services. They cover local runtime startup, OAuth security behavior, recommendation arithmetic, one-hour search caching, and write reconciliation.
 
-Deployment is paused at the user's request. Finish local implementation and verification without continuing hosting sign-in, creating KV resources, running the deployment preparation script, or publishing the Worker. Public endpoint publishing requires a later deployment decision; the private tunnel route does not require deployment.
+A successful test suite is not proof of real Supermemory authorization or a successful ChatGPT Go/Plus tool call. Each tester must authenticate their own Supermemory account and verify a read-only tool such as `get_roadmap`. The MCP cannot read every ChatGPT conversation on its own; ChatGPT must supply relevant visible context. This project does not fine-tune ChatGPT.
 
-The private tunnel implementation can be verified on the user's laptop without cloud deployment. Its remaining live gates are Supermemory OAuth on that laptop and actual learning-tool calls through the existing tunnel. The mock-server report is account-specific evidence of tunnel read/write support; it does not establish these real-service gates.
+LeetCode, Codeforces, and GitHub sources are public/profile-based and coverage is partial; source records are not automatically treated as accepted solutions or mastery. Search caches expire after one hour; confirmed writes or explicit refresh can invalidate them earlier.
 
-Implementation and local protocol verification are separate from deployment. Hosting authentication, live Supermemory OAuth, and the final ChatGPT Go tool call remain release gates until observed. No public MCP URL is claimed ready by this source alone.
+## Hosted deployment
 
-
-For full saved-discussion reading, source submission history, periodic monitoring, the runnable isolated demo, and remaining live gates, see [BACKGROUND_AND_DISCUSSIONS.md](BACKGROUND_AND_DISCUSSIONS.md).
-
-For a privacy-safe real local document/monitor report, run `npm run verify:live`. It cannot claim verification of the separate ChatGPT Go account.
-
-The read-only review_learning_discussion tool combines quoted discussion observations with concept reminders, common pitfalls, fallback approaches, review reasons and catalog-backed platform practice. See DISCUSSION_REVIEW.md.
+Hosted Cloudflare deployment is a separate configuration path; it is not required for this local test. Do not use the repository's template Wrangler config as a live deployment. For a hosted instance, configure your own Worker, KV namespace, OAuth client, and secrets, then follow [LIVE_GO_VERIFICATION.md](LIVE_GO_VERIFICATION.md). Do not commit secrets, token files, `wrangler.local.jsonc`, or personal learning data.
