@@ -17,7 +17,12 @@ export default {
     const base=origin(env);
     if(new URL(request.url).origin!==base)return new Response('Unexpected host',{status:400});
     const clientOrigin=request.headers.get('Origin');
-    if(clientOrigin&&clientOrigin!==base)return new Response('Forbidden origin',{status:403});
+    const allowedOrigins=new Set([base,'https://chatgpt.com','https://chat.openai.com','https://console.supermemory.ai']);
+    // OAuth callback is protected by the provider's one-time state, PKCE and issuer validation.
+    // The upstream provider's Origin differs from this MCP server, so allow the callback GET
+    // through to those checks while keeping the allowlist on every other route.
+    const isUpstreamOAuthCallback=new URL(request.url).pathname==='/callback'&&request.method==='GET';
+    if(clientOrigin&&!allowedOrigins.has(clientOrigin)&&!isUpstreamOAuthCallback)return new Response('Forbidden origin',{status:403});
     const response=await makeProvider(env).fetch(request,env,ctx);
     const secured=new Response(response.body,response);
     secured.headers.set('X-Content-Type-Options','nosniff');
