@@ -1,0 +1,844 @@
+{
+  "fixture": true,
+  "stages": [
+    {
+      "title": "Read the saved discussion",
+      "detail": "19130 characters reconstructed exactly: true. Literal question candidates are context; no diagnosis was invented.",
+      "data": {
+        "questions": {
+          "total": 2,
+          "items": [
+            {
+              "id": "gD1-7W4IHzHm2UAS6AnWuVO927VBw2GyzTLRkha3xGg",
+              "documentId": "discussion-1",
+              "version": "R1k4vtDRf63KSLVn93jNQYQlYRFZZiHUQN8cYJOqji4",
+              "title": "Fixture BST discussion",
+              "excerpt": "Why does LeetCode 98 need ancestor bounds?",
+              "start": 0,
+              "end": 49,
+              "sourceComplete": true,
+              "problemRefs": [
+                "lc:98"
+              ]
+            },
+            {
+              "id": "ln7o9srePxnHeySgIOLEBY7hm0GegZC1i-V5SYnBl3k",
+              "documentId": "discussion-1",
+              "version": "R1k4vtDRf63KSLVn93jNQYQlYRFZZiHUQN8cYJOqji4",
+              "title": "Fixture BST discussion",
+              "excerpt": "How can I derive the bounds myself?",
+              "start": 19088,
+              "end": 19130,
+              "sourceComplete": true,
+              "problemRefs": []
+            }
+          ],
+          "nextOffset": null,
+          "extraction": "literal_question_candidates_not_a_diagnosis",
+          "coverage": "only_synced_documents; role-labeled user turns or question lines; not guaranteed exhaustive"
+        },
+        "providerIncomplete": [
+          "truncated-1"
+        ]
+      }
+    },
+    {
+      "title": "First LeetCode refresh",
+      "detail": "The current public window returns 20 accepted submissions.",
+      "data": {
+        "source": "leetcode",
+        "status": {
+          "checkedAt": "2026-10-22T08:38:47.835Z",
+          "available": true,
+          "username": "fixture-user",
+          "coverage": "recent_accepted_only",
+          "windowLimit": 20,
+          "windowMovesOnRefresh": true,
+          "coverageGapPossible": true,
+          "historyComplete": false,
+          "publicAcceptedTotals": [],
+          "observed": 20,
+          "imported": 20,
+          "rejectedRows": 0,
+          "lastSuccessAt": "2026-10-22T08:38:47.835Z"
+        },
+        "totalStored": 20,
+        "uniqueProblems": 20,
+        "offset": 0,
+        "nextOffset": null,
+        "items": [
+          {
+            "itemId": "011e8583-aa17-5750-ba81-394b51a28083",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:40.000Z",
+            "provenanceId": "lc:2000",
+            "title": "Fixture problem 2000",
+            "problemRef": "lc:2000",
+            "submissionUrl": "https://leetcode.com/submissions/detail/2000/"
+          },
+          {
+            "itemId": "aee784c1-5cd7-5c42-a254-a9c71356292e",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:39.000Z",
+            "provenanceId": "lc:1999",
+            "title": "Fixture problem 1999",
+            "problemRef": "lc:1999",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1999/"
+          },
+          {
+            "itemId": "3b75ec3a-177d-53a9-ac4e-eb8537fc5063",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:38.000Z",
+            "provenanceId": "lc:1998",
+            "title": "Fixture problem 1998",
+            "problemRef": "lc:1998",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1998/"
+          },
+          {
+            "itemId": "c6f5f8a5-ac40-5452-8ef6-0f37b6f39977",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:37.000Z",
+            "provenanceId": "lc:1997",
+            "title": "Fixture problem 1997",
+            "problemRef": "lc:1997",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1997/"
+          },
+          {
+            "itemId": "0cbdc8b6-ae3d-534b-9e39-145ca0ed9292",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:36.000Z",
+            "provenanceId": "lc:1996",
+            "title": "Fixture problem 1996",
+            "problemRef": "lc:1996",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1996/"
+          },
+          {
+            "itemId": "208c5276-cfbb-5ddb-a0f8-37816bb90097",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:35.000Z",
+            "provenanceId": "lc:1995",
+            "title": "Fixture problem 1995",
+            "problemRef": "lc:1995",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1995/"
+          },
+          {
+            "itemId": "41319833-eb5e-59e3-9026-1ba8c08593d2",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:34.000Z",
+            "provenanceId": "lc:1994",
+            "title": "Fixture problem 1994",
+            "problemRef": "lc:1994",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1994/"
+          },
+          {
+            "itemId": "2322794f-e3d9-5bfc-8ec1-7783ca141711",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:33.000Z",
+            "provenanceId": "lc:1993",
+            "title": "Fixture problem 1993",
+            "problemRef": "lc:1993",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1993/"
+          },
+          {
+            "itemId": "779cb9a1-21be-5882-9327-c35f7960c251",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:32.000Z",
+            "provenanceId": "lc:1992",
+            "title": "Fixture problem 1992",
+            "problemRef": "lc:1992",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1992/"
+          },
+          {
+            "itemId": "acfad0b9-fd58-5eae-8ab9-2d9c7e9cf9a8",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:31.000Z",
+            "provenanceId": "lc:1991",
+            "title": "Fixture problem 1991",
+            "problemRef": "lc:1991",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1991/"
+          },
+          {
+            "itemId": "c71fd479-1ad6-50e7-a3fd-a83a2816aa13",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:30.000Z",
+            "provenanceId": "lc:1990",
+            "title": "Fixture problem 1990",
+            "problemRef": "lc:1990",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1990/"
+          },
+          {
+            "itemId": "cad01578-bb3c-57fd-8228-0175d93b64ae",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:29.000Z",
+            "provenanceId": "lc:1989",
+            "title": "Fixture problem 1989",
+            "problemRef": "lc:1989",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1989/"
+          },
+          {
+            "itemId": "4b64670d-c6d1-5bc6-beec-aa7aeca5c407",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:28.000Z",
+            "provenanceId": "lc:1988",
+            "title": "Fixture problem 1988",
+            "problemRef": "lc:1988",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1988/"
+          },
+          {
+            "itemId": "2ddd7388-dfc2-51dc-a124-6af61e14546e",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:27.000Z",
+            "provenanceId": "lc:1987",
+            "title": "Fixture problem 1987",
+            "problemRef": "lc:1987",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1987/"
+          },
+          {
+            "itemId": "07072aad-801e-5a94-88a8-e2a538b7c157",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:26.000Z",
+            "provenanceId": "lc:1986",
+            "title": "Fixture problem 1986",
+            "problemRef": "lc:1986",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1986/"
+          },
+          {
+            "itemId": "3d81dfe4-a8ca-57c4-b255-9e8eb91aff16",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:25.000Z",
+            "provenanceId": "lc:1985",
+            "title": "Fixture problem 1985",
+            "problemRef": "lc:1985",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1985/"
+          },
+          {
+            "itemId": "7b7172c9-a2c7-5ae8-ba1f-1db14e391399",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:24.000Z",
+            "provenanceId": "lc:1984",
+            "title": "Fixture problem 1984",
+            "problemRef": "lc:1984",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1984/"
+          },
+          {
+            "itemId": "f3cbd9dc-0bc8-5348-9c5b-dd80f9c896af",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:23.000Z",
+            "provenanceId": "lc:1983",
+            "title": "Fixture problem 1983",
+            "problemRef": "lc:1983",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1983/"
+          },
+          {
+            "itemId": "5f52f86d-f6b8-5e7d-9ba4-68e12cf1d304",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:22.000Z",
+            "provenanceId": "lc:1982",
+            "title": "Fixture problem 1982",
+            "problemRef": "lc:1982",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1982/"
+          },
+          {
+            "itemId": "87d0ebaa-2b9d-5d03-893b-e8e697f2561b",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:21.000Z",
+            "provenanceId": "lc:1981",
+            "title": "Fixture problem 1981",
+            "problemRef": "lc:1981",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1981/"
+          }
+        ],
+        "coverage": "accumulated_observed_submissions_not_complete_platform_history"
+      }
+    },
+    {
+      "title": "A new submission arrives",
+      "detail": "The window is still 20. The accumulated ledger now contains 21 records, with no duplicate imports.",
+      "data": {
+        "source": "leetcode",
+        "status": {
+          "checkedAt": "2026-10-22T08:38:47.874Z",
+          "available": true,
+          "username": "fixture-user",
+          "coverage": "recent_accepted_only",
+          "windowLimit": 20,
+          "windowMovesOnRefresh": true,
+          "coverageGapPossible": true,
+          "historyComplete": false,
+          "publicAcceptedTotals": [],
+          "observed": 20,
+          "imported": 20,
+          "rejectedRows": 0,
+          "lastSuccessAt": "2026-10-22T08:38:47.874Z"
+        },
+        "totalStored": 21,
+        "uniqueProblems": 21,
+        "offset": 0,
+        "nextOffset": null,
+        "items": [
+          {
+            "itemId": "86d6ff81-cda1-53d6-a282-9838b575b68a",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:41.000Z",
+            "provenanceId": "lc:2001",
+            "title": "Fixture problem 2001",
+            "problemRef": "lc:2001",
+            "submissionUrl": "https://leetcode.com/submissions/detail/2001/"
+          },
+          {
+            "itemId": "011e8583-aa17-5750-ba81-394b51a28083",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:40.000Z",
+            "provenanceId": "lc:2000",
+            "title": "Fixture problem 2000",
+            "problemRef": "lc:2000",
+            "submissionUrl": "https://leetcode.com/submissions/detail/2000/"
+          },
+          {
+            "itemId": "aee784c1-5cd7-5c42-a254-a9c71356292e",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:39.000Z",
+            "provenanceId": "lc:1999",
+            "title": "Fixture problem 1999",
+            "problemRef": "lc:1999",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1999/"
+          },
+          {
+            "itemId": "3b75ec3a-177d-53a9-ac4e-eb8537fc5063",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:38.000Z",
+            "provenanceId": "lc:1998",
+            "title": "Fixture problem 1998",
+            "problemRef": "lc:1998",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1998/"
+          },
+          {
+            "itemId": "c6f5f8a5-ac40-5452-8ef6-0f37b6f39977",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:37.000Z",
+            "provenanceId": "lc:1997",
+            "title": "Fixture problem 1997",
+            "problemRef": "lc:1997",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1997/"
+          },
+          {
+            "itemId": "0cbdc8b6-ae3d-534b-9e39-145ca0ed9292",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:36.000Z",
+            "provenanceId": "lc:1996",
+            "title": "Fixture problem 1996",
+            "problemRef": "lc:1996",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1996/"
+          },
+          {
+            "itemId": "208c5276-cfbb-5ddb-a0f8-37816bb90097",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:35.000Z",
+            "provenanceId": "lc:1995",
+            "title": "Fixture problem 1995",
+            "problemRef": "lc:1995",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1995/"
+          },
+          {
+            "itemId": "41319833-eb5e-59e3-9026-1ba8c08593d2",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:34.000Z",
+            "provenanceId": "lc:1994",
+            "title": "Fixture problem 1994",
+            "problemRef": "lc:1994",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1994/"
+          },
+          {
+            "itemId": "2322794f-e3d9-5bfc-8ec1-7783ca141711",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:33.000Z",
+            "provenanceId": "lc:1993",
+            "title": "Fixture problem 1993",
+            "problemRef": "lc:1993",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1993/"
+          },
+          {
+            "itemId": "779cb9a1-21be-5882-9327-c35f7960c251",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:32.000Z",
+            "provenanceId": "lc:1992",
+            "title": "Fixture problem 1992",
+            "problemRef": "lc:1992",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1992/"
+          },
+          {
+            "itemId": "acfad0b9-fd58-5eae-8ab9-2d9c7e9cf9a8",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:31.000Z",
+            "provenanceId": "lc:1991",
+            "title": "Fixture problem 1991",
+            "problemRef": "lc:1991",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1991/"
+          },
+          {
+            "itemId": "c71fd479-1ad6-50e7-a3fd-a83a2816aa13",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:30.000Z",
+            "provenanceId": "lc:1990",
+            "title": "Fixture problem 1990",
+            "problemRef": "lc:1990",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1990/"
+          },
+          {
+            "itemId": "cad01578-bb3c-57fd-8228-0175d93b64ae",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:29.000Z",
+            "provenanceId": "lc:1989",
+            "title": "Fixture problem 1989",
+            "problemRef": "lc:1989",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1989/"
+          },
+          {
+            "itemId": "4b64670d-c6d1-5bc6-beec-aa7aeca5c407",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:28.000Z",
+            "provenanceId": "lc:1988",
+            "title": "Fixture problem 1988",
+            "problemRef": "lc:1988",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1988/"
+          },
+          {
+            "itemId": "2ddd7388-dfc2-51dc-a124-6af61e14546e",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:27.000Z",
+            "provenanceId": "lc:1987",
+            "title": "Fixture problem 1987",
+            "problemRef": "lc:1987",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1987/"
+          },
+          {
+            "itemId": "07072aad-801e-5a94-88a8-e2a538b7c157",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:26.000Z",
+            "provenanceId": "lc:1986",
+            "title": "Fixture problem 1986",
+            "problemRef": "lc:1986",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1986/"
+          },
+          {
+            "itemId": "3d81dfe4-a8ca-57c4-b255-9e8eb91aff16",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:25.000Z",
+            "provenanceId": "lc:1985",
+            "title": "Fixture problem 1985",
+            "problemRef": "lc:1985",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1985/"
+          },
+          {
+            "itemId": "7b7172c9-a2c7-5ae8-ba1f-1db14e391399",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:24.000Z",
+            "provenanceId": "lc:1984",
+            "title": "Fixture problem 1984",
+            "problemRef": "lc:1984",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1984/"
+          },
+          {
+            "itemId": "f3cbd9dc-0bc8-5348-9c5b-dd80f9c896af",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:23.000Z",
+            "provenanceId": "lc:1983",
+            "title": "Fixture problem 1983",
+            "problemRef": "lc:1983",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1983/"
+          },
+          {
+            "itemId": "5f52f86d-f6b8-5e7d-9ba4-68e12cf1d304",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:22.000Z",
+            "provenanceId": "lc:1982",
+            "title": "Fixture problem 1982",
+            "problemRef": "lc:1982",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1982/"
+          },
+          {
+            "itemId": "87d0ebaa-2b9d-5d03-893b-e8e697f2561b",
+            "source": "leetcode",
+            "accepted": true,
+            "verdict": "Accepted",
+            "observedAt": "2026-10-21T16:26:21.000Z",
+            "provenanceId": "lc:1981",
+            "title": "Fixture problem 1981",
+            "problemRef": "lc:1981",
+            "submissionUrl": "https://leetcode.com/submissions/detail/1981/"
+          }
+        ],
+        "coverage": "accumulated_observed_submissions_not_complete_platform_history"
+      }
+    },
+    {
+      "title": "A confirmed reasoning difficulty",
+      "detail": "Real MCP ranking runs against a simulated learner observation. The before/after lists below are actual tool outputs.",
+      "data": {
+        "before": [
+          {
+            "itemId": "18800000-0000-5000-8000-000000000001",
+            "title": "Two Sum",
+            "score": 10,
+            "reason": [
+              "New curriculum problem"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:1"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000002",
+            "title": "Best Time to Buy and Sell Stock",
+            "score": 10,
+            "reason": [
+              "New curriculum problem"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:121"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000003",
+            "title": "Maximum Subarray (Kadane's)",
+            "score": 10,
+            "reason": [
+              "New curriculum problem"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:53"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000004",
+            "title": "Sort Colors",
+            "score": 10,
+            "reason": [
+              "New curriculum problem"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:75"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000005",
+            "title": "Next Permutation",
+            "score": 10,
+            "reason": [
+              "New curriculum problem"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:31"
+          }
+        ],
+        "after": [
+          {
+            "itemId": "18800000-0000-5000-8000-000000000130",
+            "title": "Validate BST",
+            "score": 24,
+            "reason": [
+              "Attempted but no verified acceptance recorded",
+              "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:98"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000067",
+            "title": "Word Search",
+            "score": 16,
+            "reason": [
+              "New curriculum problem",
+              "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:79"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000110",
+            "title": "Inorder Traversal",
+            "score": 16,
+            "reason": [
+              "New curriculum problem",
+              "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:94"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000111",
+            "title": "Preorder Traversal",
+            "score": 16,
+            "reason": [
+              "New curriculum problem",
+              "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:144"
+          },
+          {
+            "itemId": "18800000-0000-5000-8000-000000000112",
+            "title": "Postorder Traversal",
+            "score": 16,
+            "reason": [
+              "New curriculum problem",
+              "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+            ],
+            "evidence": {
+              "accepted": 0,
+              "rejected": 0,
+              "codeFiles": 0,
+              "latestAt": null
+            },
+            "problemRef": "lc:145"
+          }
+        ],
+        "signals": {
+          "eventCount": 1,
+          "weakConcepts": [
+            {
+              "concept": "dfs",
+              "count": 1
+            }
+          ],
+          "mistakeCounts": [],
+          "hintDependent": 0,
+          "selfReportedIndependent": 0,
+          "problemRefs": [
+            "lc:98"
+          ]
+        }
+      }
+    },
+    {
+      "title": "Later independent explanation",
+      "detail": "A new observation updates priorities. Acceptance and mastery are never fabricated.",
+      "data": [
+        {
+          "itemId": "18800000-0000-5000-8000-000000000130",
+          "title": "Validate BST",
+          "score": 18,
+          "reason": [
+            "Attempted but no verified acceptance recorded",
+            "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)",
+            "Later independently explained reasoning reduced practice priority; self-report does not establish mastery."
+          ],
+          "evidence": {
+            "accepted": 0,
+            "rejected": 0,
+            "codeFiles": 0,
+            "latestAt": null
+          },
+          "problemRef": "lc:98"
+        },
+        {
+          "itemId": "18800000-0000-5000-8000-000000000067",
+          "title": "Word Search",
+          "score": 16,
+          "reason": [
+            "New curriculum problem",
+            "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+          ],
+          "evidence": {
+            "accepted": 0,
+            "rejected": 0,
+            "codeFiles": 0,
+            "latestAt": null
+          },
+          "problemRef": "lc:79"
+        },
+        {
+          "itemId": "18800000-0000-5000-8000-000000000110",
+          "title": "Inorder Traversal",
+          "score": 16,
+          "reason": [
+            "New curriculum problem",
+            "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+          ],
+          "evidence": {
+            "accepted": 0,
+            "rejected": 0,
+            "codeFiles": 0,
+            "latestAt": null
+          },
+          "problemRef": "lc:94"
+        },
+        {
+          "itemId": "18800000-0000-5000-8000-000000000111",
+          "title": "Preorder Traversal",
+          "score": 16,
+          "reason": [
+            "New curriculum problem",
+            "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+          ],
+          "evidence": {
+            "accepted": 0,
+            "rejected": 0,
+            "codeFiles": 0,
+            "latestAt": null
+          },
+          "problemRef": "lc:144"
+        },
+        {
+          "itemId": "18800000-0000-5000-8000-000000000112",
+          "title": "Postorder Traversal",
+          "score": 16,
+          "reason": [
+            "New curriculum problem",
+            "Practice transfer of learner-reported weak technique(s): dfs (self-report, not verified mastery)"
+          ],
+          "evidence": {
+            "accepted": 0,
+            "rejected": 0,
+            "codeFiles": 0,
+            "latestAt": null
+          },
+          "problemRef": "lc:145"
+        }
+      ]
+    },
+    {
+      "title": "Background timer executes",
+      "detail": "A real local Durable Object alarm refreshed the fixture source. This demo then stopped its timer. Your account was never monitored by this demo.",
+      "data": {
+        "enabled": true,
+        "intervalMinutes": 30,
+        "nextRunAt": 1792658389015,
+        "taskIndex": 1,
+        "memoryPage": 1,
+        "cfCursor": 1,
+        "consecutiveFailures": 0,
+        "tasks": {
+          "leetcode": {
+            "status": "success",
+            "checkedAt": "2026-10-22T08:38:49.007Z"
+          }
+        },
+        "credentialMode": "local",
+        "lastRunAt": "2026-10-22T08:38:49.007Z",
+        "lastSuccessAt": "2026-10-22T08:38:49.007Z"
+      }
+    }
+  ]
+}

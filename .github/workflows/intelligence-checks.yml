@@ -1,0 +1,30 @@
+name: Intelligence Layer Checks
+on:
+  push:
+    branches:
+      - feature/evidence-intelligence-layer
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --no-save
+      - name: Test recommendation and roadmap logic
+        run: bunx vitest run src/lib/evidence-intelligence.test.ts src/lib/submission-evidence.test.ts src/lib/mcp-core.test.ts src/lib/github-evidence.test.ts src/lib/sync-orchestrator.test.ts src/lib/canonical-roadmap.test.ts src/lib/learning-diagnosis.test.ts src/lib/connector-registry.test.ts src/lib/transfer-intelligence.test.ts src/lib/learning-restore.test.ts src/lib/progressive-coaching.test.ts src/lib/memory-cache.test.ts src/lib/concept-graph.test.ts src/lib/learning-events.test.ts src/lib/reasoning-ranking.test.ts src/lib/supermemory-incremental.test.ts src/lib/learning-fabric.integration.test.ts src/test/rules.test.ts
+      - name: Verify real public platform API contracts
+        run: bun scripts/smoke-public-platforms.mjs
+      - name: Verify database migration registry
+        run: node scripts/check-migration-journal.mjs
+      - name: Verify migration reconciliation runner syntax
+        run: node --check scripts/reconcile-applied-migrations.mjs
+      - name: Build app
+        run: bun run build

@@ -1,26 +1,15 @@
-# Coding Intuition Learning Os
+# Coding Intuition Learning OS
 
-Build Coding Intuition Learning OS as a real full-stack private DSA study app on Lovable Cloud with authentication and RLS, a durable per-user learning database, dated spaced-repetition reviews, 7-30 day planner, contest warm-up, GitHub public-solution index, safe LeetCode/Codeforces observations, and optional Supermemory integration that never collects credentials in the browser. No fake solved data, no public learner notes. First build working auth and CRUD and a clear modern dark UI. Source curriculum must ultimately be imported from my 188-entry DSA_Roadmap_Audit(1).docx; do not invent entries if not yet available. Include import flow and clearly mark catalog incomplete until verified. Use free-tier features only and do not publish before auth/RLS tests. This is a real engineering MVP, not a UI mockup.
+A personal DSA learning project with a web application and a separate MCP server. The MCP connects ChatGPT tools to structured problem history and a user's own Supermemory account, with explicit approval for learning writes.
 
-This project was built with [Lovable](https://lovable.dev).
+## Try the local MCP
 
-**Live app**: https://coding-intuition-learning-os.lovable.app
+The local MCP source, setup guide, scope, and verification limits are in [mcp-worker/README.md](mcp-worker/README.md). Start there before connecting an AI client. The repository is currently private; people outside the owner/collaborators cannot clone it until the owner makes it public.
 
-## Build with Lovable
+The local automated suite uses simulated upstream services. It does not by itself prove live Supermemory sign-in or an authenticated ChatGPT tool call. Do not describe the hosted OAuth integration as live until a real read-only tool call succeeds.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/6e9db500-9028-4140-ba51-1903e21ae09d).
+## Web application
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+The repository also contains the Coding Intuition Learning OS web app, originally developed with [Lovable](https://lovable.dev). The app and the MCP worker have separate setup and verification instructions.
 
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+**Web app:** https://coding-intuition-learning-os.lovable.app

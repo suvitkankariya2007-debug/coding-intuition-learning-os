@@ -1,0 +1,1 @@
+ALTER TABLE public.platform_evidence ADD COLUMN IF NOT EXISTS code_url text;

@@ -70,6 +70,7 @@ export type Database = {
       }
       curriculum_items: {
         Row: {
+          is_active: boolean
           concept_only: boolean
           created_at: string
           difficulty: string | null
@@ -87,6 +88,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          is_active?: boolean
           concept_only?: boolean
           created_at?: string
           difficulty?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          is_active?: boolean
           concept_only?: boolean
           created_at?: string
           difficulty?: string | null
@@ -183,6 +186,12 @@ export type Database = {
           },
         ]
       }
+      learning_events: {
+        Row: { id:string; user_id:string; client_event_id:string; item_id:string|null; problem_ref:string|null; kind:string; summary:string; concept_keys:string[]; mistake_class:string|null; hint_stage:string|null; confidence:number|null; independently_explained:boolean|null; origin:string; recorded_at:string }
+        Insert: { id?:string; user_id?:string; client_event_id:string; item_id?:string|null; problem_ref?:string|null; kind:string; summary:string; concept_keys?:string[]; mistake_class?:string|null; hint_stage?:string|null; confidence?:number|null; independently_explained?:boolean|null; origin:string; recorded_at?:string }
+        Update: { id?:string; user_id?:string; client_event_id?:string; item_id?:string|null; problem_ref?:string|null; kind?:string; summary?:string; concept_keys?:string[]; mistake_class?:string|null; hint_stage?:string|null; confidence?:number|null; independently_explained?:boolean|null; origin?:string; recorded_at?:string }
+        Relationships: [{foreignKeyName:"learning_events_item_id_fkey";columns:["item_id"];isOneToOne:false;referencedRelation:"curriculum_items";referencedColumns:["id"]}]
+      }
       memory_outbox: {
         Row: {
           consent: boolean
@@ -209,6 +218,12 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      platform_evidence: {
+        Row: { id: string; user_id: string; item_id: string | null; source: string; provenance_id: string; code_url: string | null; verdict: string | null; accepted: boolean; observed_at: string; synced_at: string }
+        Insert: { id?: string; user_id?: string; item_id?: string | null; source: string; provenance_id: string; code_url?: string | null; verdict?: string | null; accepted?: boolean; observed_at: string; synced_at?: string }
+        Update: { id?: string; user_id?: string; item_id?: string | null; source?: string; provenance_id?: string; code_url?: string | null; verdict?: string | null; accepted?: boolean; observed_at?: string; synced_at?: string }
+        Relationships: [{ foreignKeyName: "platform_evidence_item_id_fkey"; columns: ["item_id"]; isOneToOne: false; referencedRelation: "curriculum_items"; referencedColumns: ["id"] }]
       }
       profiles: {
         Row: {
@@ -295,6 +310,14 @@ export type Database = {
       replace_catalog: {
         Args: { p_confirm: boolean; p_entries: Json; p_source: string }
         Returns: string
+      }
+      record_learning_review: {
+        Args: { p_item_id: string; p_grade: number; p_mistake_class?: string | null; p_hint_stage?: string; p_confidence?: number }
+        Returns: string
+      }
+      reconcile_canonical_188: {
+        Args: { p_entries: Json }
+        Returns: Json
       }
     }
     Enums: {

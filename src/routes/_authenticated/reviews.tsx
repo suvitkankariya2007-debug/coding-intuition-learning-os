@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useState } from "react";
+import { MISTAKE_CLASSES, HINT_STAGES } from "@/lib/learning-diagnosis";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogQuery, type CatalogRow } from "@/lib/data";
-import { review, todayISO } from "@/lib/srs";
+import { todayISO } from "@/lib/srs";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/reviews")({
@@ -42,32 +44,44 @@ function Reviews() {
 
 function ReviewCard({ row }: { row: CatalogRow }) {
   const qc = useQueryClient();
-  const { user } = Route.useRouteContext();
+  const [mistakeClass,setMistakeClass] = useState("");
+  const [hintStage,setHintStage] = useState("none");
+  const [confidence,setConfidence] = useState(3);
   const m = useMutation({
     mutationFn: async (grade: number) => {
-      const p = row.progress;
-      const today = todayISO();
-      const next = review({ ease: Number(p?.ease ?? 2.5), interval_days: p?.interval_days ?? 0, repetitions: p?.repetitions ?? 0 }, grade, today);
-      const { error } = await supabase.from("item_progress").upsert(
-        { user_id: user.id, item_id: row.id, ...next, last_reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-          status: p?.status && p.status !== "not_started" ? p.status : "attempted" },
-        { onConflict: "user_id,item_id" },
-      );
-      if (error) throw error;
-      const log = await supabase.from("review_log").insert({ user_id: user.id, item_id: row.id, grade, next_due: next.due_date });
-      if (log.error) throw log.error;
-      return next.due_date;
+      const {data:nextDue,error} = await supabase.rpc("record_learning_review",{
+        p_item_id:row.id,p_grade:grade,p_mistake_class:mistakeClass||null,
+        p_hint_stage:hintStage,p_confidence:confidence
+      });
+      if(error)throw error;
+      return nextDue;
     },
     onSuccess: (d) => { toast.success(`Next review ${d}`); qc.invalidateQueries({ queryKey: ["catalog"] }); },
     onError: (e) => toast.error(e.message),
   });
   return (
-    <div className="flex items-center justify-between rounded-lg border bg-card p-4">
+    <div className="rounded-lg border bg-card p-4">
       <div>
         <div className="font-medium">{row.position}. {row.title}</div>
         <div className="font-mono text-xs text-muted-foreground">{row.topic ?? "—"} · due {row.progress?.due_date ?? "unscheduled"}</div>
       </div>
-      <div className="flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-3 items-end text-sm">
+        <label>Mistake or weak pattern
+          <select aria-label="Mistake pattern" className="mt-1 block rounded-md border bg-background p-2" value={mistakeClass} onChange={e=>setMistakeClass(e.target.value)}>
+            <option value="">Not sure / none</option>
+            {MISTAKE_CLASSES.map(x=><option key={x} value={x}>{x.replaceAll("-", " ")}</option>)}
+          </select>
+        </label>
+        <label>Help needed
+          <select aria-label="Hint usage" className="mt-1 block rounded-md border bg-background p-2" value={hintStage} onChange={e=>setHintStage(e.target.value)}>
+            {HINT_STAGES.map(x=><option key={x} value={x}>{x}</option>)}
+          </select>
+        </label>
+        <label>Confidence: {confidence}/5
+          <input aria-label="Review confidence" className="mt-2 block" type="range" min={1} max={5} value={confidence} onChange={e=>setConfidence(Number(e.target.value))}/>
+        </label>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
         {GRADES.map((g) => (
           <Button key={g.g} size="sm" variant={g.g >= 4 ? "default" : "outline"} disabled={m.isPending} onClick={() => m.mutate(g.g)}>{g.label}</Button>
         ))}
